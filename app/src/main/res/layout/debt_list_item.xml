@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+
+    </data>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="?android:colorBackground"
+        app:cardElevation="2dp"
+        app:cardCornerRadius="4dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="2dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="4sp"
+            android:paddingRight="4sp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8sp">
+
+            <TextView
+                android:id="@+id/item_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:text="@string/holder_text" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:drawableLeftCompat="@drawable/baseline_attachment_24" />
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent" />
+
+
+
+                <TextView
+                    android:id="@+id/item_price"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:text="@string/holder_number_decimal"
+                    android:textAlignment="viewEnd"
+                    android:layout_gravity="end" />
+
+                <TextView
+                    android:id="@+id/iconIncome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:drawableLeftCompat="@drawable/baseline_arrow_left_24_green" />
+
+                <TextView
+                    android:id="@+id/iconOutcome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:drawableLeftCompat="@drawable/baseline_arrow_right_24_red" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/balance_line"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/balance_in" />
+
+                    <TextView
+                        android:layout_width="4dp"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/sum_in"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/holder_number_decimal" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/balance_out" />
+
+                    <TextView
+                        android:layout_width="4dp"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/sum_out"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/holder_number_decimal" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+</layout>

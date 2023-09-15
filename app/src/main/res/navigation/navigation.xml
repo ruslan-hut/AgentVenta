@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/navigation"
+    app:startDestination="@id/orderListFragment">
+
+    <fragment
+        android:id="@+id/orderListFragment"
+        android:name="ua.com.programmer.agentventa.documents.order.OrderListFragment"
+        android:label="@string/header_orders_list" >
+        <action
+            android:id="@+id/action_orderListFragment_to_orderFragment"
+            app:destination="@id/orderFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/orderFragment"
+        android:name="ua.com.programmer.agentventa.documents.order.OrderFragment"
+        android:label="@string/order" >
+        <argument
+            android:name="orderGuid"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_orderFragment_to_productListFragment"
+            app:destination="@id/productListFragment" />
+        <action
+            android:id="@+id/action_orderFragment_to_clientListFragment"
+            app:destination="@id/clientListFragment" />
+        <action
+            android:id="@+id/action_orderFragment_to_pickerFragment"
+            app:destination="@id/pickerFragment" />
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_orderFragment_to_fiscalFragment"
+            app:destination="@id/fiscalFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/userAccountListFragment"
+        android:name="ua.com.programmer.agentventa.settings.UserAccountListFragment"
+        android:label="@string/data_server" >
+        <action
+            android:id="@+id/action_userAccountListFragment_to_userAccountFragment"
+            app:destination="@id/userAccountFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/userAccountFragment"
+        android:name="ua.com.programmer.agentventa.settings.UserAccountFragment"
+        android:label="@string/data_server" >
+        <argument
+            android:name="accountGuid"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/productListFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.product.ProductListFragment"
+        android:label="@string/header_goods_list" >
+        <argument
+            android:name="modeSelect"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="groupGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+        <action
+            android:id="@+id/action_productListFragment_self"
+            app:destination="@id/productListFragment" />
+        <action
+            android:id="@+id/action_productListFragment_to_pickerFragment"
+            app:destination="@id/pickerFragment" />
+        <action
+            android:id="@+id/action_productListFragment_to_productFragment"
+            app:destination="@id/productFragment" />
+        <action
+            android:id="@+id/action_productListFragment_to_productImageFragment"
+            app:destination="@id/productImageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/clientListFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.client.ClientListFragment"
+        android:label="@string/header_clients_list" >
+        <argument
+            android:name="groupGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+        <argument
+            android:name="modeSelect"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <action
+            android:id="@+id/action_clientListFragment_self"
+            app:destination="@id/clientListFragment" />
+        <action
+            android:id="@+id/action_clientListFragment_to_clientMenuFragment"
+            app:destination="@id/clientMenuFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/pickerFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.picker.PickerFragment"
+        android:label="@string/product" >
+        <argument
+            android:name="productGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/productFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.product.ProductFragment"
+        android:label="@string/product" >
+        <argument
+            android:name="productGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+        <action
+            android:id="@+id/action_productFragment_to_productImageFragment"
+            app:destination="@id/productImageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/logFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.logger.LogFragment"
+        android:label="@string/events_log" />
+    <fragment
+        android:id="@+id/clientMenuFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.client.ClientFragment"
+        android:label="@string/doc_client" >
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+        <action
+            android:id="@+id/action_clientFragment_to_locationPickupFragment"
+            app:destination="@id/locationPickupFragment" />
+        <action
+            android:id="@+id/action_clientMenuFragment_to_orderFragment"
+            app:destination="@id/orderFragment" />
+        <action
+            android:id="@+id/action_clientMenuFragment_to_cashFragment"
+            app:destination="@id/cashFragment" />
+        <action
+            android:id="@+id/action_clientMenuFragment_to_debtFragment"
+            app:destination="@id/debtFragment" />
+        <action
+            android:id="@+id/action_clientMenuFragment_to_cameraFragment"
+            app:destination="@id/cameraFragment" />
+        <action
+            android:id="@+id/action_clientMenuFragment_to_clientImageFragment"
+            app:destination="@id/clientImageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/cashListFragment"
+        android:name="ua.com.programmer.agentventa.documents.cash.CashListFragment"
+        android:label="@string/header_cash_list" >
+        <action
+            android:id="@+id/action_cashListFragment_to_cashFragment"
+            app:destination="@id/cashFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/cashFragment"
+        android:name="ua.com.programmer.agentventa.documents.cash.CashFragment"
+        android:label="CashFragment" >
+        <action
+            android:id="@+id/action_cashFragment_to_clientListFragment"
+            app:destination="@id/clientListFragment" />
+        <argument
+            android:name="cashGuid"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/taskListFragment"
+        android:name="ua.com.programmer.agentventa.documents.task.TaskListFragment"
+        android:label="@string/header_tasks_list" >
+        <action
+            android:id="@+id/action_taskListFragment_to_taskFragment"
+            app:destination="@id/taskFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/taskFragment"
+        android:name="ua.com.programmer.agentventa.documents.task.TaskFragment"
+        android:label="@string/task" >
+        <argument
+            android:name="taskGuid"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/productImageFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.product.ProductImageFragment"
+        android:label="@string/product" >
+        <argument
+            android:name="productGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/locationPickupFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.locations.pickup.LocationPickupFragment"
+        android:label="@string/title_location_pickup" >
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="ua.com.programmer.agentventa.settings.SettingsFragment"
+        android:label="@string/action_settings" >
+        <action
+            android:id="@+id/action_settingsFragment_to_optionsFragment"
+            app:destination="@id/optionsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/optionsFragment"
+        android:name="ua.com.programmer.agentventa.settings.OptionsFragment"
+        android:label="@string/pref_options" />
+    <fragment
+        android:id="@+id/syncFragment"
+        android:name="ua.com.programmer.agentventa.settings.SyncFragment"
+        android:label="@string/action_sync" >
+        <action
+            android:id="@+id/action_syncFragment_to_userAccountFragment"
+            app:destination="@id/userAccountFragment" />
+        <action
+            android:id="@+id/action_syncFragment_to_logFragment"
+            app:destination="@id/logFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/clientsMapFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.map.clients.ClientsMapFragment"
+        android:label="@string/title_clients_map" />
+    <fragment
+        android:id="@+id/locationHistoryFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.map.history.LocationHistoryFragment"
+        android:label="@string/title_locations_history" />
+    <fragment
+        android:id="@+id/debtFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.debt.DebtFragment"
+        android:label="@string/header_document" >
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+        <argument
+            android:name="docId"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="ua.com.programmer.agentventa.camera.CameraFragment"
+        android:label="@string/camera" >
+        <argument
+            android:name="clientGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/clientImageFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.client.ClientImageFragment"
+        android:label="@string/client_image" >
+        <argument
+            android:name="imageGuid"
+            app:argType="string"
+            android:defaultValue=""/>
+    </fragment>
+    <fragment
+        android:id="@+id/fiscalFragment"
+        android:name="ua.com.programmer.agentventa.fiscal.FiscalFragment"
+        android:label="@string/title_fiscal_service" />
+</navigation>

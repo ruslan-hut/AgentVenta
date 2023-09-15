@@ -1,0 +1,71 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/pref_title_items_list">
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="open_editor_switch"
+            android:summary="@string/pref_desc_item_edit"
+            android:title="@string/pref_title_open_item_edit" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="show_rests_only"
+            android:summary="@string/pref_desc_rests_only"
+            android:title="@string/pref_title_rests_only" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="highlight_goods_in_order"
+            android:summary="@string/perf_desc_highlight_goods"
+            android:title="@string/pref_title_highlight_goods" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_item_selection_screen" >
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="item_editor_short_screen"
+            android:summary="@string/pref_desc_item_editor_short_screen"
+            android:title="@string/pref_item_editor_short_screen" />
+        <EditTextPreference
+            android:defaultValue="0"
+            android:key="default_item_quantity"
+            android:inputType="numberDecimal"
+            android:singleLine="true"
+            android:selectAllOnFocus="true"
+            android:title="@string/pref_title_default_item_quantity" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_package_mark"
+            android:summary="@string/pref_desc_package_mark"
+            android:title="@string/pref_title_package_mark" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/pref_title_order_fields">
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_discounts"
+            android:summary="@string/pref_desc_use_discounts"
+            android:title="@string/pref_title_use_discounts" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_payment_type_switch"
+            android:summary="@string/pref_desc_payment_type_switch"
+            android:title="@string/pref_title_payment_type_switch" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="use_returns_switch"
+            android:summary="@string/pref_desc_returns"
+            android:title="@string/pref_title_returns" />
+
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/show_map"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/action_show_map"
+        android:icon="@drawable/sharp_map_24"/>
+    <item
+        android:id="@+id/pick_date"
+        android:orderInCategory="30"
+        android:title="@string/choose_date"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/sharp_event_24"/>
+    <item
+        android:id="@+id/show_track"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        android:title="@string/action_show_track" />
+    <item
+        android:id="@+id/show_route"
+        android:orderInCategory="300"
+        app:showAsAction="never"
+        android:title="@string/action_show_route"/>
+    <item
+        android:id="@+id/recalc_route"
+        android:orderInCategory="400"
+        android:title="@string/action_recalc_route"
+        app:showAsAction="never"/>
+</menu>

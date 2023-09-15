@@ -1,0 +1,151 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="ua.com.programmer.agentventa.documents.common.DocumentListViewModel" />
+    </data>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="4dp"
+        android:background="?attr/colorSurfaceVariant">
+
+        <EditText
+            android:id="@+id/edit_search"
+            android:layout_alignParentTop="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:text="@{viewModel.searchText}"
+            android:visibility="@{viewModel.searchVisibility}"
+            android:onTextChanged="@{viewModel::onTextChanged}"
+            android:hint="@string/search_hint"
+            android:autofillHints="" />
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/edit_search"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="24dp"
+            android:id="@+id/documents_swipe">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/documents_recycler" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <TextView
+            android:id="@+id/text_no_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:text="@string/no_data_list"
+            android:visibility="@{viewModel.noDataTextVisibility}"
+            app:drawableTopCompat="@drawable/ic_error_gray_64dp" />
+
+        <LinearLayout
+            android:id="@+id/documents_list_totals"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSecondaryContainer"
+            android:padding="2dp"
+            android:visibility="@{viewModel.totalsVisibility}"
+            android:layout_alignParentBottom="true">
+
+            <TextView
+                android:paddingLeft="4dp"
+                android:paddingStart="4dp"
+                android:paddingRight="4dp"
+                android:paddingEnd="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/title_documents_qty" />
+
+            <TextView
+                android:id="@+id/documents_qty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="4dp"
+                android:paddingStart="4dp"
+                android:paddingRight="4dp"
+                android:paddingEnd="4dp"
+                android:textStyle="bold"
+                android:text="@{viewModel.documentsCount}" />
+
+            <ImageView
+                android:id="@+id/return_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:src="@drawable/baseline_replay_24" />
+
+            <TextView
+                android:id="@+id/documents_return"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:text="@{viewModel.returnsCount}" />
+
+
+            <!--        <TextView-->
+            <!--            android:layout_weight="1"-->
+            <!--            android:layout_width="0dp"-->
+            <!--            android:layout_height="wrap_content"-->
+            <!--            android:textAlignment="viewEnd"-->
+            <!--            android:gravity="end"-->
+            <!--            android:textColor="@color/white"-->
+            <!--            android:text="@string/sum"/>-->
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:src="@drawable/baseline_speed_24" />
+
+            <TextView
+                android:paddingRight="4dp"
+                android:id="@+id/documents_weight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="4dp"
+                android:textStyle="bold"
+                android:text="@{viewModel.totalWeight}" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="18dp"
+                android:src="@drawable/baseline_functions_24" />
+
+            <TextView
+                android:paddingRight="4dp"
+                android:id="@+id/documents_sum"
+                android:text = "@{viewModel.totalSum}"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="4dp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="52dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            app:srcCompat="@drawable/baseline_edit_24" />
+
+    </RelativeLayout>
+
+</layout>

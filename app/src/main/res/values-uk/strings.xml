@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Агент Venta</string>
+    <string name="action_settings">Налаштування</string>
+    <string name="action_sync">Оновити дані</string>
+    <string name="header_goods_list">Список товарів</string>
+    <string name="header_orders_list">Замовлення</string>
+    <string name="pref_default_display_name">Степан Гармаш</string>
+    <string name="pref_header_data_sync">Зв\'язок</string>
+    <string name="pref_header_general">Загальні</string>
+    <string name="pref_header_notifications">Сповіщення</string>
+    <string name="pref_ringtone_silent">Тихо</string>
+    <string name="pref_title_display_name">Ім\'я</string>
+    <string name="pref_title_network_usage">Використання мережі</string>
+    <string name="pref_title_ringtone">Сигнал</string>
+    <string name="pref_title_server_address">Адреса сервера</string>
+    <string name="pref_title_sync_frequency">Інтервал оновлень</string>
+    <string name="title_activity_settings">Налаштування</string>
+    <string name="pref_description_social_recommendations">Рекомендації</string>
+    <string name="pref_title_add_friends_to_messages">Додавати друзів</string>
+    <string-array name="pref_example_list_titles">
+        <item>Завжди</item>
+        <item>Якщо можливо</item>
+        <item>Ніколи</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+    <string name="pref_title_new_message_notifications">Сповіщення про нові листи</string>
+    <string name="pref_title_social_recommendations">Соціальні сервіси</string>
+    <string name="pref_title_system_sync_settings">Системні налаштування</string>
+    <string name="pref_title_vibrate">Вібрувати</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 хвилин</item>
+        <item>30 хвилин</item>
+        <item>1 година</item>
+        <item>3 години</item>
+        <item>6 годин</item>
+        <item>Ніколи</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="list_preference_entries">
+        <item>Варіант 1</item>
+        <item>Варіант 2</item>
+        <item>Варіант 3</item>
+    </string-array>
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <string-array name="pref_sync_format_entries">
+        <item>HTTP сервіс</item>
+        <item>FTP сервер</item>
+    </string-array>
+    <string-array name="pref_sync_format_values">
+        <item>HTTP_service</item>
+        <item>FTP_server</item>
+    </string-array>
+    <string name="data_inserted">Нових</string>
+    <string name="data_total_rows_count">Всього записів</string>
+    <string name="data_updated">Обмін завершений</string>
+    <string name="data_connection_error">Немає з\'єднання</string>
+    <string name="data_xml_error">Помилка розбору даних</string>
+    <string name="attr_code">Код</string>
+    <string name="attr_description">Найменування</string>
+    <string name="attr_price">Ціна</string>
+    <string name="attr_quantity">Кількість</string>
+    <string name="title_activity_orders_list">Список замовлень</string>
+    <string name="order">Замовлення</string>
+    <string name="new_element">нове</string>
+    <string name="doc_client">Клієнт</string>
+    <string name="doc_date">Дата</string>
+    <string name="doc_isreturn">Повернення</string>
+    <string name="doc_notes">Примітки</string>
+    <string name="doc_number">Номер</string>
+    <string name="doc_payment">За готівку</string>
+    <string name="doc_total_price">Всього</string>
+    <string name="doc_total_quantity">Кількість</string>
+    <string name="doc_client_hint">введіть ім\'я клієнта</string>
+    <string name="doc_payment_cash">за готівку</string>
+    <string name="doc_payment_credit">кредит</string>
+    <string name="doc_shipment_return">повернення</string>
+    <string name="doc_shipment_sale">продаж</string>
+    <string name="save_order">Зберегти</string>
+    <string name="delete_order">Видалити</string>
+    <string name="edit_order">Редагувати</string>
+    <string name="data_not_saved">Данні не збережено</string>
+    <string name="save_before_quit">Зберегти перед виходом?</string>
+    <string name="no">Ні</string>
+    <string name="yes">Так</string>
+    <string name="OK">ОК</string>
+    <string name="data_saved">Дані збережено</string>
+    <string name="edit_mode">Режим редагування</string>
+    <string name="header_clients_list">Список клієнтів</string>
+    <string name="attr_debt">Сальдо</string>
+    <string name="delete_data">Підтведжуєте видалення</string>
+    <string name="error_unknown">Невідома помилка</string>
+    <string name="data_already_sent">Дані вже відправлені, зміни не будуть прийняті сервером якщо документ вже проведений</string>
+    <string name="deny">Дію відмінено</string>
+    <string name="sum">Сума</string>
+    <string name="select_goods">Введення товарів</string>
+    <string name="rest">Залишок</string>
+    <string name="title_attributes">Реквізити</string>
+    <string name="title_content">Вміст</string>
+    <string name="close">Закрити</string>
+    <string name="error_no_client">Не обраний клієнт</string>
+    <string name="error">Помилка</string>
+    <string name="pref_default_server_address">Демонстраційний режим</string>
+    <string name="pref_title_base_name">Ім\'я бази даних</string>
+    <string name="pref_title_password">Пароль</string>
+    <string name="pref_title_username">Ім\'я користувача</string>
+    <string name="item_not_selected">Спочатку оберіть товар</string>
+    <string name="save">Зберегти</string>
+    <string name="cancel">Скасувати</string>
+    <string name="flag_package">Паковання</string>
+    <string name="current_value">Поточне значення</string>
+    <string name="new_value">Нове значення</string>
+    <string name="pref_title_goods_selection">Вибір товарів</string>
+    <string name="pref_title_open_item_edit">Відкривати вікно редагування</string>
+    <string name="pref_desc_item_edit">При виділенні товару одразу відкривати вікно редагування</string>
+    <string name="documents_sent">Відправлено документів</string>
+    <string name="no_data">Немає данних для відправлення</string>
+    <string name="access_denied_on_server">Сервер відмовив в доступі</string>
+    <string name="read_only">Дозволено тільки читання даних</string>
+    <string name="pref_title_sync_format">Тип підключення</string>
+    <string name="error_sync_format_not_set">Не встановлений тип підключення</string>
+    <string name="error_no_server_address">Не вказана адреса сервера або ім\'я бази</string>
+    <string name="search_hint">Пошук…</string>
+    <string name="text_erase_data">Всі дані будуть видалені без можливості відновлення!</string>
+    <string name="warning">Увага</string>
+    <string name="pref_title_erase_data">Видалення данних</string>
+    <string name="out_of_memory">Помилка: недостатньо пам\'яті</string>
+    <string name="attr_group">Група</string>
+    <string name="attr_discount">Знижка</string>
+    <string name="pref_desc_use_discounts">Показувати і обчислювати в документах знижку покупця або показувати категорію цін</string>
+    <string name="pref_title_use_discounts">Використовувати знижки</string>
+    <string name="pref_title_payment_type_switch">Ознака оплати готівкою</string>
+    <string name="pref_desc_payment_type_switch">Використовувати в документах ознаку оплати готівкою</string>
+    <string name="pref_desc_returns">Показувати ознаку операції повернення товару</string>
+    <string name="pref_title_returns">Ознака повернення</string>
+    <string name="pref_title_package_mark">Наявність пакування</string>
+    <string name="pref_desc_package_mark">Ознака товару в пакуванні</string>
+    <string name="continue_edit">Продовжити</string>
+    <string name="hint_press_back">Нажміть ще раз для виходу</string>
+    <string name="pref_desc_rests_only">За умовчанням показувати тільки товари із залишками</string>
+    <string name="pref_title_rests_only">Товари із залишками</string>
+    <string name="rests_only">Тільки із залишком</string>
+    <string name="whole_list">Всі товари</string>
+    <string name="price_type">Категорія цін</string>
+    <string name="choose_date">Обрати дату</string>
+    <string name="no_limits">Без обмежень</string>
+    <string name="today">Сьогодні</string>
+    <string name="yesterday">Вчора</string>
+    <string name="title_order_number">№</string>
+    <string name="title_items_qty">Кількість:</string>
+    <string name="title_documents_qty">Документів</string>
+    <string name="enable_edit">Для внесення змін у список товарів ввімкніть режим редагування</string>
+    <string name="cant_edit">Редагування цієї стрічки неможливе</string>
+    <string name="error_reading_db">Помилка читання даних, спробуйте пізніше</string>
+    <string name="pref_desc_restore_list_position">Встановлювати список на позицію, що була активною перед вибором</string>
+    <string name="pref_restore_list_position">Відновляти позицію в списку</string>
+    <string name="action_sync_descr">Оновити всі дані та відправити підготовлені документи</string>
+    <string name="action_sync_warn">Оновлення триває, чекайте завершення</string>
+    <string name="debts_list">Взаєморозрахунки</string>
+    <string name="empty_list">Немає даних</string>
+    <string name="search_from_main_window">Для пошуку поверніться на початок списку</string>
+    <string name="attr_address">Адреса</string>
+    <string name="attr_phone">Телефон</string>
+    <string name="default_value">За умовчанням</string>
+    <string name="title_previous">Минуле</string>
+    <string name="doc_goods">Товари</string>
+    <string name="attr_qty">Кіль.</string>
+    <string name="navigation_drawer_close">Зачинити меню</string>
+    <string name="navigation_drawer_open">Відчинити меню</string>
+    <string name="title_activity_main_navigation">Головний</string>
+    <string name="header_catalogs">Довідники</string>
+    <string name="header_actions">Сервіс</string>
+    <string name="sync_progress">Завантаження даних…</string>
+    <string name="title_no_data">Немає даних</string>
+    <string name="new_document">Створено новий документ</string>
+    <string name="copy_previous">Копіювати попереднє</string>
+    <string name="warn_order_content">Зміст поточного документа буде видалено</string>
+    <string name="no_previous_document">Попередній документ не знайдено</string>
+    <string name="q_create_new_document">Створити новий документ?</string>
+    <string name="q_title">Підтвердіть дію</string>
+    <string name="holder_number">000</string>
+    <string name="holder_number_decimal">0.00</string>
+    <string name="pref_title_highlight_goods">Виділяти товари</string>
+    <string name="perf_desc_highlight_goods">Виділяти кольором товари які вже введені в замовлення</string>
+    <string name="attr_price_min">Найменьша ціна</string>
+    <string name="loading">Завантаження…</string>
+    <string name="pref_title_server_port">Номер порту</string>
+    <string name="header_cash_list">Каса</string>
+    <string name="holder_text">[…]</string>
+    <string name="no_data_list">Список порожній</string>
+    <string name="pref_title_offline_mode">Режим без зв\'язку</string>
+    <string name="doc_delivery_date">Дата постачання</string>
+    <string name="error_sending_data">Дані не відправлено</string>
+    <string name="header_message">Повідомлення</string>
+    <string name="header_document">Документ</string>
+    <string name="action_sort_by_name">Сортування за найменуванням</string>
+    <string name="action_sort_default">Сортування за умовчанням</string>
+    <string name="attr_parent_document">На підставі</string>
+    <string name="action_new_document">Ввести новий документ</string>
+    <string name="doc_next_payment">Наступний платіж</string>
+    <string name="location_permission_rationale">Необхідний дозвіл на доступ до служби визначення місцерозташування</string>
+    <string name="title_location_updates">Локація оновлена</string>
+    <string name="notification_channel_locations">Оновлення локації</string>
+    <string name="location_current">Поточне місцезнаходження</string>
+    <string name="location_unknown">Не визначено</string>
+    <string name="pref_title_notification_location_update">Запис нової локації</string>
+    <string name="title_locations_history">Історія локацій</string>
+    <string name="error_location_service_disabled">Історія локацій вимкнена</string>
+    <string name="action_show_map">Відкрити мапу</string>
+    <string name="ask_close_map_view">Вийти із режиму перегляду локацій?</string>
+    <string name="action_show_track">Показати трек</string>
+    <string name="error_no_selected_points">Немає що показати, оберіть декілька локацій</string>
+    <string name="title_track_length">Довжина трека</string>
+    <string name="title_points_selected">Точок</string>
+    <string name="kilometer">км</string>
+    <string name="title_own_track">Дані поточного пристрою</string>
+    <string name="action_recalc_route">Перерахувати маршрут</string>
+    <string name="action_show_route">Показати маршрут</string>
+    <string name="title_items_qty_is_null">Відсутній на складі</string>
+    <string name="price_variants">Варіанти ціни</string>
+    <string name="attr_base_price">Вхідна ціна</string>
+    <string name="available_quantity">на складі</string>
+    <string name="pref_item_editor_short_screen">Скорочений варіант вікна редагування товару</string>
+    <string name="pref_desc_item_editor_short_screen">Відображати меньше інформації про товар під час редагування кількості і ціни</string>
+    <string name="notification_channel_data_loader">Оновлення даних</string>
+    <string name="notification_text_sending_message">Відповідь надіслана</string>
+    <string name="attr_unit">Одиниця</string>
+    <string name="attr_per_package">у пакованні</string>
+    <string name="packages">паковань</string>
+    <string name="unit_default">шт</string>
+    <string name="unit_package">пак</string>
+    <string name="unit_kilo">кг</string>
+    <string name="error_no_unit_convertion">Не задана кількість одиниць товару в пакованні</string>
+    <string name="enter_price_percent">Введіть процент націнки</string>
+    <string name="pref_title_item_selection_screen">Вікно редагування товару</string>
+    <string name="pref_title_items_list">Список товарів</string>
+    <string name="pref_title_order_fields">Налаштунки замовлення</string>
+    <string name="pref_title_default_item_quantity">Кількість товару за умовчанням</string>
+    <string name="attr_weight">Вага</string>
+    <string name="error_no_unit_weight">Цей товар не відпускається за вагою</string>
+    <string name="title_value_check">Перевірка заповнення</string>
+    <string name="error_no_delivery_date">Не вказана дата постачання</string>
+    <string name="error_no_client_description">Перш ніж продовжити, оберіть клієнта</string>
+    <string name="data_server">Сервер данних</string>
+    <string name="hint_press_to_edit">Для редагування нажміть та утримуйте</string>
+    <string name="demo_mode">Демо підключення</string>
+    <string name="title_location_pickup">Мітка розташування</string>
+    <string name="action_reset">Скинути</string>
+    <string name="hint_move_marker">Перемістіть маркер на потрібне місце</string>
+    <string name="title_request_location">Поточне розташування</string>
+    <string name="message_request_location">Отримати данні про поточне розташування від сервісу геолокації</string>
+    <string name="pref_options">Опції</string>
+    <string name="pref_category_access">Дозволи та обмеження</string>
+    <string name="pref_title_allow_price">Вибір типу цін</string>
+    <string name="pref_title_allow_cash">Введення касових документів</string>
+    <string name="pref_title_delivery_date">Дата доставки</string>
+    <string name="pref_summary_delivery_date">Обов\'язкове вказання дати доставки при заповнені документа</string>
+    <string name="pref_category_other">Інше</string>
+    <string name="currency_default_value">грн</string>
+    <string name="attr_currency">Валюта</string>
+    <string name="pref_category_system">Системні параметри</string>
+    <string name="pref_title_location_service">Служби геолокації</string>
+    <string name="pref_title_clients_locations">Координати клієнтів</string>
+    <string name="title_clients_map">Клієнти на мапі</string>
+    <string name="warn_no_clients_locations">Немає записів про розташування клієнтів</string>
+    <string name="pref_title_user_id">ID пристрою</string>
+    <string name="pref_description_user_id">Вискористовувати окремий ідентифікатор пристрою для цього з\'єднання</string>
+    <string name="pref_title_licensed">Ліцензія</string>
+    <string name="license_not_installed">не встановлена</string>
+    <string name="pref_title_check_order_location">Контроль перебування в торгівельній точці під час прийому замовлення</string>
+    <string name="error_no_location_order">Не визначено місцезнаходження. Можливо відключені сервіси геолокації.</string>
+    <string name="action_update_location">Оновити локацію</string>
+    <string name="weight">Вага</string>
+    <string name="warn_low_accuracy">Недостатня точність вимірювання</string>
+    <string name="header_price_list">Перелік цін</string>
+    <string name="pref_title_load_images">Завантажувати зображення товарів</string>
+    <string name="pref_title_image_cache_count">Максимальна кількість картинок в кеші</string>
+    <string name="pref_title_image_cache_size">Обсяг пам\'яті для картинок (Мб)</string>
+    <string name="action_load_images">Завантажити картинки</string>
+    <string name="warn_load_images_disabled">На вашому пристрої завантаження картинок вимкнено</string>
+    <string name="images">Картинки</string>
+    <string name="pref_title_show_client_price_only">Показувати тільки ціну клієнта</string>
+    <string name="pref_title_set_client_price">За умовчанням встановлювати ціну клієнта</string>
+    <string name="attr_company">Організація</string>
+    <string name="title_activity_goods_image">Перегляд зображення</string>
+    <string name="title_activity_debt_document">Перегляд документа</string>
+    <string name="attr_warehouse">Склад</string>
+    <string name="warn_no_document_data">Дані документа не вдалося завантажити з сервера</string>
+    <string name="request_finished">Обмін даними завершено</string>
+    <string name="request_error">Обмін завершений з помилками</string>
+    <string name="data_type_client">Дані про клієнтів</string>
+    <string name="data_type_item">Дані про товари</string>
+    <string name="data_type_price">Прайс-лист</string>
+    <string name="data_type_debt">Взаєморозрахунки</string>
+    <string name="data_type_image">Параметри картинок</string>
+    <string name="data_type_client_location">Координати клієнтів</string>
+    <string name="ACCESS_DENIED">Доступ заборонений</string>
+    <string name="status_downloading">Передавання даних…</string>
+    <string name="data_type_debt_document">Взаєморозрахунки, зміст документів</string>
+    <string name="data_type_document_sent">Відправлено документів</string>
+    <string name="time_counter">Часу витрачено</string>
+    <string name="data_reading_error">Помилка читання даних</string>
+    <string name="ERROR_SYNC_IS_ACTIVE">Процес обміну вже запущений</string>
+    <string name="CONNECTION_ERROR">Помилка з\'єднання</string>
+    <string name="attr_bonus">Бонуси</string>
+    <string name="header_clients_list_by_locations">Список клієнтів за локацією</string>
+    <string name="data_type_client_direction">Локаціі клієнтів</string>
+    <string name="message_send_logs">Текст журнала налагодження скопійований в буфер обміну, наступним кроком оберіть сервіс для збереження або відправлення цих даних</string>
+    <string name="balance_in">Сальдо поч.</string>
+    <string name="balance_out">Сальдо кін.</string>
+    <string name="header_tasks_list">Завдання</string>
+    <string name="pref_title_clients_goods">Асортимент клієнта</string>
+    <string name="is_done">Завершено</string>
+    <string name="created_femine">Створена</string>
+    <string name="data_type_client_goods_item">Асортимент клієнта</string>
+    <string name="client_goods">Асортимент клієнта</string>
+    <string name="days_no_shipment">Днів без поставки</string>
+    <string name="shipment_date">Дата поставки</string>
+    <string name="shipment_quantity">Кількість поставки</string>
+    <string name="doc_client_goods">По клієнту</string>
+    <string name="rest_type">Тип залишків</string>
+    <string name="demand">Потреба</string>
+    <string name="directions_api_limit_warn">Ви досягли добового ліміту на запити до сервісу побудови маршрутів</string>
+    <string name="menu_filter_category">Відбір за категорією</string>
+    <string name="menu_filter_brand">Відбір за торговою маркою</string>
+    <string name="category">Категорія</string>
+    <string name="you_are_here">Ви тут</string>
+    <string name="vendor_status">Склад постачальника</string>
+    <string name="title_client_is_banned">Клієнт заблокований</string>
+    <string name="ban_message">Оформлення замовлень заборонено</string>
+    <string name="data_type_competitor_price">Кон\'юнктура ринку</string>
+    <string name="competitor_price_list_title">Ціни конкурентів (кон\'юнктура ринку)</string>
+    <string name="error_indivisible">Товар неподільний, введіть кількість в цілих одиницях</string>
+    <string name="menu_filter_status">Відбір за статусом</string>
+    <string name="fiscal_check">Фіскальний чек</string>
+    <string name="action_print">Друк</string>
+    <string name="error_printing_not_available">Друк не доступний</string>
+    <string name="error_cannot_print">Друк можливий тільки після отправки документа</string>
+    <string name="error_while_print">Помилка друку</string>
+    <string name="error_product_not_found">Товар не знайдено</string>
+    <string name="attr_barcode">Штрих код</string>
+    <string name="document_state_icon">Ознака статусу документа</string>
+    <string name="error_no_current_account">Не обрані поточні налаштування підключення</string>
+    <string name="product">Товар</string>
+    <string name="events_log">Журнал подій</string>
+    <string name="sync_settings">Налаштування обміну</string>
+    <string name="weight_per_unit">вага одиниці</string>
+    <string name="error_only_package">Товар продається тількі упаковками</string>
+    <string name="copied_to_clipboard">Скопійовано у буфер</string>
+    <string name="warn_no_location">Немає даних про розташування клієнта</string>
+    <string name="pref_warn_read_only">Опції завантажуються з сервера і не змінюються на пристрої</string>
+    <string name="pref_summary_app_options">Налаштування додатка</string>
+    <string name="task">Завдання</string>
+    <string name="open_account_settings">Відкрити налаштування</string>
+    <string name="current_account_for_sync">Поточні налаштування підключення</string>
+    <string name="data_deleted">Дані видалені</string>
+    <string name="product_image">Зображення товару</string>
+    <string name="client_menu">Меню клієнта</string>
+    <string name="data_copied">Дані скопійовано</string>
+    <string name="title_data">Основні</string>
+    <string name="camera">Камера</string>
+    <string name="client_image">Фото клієнта</string>
+    <string name="change_description">Змінити опис</string>
+    <string name="set_default">За замовчуванням</string>
+    <string name="delete">Видалити</string>
+    <string name="description">Опис</string>
+    <string name="rotate">Повернути</string>
+    <string name="data_type_client_image">Фото клієнта</string>
+    <string name="header_service">Сервіс</string>
+    <string name="title_fiscal_service">Робота з ПРРО</string>
+    <string name="fiscal_service_no_provider">Сервіс роботи з ПРРО не активований</string>
+    <string name="fiscal_service_provider">Сервіс фіскалізації</string>
+    <string name="cashier">Касир</string>
+    <string name="authorized">Авторизовано</string>
+    <string name="last_action_result">Результат виконання останньої команди</string>
+    <string name="offline_mode">Режим офлайн</string>
+    <string name="shift_opened">Зміну відкрито</string>
+    <string name="success">Успішно</string>
+    <string name="operation_successful">Операцію виконано успішно</string>
+    <string name="payment_type">Тип розрахунку</string>
+    <string name="fiscal_service_error">Помилка реєстрації фіскального чека</string>
+    <string name="error_cannot_fiscal">Неможливо зареєструвати фіскальний чек, перевірте заповненя документа</string>
+    <string name="view_receipt">Перегляд чека</string>
+    <string name="error_fiscal_not_ready">Сервіс ПРРО не підключений</string>
+    <string name="online_mode">Режим онлайн</string>
+    <string name="close_shift_warn">Зміну буде закрито з виконанням зет-звіту. Продовжити?</string>
+    <string name="service_operation_sum">Сума сервісної операції</string>
+    <string name="error_no_service_sum">Не вказано суму операції або введено некоректне значення</string>
+</resources>

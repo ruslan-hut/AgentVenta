@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/lightGray">
+
+    <LinearLayout
+        style="@style/DocumentElementLight"
+        android:layout_height="wrap_content">
+        <TextView style="@style/DocumentName"
+            android:text="@string/attr_code" />
+        <TextView
+            android:id="@+id/item_code"
+            style="@style/DocumentValueLight"
+            android:textColor="@color/gray"
+            android:gravity="center"
+            android:text="@string/holder_text" />
+    </LinearLayout>
+    <LinearLayout
+        style="@style/DocumentElementLight"
+        android:layout_height="wrap_content">
+        <TextView style="@style/DocumentName"
+            android:text="@string/attr_barcode" />
+        <TextView
+            android:id="@+id/item_barcode"
+            style="@style/DocumentValueLight"
+            android:textColor="@color/gray"
+            android:gravity="center"
+            android:text="@string/holder_text" />
+    </LinearLayout>
+    <LinearLayout
+        style="@style/DocumentElementLight"
+        android:orientation="vertical"
+        android:layout_height="wrap_content">
+        <TextView style="@style/DocumentName"
+            android:text="@string/attr_description" />
+        <TextView
+            android:id="@+id/item_name"
+            style="@style/DocumentValueLight"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="@string/holder_text" />
+    </LinearLayout>
+
+    <LinearLayout
+        style="@style/DocumentElementLight"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView style="@style/DocumentName"
+            android:text="@string/attr_group"/>
+        <TextView
+            android:id="@+id/item_group"
+            style="@style/DocumentValueLight"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:text="@string/holder_text" />
+    </LinearLayout>
+
+
+    <LinearLayout
+        style="@style/DocumentElementLight"
+        android:layout_height="wrap_content">
+        <TextView
+            style="@style/DocumentName"
+            android:text="@string/attr_price" />
+        <TextView
+            android:id="@+id/item_price"
+            style="@style/DocumentValue"
+            android:gravity="center"
+            android:text="@string/holder_number_decimal"/>
+    </LinearLayout>
+    <LinearLayout
+        style="@style/DocumentElementLight">
+        <TextView
+            style="@style/DocumentName"
+            android:text="@string/attr_quantity"/>
+        <TextView
+            android:id="@+id/item_quantity"
+            style="@style/DocumentValue"
+            android:gravity="center"
+            android:text="@string/holder_number"/>
+    </LinearLayout>
+</LinearLayout>

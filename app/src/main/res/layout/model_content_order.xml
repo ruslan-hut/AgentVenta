@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="viewModel"
+            type="ua.com.programmer.agentventa.documents.order.OrderViewModel" />
+    </data>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:gravity="center_vertical"
+                android:padding="8dp">
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:text="@string/doc_number" />
+
+                <TextView
+                    android:id="@+id/doc_number"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    android:layout_width="16dp"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorSecondary" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:text="@string/doc_date" />
+
+                <TextView
+                    android:id="@+id/doc_date"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/doc_is_fiscal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/fiscal_check"
+                android:gravity="center_horizontal"
+                android:background="?attr/colorTertiaryContainer" />
+
+            <LinearLayout
+                style="@style/DocumentElement"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/doc_delivery_date" />
+
+                <TextView
+                    android:id="@+id/doc_delivery_date"
+                    style="@style/DocumentValue" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/DocumentElement"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/doc_client_title"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/doc_client" />
+
+                <TextView
+                    android:id="@+id/doc_client"
+                    style="@style/DocumentValue" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/element_discount"
+                style="@style/DocumentElement">
+
+                <TextView
+                    android:id="@+id/doc_discount_title"
+                    style="@style/DocumentName"
+                    android:text="@string/attr_discount" />
+
+                <TextView
+                    android:id="@+id/doc_discount"
+                    style="@style/DocumentValue"
+                    android:gravity="end"
+                    android:layout_weight="1"
+                    android:layout_width="0dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/element_price_type"
+                style="@style/DocumentElement">
+
+                <TextView
+                    android:id="@+id/doc_price_type_title"
+                    style="@style/DocumentName"
+                    android:layout_weight="1"
+                    android:text="@string/price_type" />
+
+                <Spinner
+                    android:id="@+id/doc_price_type"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|end"
+                    android:layout_weight="3"
+                    android:layout_width="0dp"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/element_payment_type"
+                style="@style/DocumentElement">
+
+                <TextView
+                    android:id="@+id/doc_payment_type_title"
+                    style="@style/DocumentName"
+                    android:layout_weight="1"
+                    android:text="@string/payment_type" />
+
+                <Spinner
+                    android:id="@+id/doc_payment_type"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical|end"
+                    android:layout_weight="3"
+                    android:layout_width="0dp"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+
+            </LinearLayout>
+
+<!--            <LinearLayout-->
+<!--                android:id="@+id/element_rest_type"-->
+<!--                style="@style/DocumentElement">-->
+
+<!--                <TextView-->
+<!--                    android:id="@+id/doc_rest_type_title"-->
+<!--                    style="@style/DocumentName"-->
+<!--                    android:text="@string/rest_type" />-->
+
+<!--                <Spinner-->
+<!--                    android:id="@+id/doc_rest_type"-->
+<!--                    style="@style/DocumentValue"-->
+<!--                    android:gravity="end"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:layout_width="0dp" />-->
+
+<!--            </LinearLayout>-->
+
+<!--            <LinearLayout-->
+<!--                android:id="@+id/element_cash"-->
+<!--                style="@style/DocumentElement">-->
+
+<!--                <TextView-->
+<!--                    style="@style/DocumentName"-->
+<!--                    android:text="@string/doc_payment" />-->
+
+<!--                <androidx.appcompat.widget.SwitchCompat-->
+<!--                    android:background="?android:colorBackground"-->
+<!--                    android:id="@+id/doc_isCash"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_weight="1" />-->
+
+<!--            </LinearLayout>-->
+
+            <LinearLayout
+                android:id="@+id/element_returns"
+                style="@style/DocumentElement">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:text="@string/doc_isreturn" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:background="?android:colorBackground"
+                    android:id="@+id/doc_isReturn"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/DocumentElement">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:text="@string/doc_total_price" />
+
+                <TextView
+                    android:id="@+id/doc_total_price"
+                    style="@style/DocumentValue"
+                    android:gravity="end"
+                    android:textAppearance="?android:textAppearanceLarge"
+                    android:textColor="?attr/colorTertiary" />
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/DocumentElement">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:text="@string/doc_total_quantity" />
+
+                <TextView
+                    android:id="@+id/doc_total_quantity"
+                    style="@style/DocumentValue"
+                    android:gravity="end"
+                    android:textAppearance="?android:textAppearanceLarge" />
+
+            </LinearLayout>
+
+            <LinearLayout style="@style/DocumentElement">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:text="@string/doc_next_payment" />
+
+                <TextView
+                    android:id="@+id/doc_next_payment"
+                    style="@style/DocumentValue"
+                    android:gravity="end"
+                    android:textAppearance="?android:textAppearanceLarge"
+                    android:textColor="?attr/colorPrimaryVariant" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/DocumentElement"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:text="@string/doc_notes" />
+
+                <TextView
+                    android:id="@+id/doc_notes"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:textAppearanceMedium" />
+
+            </LinearLayout>
+
+            <!--<TextView-->
+            <!--android:id="@+id/buttonEditGoods"-->
+            <!--style="@style/ButtonStyle"-->
+
+            <!--android:drawableRight="@drawable/ic_shopping_cart_white_24dp"-->
+            <!--android:text="@string/select_goods" />-->
+
+
+        </LinearLayout>
+
+    </ScrollView>
+</layout>

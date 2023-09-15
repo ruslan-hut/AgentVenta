@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Агент Venta</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_sync">Обновить данные</string>
+    <string name="data_connection_error">Нет соединения</string>
+    <string name="data_inserted">Добавлено</string>
+    <string name="data_total_rows_count">Всего записей</string>
+    <string name="data_updated">Обмен завершен</string>
+    <string name="data_xml_error">Ошибка чтения данных</string>
+    <string name="header_goods_list">Список товаров</string>
+    <string name="header_orders_list">Заказы</string>
+    <string name="pref_default_display_name">Петр Николаевич</string>
+    <string name="pref_description_social_recommendations">Рекомендации</string>
+    <string name="pref_header_data_sync">Синхронизация</string>
+    <string name="pref_header_general">Общие</string>
+    <string name="pref_header_notifications">Оповещения</string>
+    <string name="pref_ringtone_silent">Без звука</string>
+    <string name="pref_title_add_friends_to_messages">Добавлять друзей</string>
+    <string name="pref_title_display_name">Имя</string>
+    <string name="pref_title_network_usage">Использование сети</string>
+    <string name="pref_title_new_message_notifications">Оповещение о новых событиях</string>
+    <string name="pref_title_ringtone">Звук сигнала</string>
+    <string name="pref_title_server_address">Адрес сервера</string>
+    <string name="pref_title_social_recommendations">Социальные сети</string>
+    <string name="pref_title_sync_frequency">Интервал обновлений</string>
+    <string name="pref_title_system_sync_settings">Системные настройки</string>
+    <string name="pref_title_vibrate">Вибрация</string>
+    <string name="title_activity_settings">Настройки</string>
+
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 минут</item>
+        <item>30 минут</item>
+        <item>1 час</item>
+        <item>3 часа</item>
+        <item>6 часов</item>
+        <item>Отключено</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="list_preference_entries">
+        <item>Вариант 1</item>
+        <item>Вариант 2</item>
+        <item>Вариант 3</item>
+    </string-array>
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <string-array name="pref_example_list_titles">
+        <item>Всегда</item>
+        <item>Если возможно</item>
+        <item>Никогда</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="pref_sync_format_entries">
+        <item>HTTP сервис</item>
+        <item>FTP сервер</item>
+    </string-array>
+    <string-array name="pref_sync_format_values">
+        <item>HTTP_service</item>
+        <item>FTP_server</item>
+    </string-array>
+    <string name="attr_code">Код</string>
+    <string name="attr_description">Наименование</string>
+    <string name="attr_price">Цена</string>
+    <string name="attr_quantity">Количество</string>
+    <string name="title_activity_orders_list">Список заказов</string>
+    <string name="order">Заказ</string>
+    <string name="new_element">новый</string>
+    <string name="doc_client">Клиент</string>
+    <string name="doc_date">Дата</string>
+    <string name="doc_isreturn">Возврат</string>
+    <string name="doc_notes">Примечание</string>
+    <string name="doc_number">Номер</string>
+    <string name="doc_payment">За наличные</string>
+    <string name="doc_total_price">Итого</string>
+    <string name="doc_total_quantity">Количество</string>
+    <string name="doc_client_hint">введите имя клиента</string>
+    <string name="doc_payment_cash">наличными</string>
+    <string name="doc_payment_credit">кредит</string>
+    <string name="doc_shipment_return">возврат</string>
+    <string name="doc_shipment_sale">продажа</string>
+    <string name="save_order">Сохранить</string>
+    <string name="delete_order">Удалить</string>
+    <string name="edit_order">Редактировать</string>
+    <string name="data_not_saved">Данные не сохранены</string>
+    <string name="save_before_quit">Сохранить перед выходом?</string>
+    <string name="no">Нет</string>
+    <string name="yes">Да</string>
+    <string name="OK">ОК</string>
+    <string name="data_saved">Данные сохранены</string>
+    <string name="edit_mode">Режим редактирования</string>
+    <string name="header_clients_list">Список клиентов</string>
+    <string name="attr_debt">Сальдо</string>
+    <string name="delete_data">Подтвердите удаление</string>
+    <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="data_already_sent">Данные уже отправлены, изменения не будут приняты сервером если документ уже проведен</string>
+    <string name="deny">Действие отменено</string>
+    <string name="sum">Сумма</string>
+    <string name="select_goods">Выбор товаров</string>
+    <string name="rest">Остаток</string>
+    <string name="title_attributes">Реквизиты</string>
+    <string name="title_content">Состав</string>
+    <string name="close">Закрыть</string>
+    <string name="error_no_client">Не выбран клиент</string>
+    <string name="error">Ошибка</string>
+    <string name="pref_default_server_address">Демонстрационный режим</string>
+    <string name="pref_title_base_name">Имя базы данных</string>
+    <string name="pref_title_password">Пароль</string>
+    <string name="pref_title_username">Имя пользователя</string>
+    <string name="item_not_selected">Сначала выберите товар</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="flag_package">Упаковка</string>
+    <string name="current_value">Текущее значение</string>
+    <string name="new_value">Новое значение</string>
+    <string name="pref_title_goods_selection">Выбор товаров</string>
+    <string name="pref_title_open_item_edit">Открывать окно редактирования</string>
+    <string name="pref_desc_item_edit">При выделении товара сразу открывать окно редактирования</string>
+    <string name="documents_sent">Отправлено документов</string>
+    <string name="no_data">Нет данных для отправки</string>
+    <string name="access_denied_on_server">Сервер отказал в доступе</string>
+    <string name="read_only">Разрешено только чтение данных</string>
+    <string name="pref_title_sync_format">Тип соединения</string>
+    <string name="error_sync_format_not_set">Не настроен тип подключения</string>
+    <string name="error_no_server_address">Не настроен адрес сервера или имя базы</string>
+    <string name="search_hint">Поиск…</string>
+    <string name="text_erase_data">Подтвердите удаление. Все данные будут очищены без возможности восстановления!</string>
+    <string name="warning">Внимание</string>
+    <string name="pref_title_erase_data">Удалить данные</string>
+    <string name="out_of_memory">Ошибка: недостаточно памяти</string>
+    <string name="attr_group">Группа</string>
+    <string name="attr_discount">Скидка</string>
+    <string name="pref_desc_use_discounts">Показывать в документах и рассчитывать скидку покупателя или отображать категорию цен</string>
+    <string name="pref_title_use_discounts">Использовать скидки</string>
+    <string name="pref_title_payment_type_switch">Признак наличной оплаты</string>
+    <string name="pref_desc_payment_type_switch">Использовать в документах признак оплаты наличными</string>
+    <string name="pref_desc_returns">Показывать отметку операции возврата товара</string>
+    <string name="pref_title_returns">Признак возврата</string>
+    <string name="pref_title_package_mark">Наличие упаковки</string>
+    <string name="pref_desc_package_mark">Отметка товара в упаковке</string>
+    <string name="continue_edit">Продолжить</string>
+    <string name="hint_press_back">Нажмите еще раз для выхода</string>
+    <string name="pref_desc_rests_only">По умолчанию показывать только товары с остатками</string>
+    <string name="pref_title_rests_only">Товары с остатками</string>
+    <string name="rests_only">Только с остатком</string>
+    <string name="whole_list">Все товары</string>
+    <string name="price_type">Категория цен</string>
+    <string name="choose_date">Выбрать дату</string>
+    <string name="no_limits">Без ограничений</string>
+    <string name="today">Сегодня</string>
+    <string name="yesterday">Вчера</string>
+    <string name="title_order_number">№</string>
+    <string name="title_items_qty">Количество:</string>
+    <string name="title_documents_qty">Документов</string>
+    <string name="enable_edit">Для изменения списка товаров включите режим редактирования</string>
+    <string name="cant_edit">Редактирование этой строки невозможно</string>
+    <string name="error_reading_db">Ошибка чтения данных, попробуйте позже</string>
+    <string name="pref_desc_restore_list_position">Пролистывать список к прежней позиции при возврате</string>
+    <string name="pref_restore_list_position">Восстанавливать положение в списке</string>
+    <string name="action_sync_descr">Обновить все данные и отправить подготовленные документы</string>
+    <string name="action_sync_warn">Обновление уже запущено, дождитесь окончания</string>
+    <string name="debts_list">Взаиморасчеты</string>
+    <string name="empty_list">Нет данных</string>
+    <string name="search_from_main_window">Для поиска вернитесь в начало списка</string>
+    <string name="attr_address">Адрес</string>
+    <string name="attr_phone">Телефон</string>
+    <string name="default_value">По умолчанию</string>
+    <string name="title_previous">Прошлый</string>
+    <string name="doc_goods">Товары</string>
+    <string name="attr_qty">Кол.</string>
+    <string name="navigation_drawer_close">Закрыть меню</string>
+    <string name="navigation_drawer_open">Открыть меню</string>
+    <string name="title_activity_main_navigation">Основной</string>
+    <string name="header_catalogs">Справочники</string>
+    <string name="header_actions">Сервис</string>
+    <string name="sync_progress">Загрузка данных…</string>
+    <string name="title_no_data">Нет данных</string>
+    <string name="new_document">Создан новый документ</string>
+    <string name="copy_previous">Копировать прошлый</string>
+    <string name="warn_order_content">Текущие данные заказа будут очищены</string>
+    <string name="no_previous_document">Предыдущий документ не найден</string>
+    <string name="q_create_new_document">Создать новый документ?</string>
+    <string name="q_title">Подтвердите действие</string>
+    <string name="holder_number">000</string>
+    <string name="holder_number_decimal">0.00</string>
+    <string name="pref_title_highlight_goods">Выделять товары</string>
+    <string name="perf_desc_highlight_goods">Выделять цветом товары, которые уже выбраны в заказ</string>
+    <string name="attr_price_min">Минимальная цена</string>
+    <string name="loading">Загрузка…</string>
+    <string name="pref_title_server_port">Номер порта</string>
+    <string name="header_cash_list">Касса</string>
+    <string name="holder_text">[…]</string>
+    <string name="no_data_list">Список пустой</string>
+    <string name="pref_title_offline_mode">Режим оффлайн</string>
+    <string name="doc_delivery_date">Дата доставки</string>
+    <string name="error_sending_data">Данные не отправлены</string>
+    <string name="header_message">Сообщение</string>
+    <string name="header_document">Документ</string>
+    <string name="action_sort_by_name">Сортировка по наименованию</string>
+    <string name="action_sort_default">Сортировка по умолчанию</string>
+    <string name="attr_parent_document">Основание</string>
+    <string name="action_new_document">Ввести новый документ</string>
+    <string name="doc_next_payment">Обещанный платеж</string>
+    <string name="location_permission_rationale">Необходимо разрешение на доступ к службам определения местоположения</string>
+    <string name="title_location_updates">Местоположение обновлено</string>
+    <string name="notification_channel_locations">Обновление местоположения</string>
+    <string name="location_current">Текущее положение</string>
+    <string name="location_unknown">Неизвестно</string>
+    <string name="pref_title_notification_location_update">Запись изменения местоположения</string>
+    <string name="title_locations_history">История местоположений</string>
+    <string name="error_location_service_disabled">Запись истории местоположений отключена</string>
+    <string name="action_show_map">Показать карту</string>
+    <string name="ask_close_map_view">Закрыть просмотр истории местоположений?</string>
+    <string name="action_show_track">Показать трек</string>
+    <string name="error_no_selected_points">Нечего показывать, выберите несколько точек</string>
+    <string name="title_track_length">Длина трека</string>
+    <string name="title_points_selected">Точек</string>
+    <string name="kilometer">км</string>
+    <string name="title_own_track">Данные текущего устройства</string>
+    <string name="action_recalc_route">Пересчитать маршрут</string>
+    <string name="action_show_route">Показать маршрут</string>
+    <string name="title_items_qty_is_null">Нет в наличии</string>
+    <string name="price_variants">Доступные цены</string>
+    <string name="attr_base_price">Входящая цена</string>
+    <string name="available_quantity">доступно</string>
+    <string name="pref_item_editor_short_screen">Сокращенный вариант окна редактирования товара</string>
+    <string name="pref_desc_item_editor_short_screen">Показывать меньше данных о товаре во время редактирования количества и цены</string>
+    <string name="notification_channel_data_loader">Обновление данных</string>
+    <string name="notification_text_sending_message">Ответ отправлен</string>
+    <string name="attr_unit">Единица</string>
+    <string name="attr_per_package">в упаковке</string>
+    <string name="packages">упаковок</string>
+    <string name="unit_default">шт</string>
+    <string name="unit_package">уп</string>
+    <string name="unit_kilo">кг</string>
+    <string name="error_no_unit_convertion">Не задано количество единиц товара в упаковке</string>
+    <string name="enter_price_percent">Введите процент наценки</string>
+    <string name="pref_title_item_selection_screen">Окно редактирования товара</string>
+    <string name="pref_title_order_fields">Настройки заказа</string>
+    <string name="pref_title_items_list">Список товаров</string>
+    <string name="pref_title_default_item_quantity">Количество товара по умолчанию</string>
+    <string name="attr_weight">Вес</string>
+    <string name="error_no_unit_weight">Этот товар не отпускается на вес</string>
+    <string name="title_value_check">Проверка заполнения</string>
+    <string name="error_no_delivery_date">Не указана дата доставки</string>
+    <string name="error_no_client_description">Прежде чем продолжить, выберите клиента</string>
+    <string name="data_server">Сервер данных</string>
+    <string name="hint_press_to_edit">Для редактирования нажмите и удерживайте</string>
+    <string name="demo_mode">Демо подключение</string>
+    <string name="title_location_pickup">Отметка местоположения</string>
+    <string name="action_reset">Сбросить</string>
+    <string name="hint_move_marker">Передвиньте маркер в нужную точку</string>
+    <string name="title_request_location">Определить положение</string>
+    <string name="message_request_location">Получить данные о текущем местоположении от службы геолокации</string>
+    <string name="pref_options">Опции</string>
+    <string name="pref_category_access">Разрешения и ограничения</string>
+    <string name="pref_title_allow_price">Выбор типа цен</string>
+    <string name="pref_title_allow_cash">Ввод кассовых документов</string>
+    <string name="pref_title_delivery_date">Дата доставки</string>
+    <string name="pref_summary_delivery_date">Требовать указание даты доставки при заполнении документа</string>
+    <string name="pref_category_other">Прочее</string>
+    <string name="currency_default_value">грн</string>
+    <string name="attr_currency">Валюта</string>
+    <string name="pref_category_system">Системные параметры</string>
+    <string name="pref_title_location_service">Службы местоположения</string>
+    <string name="pref_title_clients_locations">Координаты клиентов</string>
+    <string name="title_clients_map">Клиенты на карте</string>
+    <string name="warn_no_clients_locations">Нет записей о расположениях клиентов</string>
+    <string name="pref_title_user_id">ID устройства</string>
+    <string name="pref_description_user_id">Использовать отдельный идентификатор устройства для этого соединения</string>
+    <string name="pref_title_licensed">Лицензия</string>
+    <string name="license_not_installed">не установлена</string>
+    <string name="pref_title_check_order_location">Контроль нахождения в торговой точке при приеме заявки</string>
+    <string name="error_no_location_order">Не определено местоположение. Возможно, сервисы геолокации отключены.</string>
+    <string name="action_update_location">Обновить координаты</string>
+    <string name="weight">Вес</string>
+    <string name="warn_low_accuracy">Низкая точность измерения</string>
+    <string name="header_price_list">Список цен</string>
+    <string name="pref_title_load_images">Загружать картинки товаров</string>
+    <string name="pref_title_image_cache_count">Максимальное количество картинок в кеше</string>
+    <string name="pref_title_image_cache_size">Объем памяти для картинок (Мб)</string>
+    <string name="action_load_images">Загрузить картинки</string>
+    <string name="warn_load_images_disabled">На вашем устройстве загрузка картинок отключена</string>
+    <string name="images">Картинки</string>
+    <string name="pref_title_show_client_price_only">Показывать только цену клиента</string>
+    <string name="pref_title_set_client_price">По умолчанию устанавливать цену клиента</string>
+    <string name="attr_company">Организация</string>
+    <string name="title_activity_goods_image">Просмотр изображения</string>
+    <string name="title_activity_debt_document">Просмотр документа</string>
+    <string name="attr_warehouse">Склад</string>
+    <string name="warn_no_document_data">Данные документа не удалось загрузить с сервера</string>
+    <string name="request_finished">Обмен данными завершен</string>
+    <string name="request_error">Обмен завершен с ошибками</string>
+    <string name="data_type_client">Данные клиентов</string>
+    <string name="data_type_item">Данные товаров</string>
+    <string name="data_type_price">Прайс-лист</string>
+    <string name="data_type_debt">Взаиморасчеты</string>
+    <string name="data_type_image">Параметры картинок</string>
+    <string name="data_type_client_location">Координаты клиентов</string>
+    <string name="ACCESS_DENIED">Доступ запрещен</string>
+    <string name="status_downloading">Передача данных…</string>
+    <string name="data_type_debt_document">Взаиморасчеты, документы</string>
+    <string name="data_type_document_sent">Отправлено документов</string>
+    <string name="time_counter">Время выполнения</string>
+    <string name="data_reading_error">Ошибка чтения данных</string>
+    <string name="ERROR_SYNC_IS_ACTIVE">Активен другой процесс обмена</string>
+    <string name="CONNECTION_ERROR">Ошибка соединения</string>
+    <string name="attr_bonus">Бонусы</string>
+    <string name="header_clients_list_by_locations">Список клиентов по локациям</string>
+    <string name="data_type_client_direction">Локации клиентов</string>
+    <string name="message_send_logs">Отладочный журнал скопирован в буфер обмена, на слкдующем шаге выберите сервис для сохранения текста</string>
+    <string name="balance_in">Сальдо нач.</string>
+    <string name="balance_out">Сальдо кон.</string>
+    <string name="header_tasks_list">Задачи</string>
+    <string name="pref_title_clients_goods">Ассортимент клиента</string>
+    <string name="is_done">Выполнено</string>
+    <string name="created_femine">Создана</string>
+    <string name="data_type_client_goods_item">Ассортимент клиента</string>
+    <string name="client_goods">Ассортимент клиента</string>
+    <string name="days_no_shipment">Дней без поставки</string>
+    <string name="shipment_date">Дата поставки</string>
+    <string name="shipment_quantity">Количество поставки</string>
+    <string name="doc_client_goods">По клиенту</string>
+    <string name="rest_type">Тип остатка</string>
+    <string name="demand">Потребность</string>
+    <string name="directions_api_limit_warn">Вы достигли суточного предела по количеству запросов к сервису построения маршрутов</string>
+    <string name="menu_filter_category">Отбор по портфелю</string>
+    <string name="menu_filter_brand">Отбор по торговой марке</string>
+    <string name="category">Портфель</string>
+    <string name="you_are_here">Вы здесь</string>
+    <string name="vendor_status">Склад поставщика</string>
+    <string name="title_client_is_banned">Клиент заблокирован</string>
+    <string name="ban_message">Оформление заявок запрещено</string>
+    <string name="data_type_competitor_price">Конъюнктура рынка</string>
+    <string name="competitor_price_list_title">Цены конкурентов (конъюнктура рынка)</string>
+    <string name="error_indivisible">Товар неделимый, введите целое количество</string>
+    <string name="menu_filter_status">Отбор по статусу</string>
+    <string name="fiscal_check">Фискальный чек</string>
+    <string name="action_print">Печать</string>
+    <string name="error_printing_not_available">Печать не доступна</string>
+    <string name="error_cannot_print">Печать возможна только после отправки документа</string>
+    <string name="error_while_print">Ошибка печати</string>
+    <string name="error_product_not_found">Товар не найден</string>
+    <string name="attr_barcode">Штрих код</string>
+    <string name="document_state_icon">Значек статуса документа</string>
+    <string name="error_no_current_account">Не выбраны текущие настройки подключения</string>
+    <string name="product">Товар</string>
+    <string name="events_log">Журнал событий</string>
+    <string name="sync_settings">Настройки обмена</string>
+    <string name="weight_per_unit">вес единицы</string>
+    <string name="error_only_package">Этот товар продается только упаковками</string>
+    <string name="copied_to_clipboard">Скопировано в буфер</string>
+    <string name="warn_no_location">Нет данных о местоположении клиента</string>
+    <string name="pref_warn_read_only">Опции загружаются с сервера и не изменяются на устройстве</string>
+    <string name="pref_summary_app_options">Настройки приложения</string>
+    <string name="task">Задача</string>
+    <string name="open_account_settings">Открыть настройки</string>
+    <string name="current_account_for_sync">Текущие настройки подключения</string>
+    <string name="data_deleted">Данные удалены</string>
+    <string name="product_image">Картинка товара</string>
+    <string name="client_menu">Меню клиента</string>
+    <string name="data_copied">Данные скопированы</string>
+    <string name="title_data">Сведения</string>
+    <string name="camera">Камера</string>
+    <string name="client_image">Фото клиента</string>
+    <string name="change_description">Изменить описание</string>
+    <string name="set_default">По умолчанию</string>
+    <string name="delete">Удалить</string>
+    <string name="description">Описание</string>
+    <string name="rotate">Повернуть</string>
+    <string name="data_type_client_image">Фото клиента</string>
+    <string name="header_service">Сервис</string>
+    <string name="title_fiscal_service">Работа с ПРРО</string>
+    <string name="fiscal_service_no_provider">Сервис работы с ПРРО не активен</string>
+    <string name="fiscal_service_provider">Сервис фискализации</string>
+    <string name="cashier">Кассир</string>
+    <string name="authorized">Авторизирован</string>
+    <string name="last_action_result">Результат выполнения последней команды</string>
+    <string name="offline_mode">Режим офлайн</string>
+    <string name="shift_opened">Смена открыта</string>
+    <string name="success">Успешно</string>
+    <string name="operation_successful">Операция выполнена успешно</string>
+    <string name="payment_type">Тип расчета</string>
+    <string name="fiscal_service_error">Ошибка регистрации фискального чека</string>
+    <string name="error_cannot_fiscal">Нельзя зарегистрировать фискальный чек, проверьте заполнение документа</string>
+    <string name="view_receipt">Просмотр чека</string>
+    <string name="error_fiscal_not_ready">Служба ПРРО не подключена</string>
+    <string name="online_mode">Режим онлайн</string>
+    <string name="close_shift_warn">Смена будет закрыта с выполнением зет-отчета. Продолжить?</string>
+    <string name="service_operation_sum">Сумма служебной операции</string>
+    <string name="error_no_service_sum">Не указана сумма операции или введено некорретное значение</string>
+</resources>

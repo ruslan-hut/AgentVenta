@@ -1,0 +1,9 @@
+/.gradle/
+/.idea/
+/app/src/main/AndroidManifest.xml
+/local.properties
+/app/google-services.json
+/app/build/
+/gradlew
+/gradlew.bat
+/build/

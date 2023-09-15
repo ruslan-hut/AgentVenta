@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/pref_category_access">
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="ALLOW_PRICE_TYPE_CHOOSE"
+            android:title="@string/pref_title_allow_price"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="SHOW_CLIENT_PRICE_ONLY"
+            android:title="@string/pref_title_show_client_price_only"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="SET_CLIENT_PRICE"
+            android:title="@string/pref_title_set_client_price"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="ALLOW_CREATE_CASH_DOCUMENTS"
+            android:title="@string/pref_title_allow_cash"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="check_order_location"
+            android:title="@string/pref_title_check_order_location"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="require_delivery_date"
+            android:title="@string/pref_title_delivery_date"
+            android:summary="@string/pref_summary_delivery_date"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_category_system">
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="ENABLE_LOCATION_SERVICE"
+            android:title="@string/pref_title_location_service" />
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="clients_locations"
+            android:title="@string/pref_title_clients_locations" />
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="key_is_active"
+            android:title="@string/pref_title_licensed"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_category_other">
+        <EditTextPreference
+            android:enabled="false"
+            android:key="currency_name"
+            android:defaultValue="@string/currency_default_value"
+            android:title="@string/attr_currency"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="load_images"
+            android:title="@string/pref_title_load_images"/>
+        <CheckBoxPreference
+            android:enabled="false"
+            android:defaultValue="false"
+            android:key="clients_goods"
+            android:title="@string/pref_title_clients_goods"/>
+    </PreferenceCategory>
+</PreferenceScreen>

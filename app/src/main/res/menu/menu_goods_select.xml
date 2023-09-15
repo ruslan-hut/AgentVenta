@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/show_totals"
+        android:orderInCategory="10"
+        android:title="@string/doc_total_price"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_functions_24"/>
+    <item
+        android:id="@+id/action_search"
+        android:orderInCategory="20"
+        android:title="@string/search_hint"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_search_24"/>
+    <item
+        android:id="@+id/show_rests"
+        android:orderInCategory="30"
+        android:checkable="true"
+        android:title="@string/rests_only"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/sorting"
+        android:orderInCategory="40"
+        android:checkable="true"
+        android:title="@string/action_sort_by_name"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/client_goods"
+        android:visible="false"
+        android:orderInCategory="50"
+        android:checkable="true"
+        android:title="@string/client_goods"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/sub_menu_price"
+        android:orderInCategory="60"
+        android:title="@string/price_type">
+        <menu>
+
+        </menu>
+    </item>
+    <item
+        android:id="@+id/sub_menu_category"
+        android:visible="false"
+        android:orderInCategory="100"
+        android:title="@string/menu_filter_category">
+        <menu>
+
+        </menu>
+    </item>
+    <item
+        android:id="@+id/sub_menu_brand"
+        android:visible="false"
+        android:orderInCategory="200"
+        android:title="@string/menu_filter_brand">
+        <menu>
+
+        </menu>
+    </item>
+    <item
+        android:id="@+id/sub_menu_status"
+        android:visible="false"
+        android:orderInCategory="300"
+        android:title="@string/menu_filter_status">
+        <menu>
+
+        </menu>
+    </item>
+</menu>

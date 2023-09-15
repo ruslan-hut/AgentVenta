@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/orderListFragment"
+            android:icon="@drawable/baseline_format_list_bulleted_24"
+            android:title="@string/header_orders_list"/>
+        <item
+            android:id="@+id/cashListFragment"
+            android:icon="@drawable/baseline_format_list_bulleted_24"
+            android:title="@string/header_cash_list"/>
+        <item
+            android:id="@+id/taskListFragment"
+            android:icon="@drawable/baseline_format_list_bulleted_24"
+            android:title="@string/header_tasks_list"/>
+    </group>
+
+    <item android:title="@string/header_catalogs">
+        <menu>
+            <item
+                android:id="@+id/productListFragment"
+                android:icon="@drawable/baseline_shopping_cart_24"
+                android:title="@string/header_goods_list" />
+            <item
+                android:id="@+id/clientListFragment"
+                android:icon="@drawable/baseline_people_24"
+                android:title="@string/header_clients_list" />
+            <item
+                android:id="@+id/nav_clients_directions"
+                android:icon="@drawable/baseline_people_24"
+                android:title="@string/header_clients_list_by_locations"
+                android:visible="false"/>
+            <item
+                android:id="@+id/clientsMapFragment"
+                android:icon="@drawable/sharp_map_24"
+                android:title="@string/title_clients_map" />
+        </menu>
+    </item>
+
+    <item android:title="@string/header_service">
+        <menu>
+            <item
+                android:id="@+id/syncFragment"
+                android:icon="@drawable/baseline_sync_24"
+                android:title="@string/action_sync" />
+            <item
+                android:id="@+id/userAccountListFragment"
+                android:icon="@drawable/baseline_domain_24"
+                android:title="@string/data_server"/>
+            <item
+                android:id="@+id/fiscalFragment"
+                android:icon="@drawable/baseline_receipt_24"
+                android:title="@string/title_fiscal_service" />
+            <item
+                android:id="@+id/settingsFragment"
+                android:icon="@drawable/baseline_settings_24"
+                android:title="@string/action_settings"/>
+            <item
+                android:id="@+id/locationHistoryFragment"
+                android:icon="@drawable/sharp_place_24"
+                android:title="@string/title_locations_history" />
+            <item
+                android:id="@+id/logFragment"
+                android:icon="@drawable/baseline_device_unknown_24"
+                android:title="@string/events_log" />
+        </menu>
+    </item>
+
+</menu>

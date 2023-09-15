@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/save_item"
+        android:orderInCategory="20"
+        android:title="@string/save"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_save_24"/>
+    <item
+        android:id="@+id/switch_weight"
+        android:orderInCategory="15"
+        android:title="@string/attr_weight"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_speed_24" />
+    <item
+        android:id="@+id/switch_unit"
+        android:orderInCategory="10"
+        android:title="@string/flag_package"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_widgets_24"/>
+</menu>

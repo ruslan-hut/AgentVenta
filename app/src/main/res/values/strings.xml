@@ -1,0 +1,436 @@
+<resources>
+    <string name="app_name">Agent Venta</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="action_sync">Sync data</string>
+
+    <string name="header_goods_list">Goods list</string>
+    <string name="header_orders_list">Orders list</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <string name="attr_code">Code</string>
+    <string name="attr_description">Description</string>
+    <string name="attr_price">Price</string>
+    <string name="attr_quantity">Quantity</string>
+
+    <string name="data_inserted">Inserted</string>
+    <string name="data_updated">Updated</string>
+    <string name="data_total_rows_count">Total rows count</string>
+    <string name="data_connection_error">No connection</string>
+    <string name="data_xml_error">Data parsing error</string>
+
+    <!-- Strings related to Settings -->
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_social_recommendations">Enable social recommendations</string>
+    <string name="pref_description_social_recommendations">Recommendations for people to contact
+        based on your message history
+    </string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Data and sync</string>
+
+    <string name="pref_title_sync_frequency">Sync frequency</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="pref_sync_format_entries">
+        <item>HTTP service</item>
+        <item>FTP server</item>
+    </string-array>
+    <string-array name="pref_sync_format_values">
+        <item>HTTP_service</item>
+        <item>FTP_server</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_sync_format">Connection type</string>
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+    <string name="pref_title_network_usage">Network usage</string>
+
+    <string name="pref_title_server_address">Server address</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+
+    <string name="pref_title_new_message_notifications">New message notifications</string>
+
+    <string name="pref_title_ringtone">Ringtone</string>
+    <string name="pref_ringtone_silent">Silent</string>
+
+    <string name="pref_title_vibrate">Vibrate</string>
+    <string name="title_activity_orders_list">Orders List</string>
+    <string name="order">Order</string>
+    <string name="new_element">new</string>
+    <string name="doc_number">Number</string>
+    <string name="doc_date">Date</string>
+    <string name="doc_client">Client</string>
+    <string name="doc_payment">Paid by cash</string>
+    <string name="doc_isreturn">Is return</string>
+    <string name="doc_notes">Notice</string>
+    <string name="doc_total_price">Total price</string>
+    <string name="doc_total_quantity">Total quantity</string>
+    <string name="doc_client_hint">enter client\'s name</string>
+    <string name="doc_payment_cash">cash</string>
+    <string name="doc_payment_credit">credit</string>
+    <string name="doc_shipment_return">return</string>
+    <string name="doc_shipment_sale">sale</string>
+    <string name="save_order">Save order</string>
+    <string name="delete_order">Delete</string>
+    <string name="edit_order">Edit</string>
+    <string name="data_not_saved">Data is not saved</string>
+    <string name="save_before_quit">Save before quit?</string>
+    <string name="OK">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="data_saved">Data saved</string>
+    <string name="edit_mode">Edit mode</string>
+    <string name="header_clients_list">Clients list</string>
+    <string name="attr_debt">Debt</string>
+    <string name="delete_data">Confirm deletion</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="data_already_sent">Data is already sent</string>
+    <string name="deny">Action denied</string>
+    <string name="sum">Sum</string>
+    <string name="select_goods">Select goods</string>
+    <string name="rest">Rest</string>
+    <string name="title_attributes">Attributes</string>
+    <string name="title_content">Content</string>
+    <string name="close">Close</string>
+    <string name="error_no_client">No client is chosen</string>
+    <string name="error">Error occurred</string>
+    <string name="pref_default_server_address">Demo mode</string>
+    <string name="pref_title_base_name">Database name</string>
+    <string name="pref_title_username">User name</string>
+    <string name="pref_title_password">Password</string>
+    <string name="item_not_selected">Select item</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="flag_package">Package</string>
+    <string name="current_value">Current value</string>
+    <string name="new_value">New value</string>
+    <string name="pref_title_goods_selection">Goods selection</string>
+    <string name="pref_title_open_item_edit">Open item edit dialog</string>
+    <string name="pref_desc_item_edit">On item selection always open edit dialog</string>
+    <string name="documents_sent">Documents sent</string>
+    <string name="no_data">No data for sending</string>
+    <string name="access_denied_on_server">Access denied on server</string>
+    <string name="read_only">You have \'read only\' permission</string>
+    <string name="error_sync_format_not_set">Connection type not set</string>
+    <string name="error_no_server_address">Server address or base name not set</string>
+    <string name="search_hint">Search…</string>
+    <string name="warning">Warning</string>
+    <string name="text_erase_data">If you continue all data will be lost permanently</string>
+    <string name="pref_title_erase_data">Erase data</string>
+    <string name="out_of_memory">Out of memory error</string>
+    <string name="attr_group">Group</string>
+    <string name="attr_discount">Discount</string>
+    <string name="pref_title_use_discounts">Use discounts</string>
+    <string name="pref_desc_use_discounts">Show in documents and calculate client\'s discount</string>
+    <string name="pref_title_payment_type_switch">Payment type switch</string>
+    <string name="pref_desc_payment_type_switch">Use payment type switch in documents to mark cash payments</string>
+    <string name="pref_title_returns">Is a return switch</string>
+    <string name="pref_desc_returns">Use switch to mark purchase returns</string>
+    <string name="pref_title_package_mark">Package mark</string>
+    <string name="pref_desc_package_mark">Enable packaged goods mark</string>
+    <string name="continue_edit">Continue</string>
+    <string name="hint_press_back">Press once again to exit</string>
+    <string name="pref_desc_rests_only">By default, show goods items having rests only</string>
+    <string name="pref_title_rests_only">Goods with rests only</string>
+    <string name="rests_only">Rests only</string>
+    <string name="whole_list">Whole list</string>
+    <string name="price_type">Price type</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="choose_date">Choose date</string>
+    <string name="no_limits">No limits</string>
+    <string name="title_order_number">#</string>
+    <string name="title_items_qty">Items qty</string>
+    <string name="title_documents_qty">Documents</string>
+    <string name="enable_edit">Enable edit mode to change order content</string>
+    <string name="cant_edit">Can\'t edit this line</string>
+    <string name="error_reading_db">Error reading database. Try later</string>
+    <string name="pref_restore_list_position">Restore list position</string>
+    <string name="pref_desc_restore_list_position">Scroll list to previous position when you press back button</string>
+    <string name="action_sync_descr">Receive updates for all data and send documents</string>
+    <string name="action_sync_warn">Sync is in progress now</string>
+    <string name="debts_list">Debts list</string>
+    <string name="empty_list">No data</string>
+    <string name="search_from_main_window">Use search function on first screen only</string>
+    <string name="attr_address">Address</string>
+    <string name="attr_phone">Phone</string>
+    <string name="default_value">Default</string>
+    <string name="title_previous">Previous</string>
+    <string name="doc_goods">Goods</string>
+    <string name="attr_qty">Qty</string>
+    <string name="title_activity_main_navigation">Main</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="header_catalogs">Catalogs</string>
+    <string name="header_actions">Actions</string>
+    <string name="sync_progress">Loading data…</string>
+    <string name="title_no_data">No data</string>
+    <string name="new_document">New document created</string>
+    <string name="copy_previous">Copy previous</string>
+    <string name="warn_order_content">Current content will be overwritten</string>
+    <string name="no_previous_document">No previous document found</string>
+    <string name="q_create_new_document">Create new document?</string>
+    <string name="q_title">Confirm action</string>
+    <string name="holder_number">000</string>
+    <string name="holder_number_decimal">0.00</string>
+    <string name="perf_desc_highlight_goods">Highlight chosen goods in order</string>
+    <string name="pref_title_highlight_goods">Highlight goods</string>
+    <string name="attr_price_min">Minimal price</string>
+    <string name="loading">Loading…</string>
+    <string name="pref_title_server_port">Server port</string>
+    <string name="header_cash_list">Cash</string>
+    <string name="holder_text">[…]</string>
+    <string name="no_data_list">No data</string>
+    <string name="pref_title_offline_mode">Offline mode</string>
+    <string name="doc_delivery_date">Date of delivery</string>
+    <string name="error_sending_data">Data not sent</string>
+    <string name="header_message">Message</string>
+    <string name="header_document">Document</string>
+    <string name="action_sort_by_name">Sort by name</string>
+    <string name="action_sort_default">Default sorting</string>
+    <string name="attr_parent_document">Parent document</string>
+    <string name="action_new_document">Add new document</string>
+    <string name="doc_next_payment">Next payment value</string>
+    <string name="location_permission_rationale">Location permission is needed</string>
+    <string name="title_location_updates">Location updates</string>
+    <string name="notification_channel_locations">Location updates</string>
+    <string name="location_current">Current location</string>
+    <string name="location_unknown">Unknown</string>
+    <string name="pref_title_notification_location_update">Location updates</string>
+    <string name="title_locations_history">Locations history</string>
+    <string name="error_location_service_disabled">Location service is disabled</string>
+    <string name="action_show_map">Show map</string>
+    <string name="ask_close_map_view">Close location history view?</string>
+    <string name="action_show_track">Show track</string>
+    <string name="error_no_selected_points">Nothing to show, select some points</string>
+    <string name="title_track_length">Track length</string>
+    <string name="title_points_selected">Points</string>
+    <string name="kilometer">km</string>
+    <string name="title_own_track">Current device data</string>
+    <string name="action_recalc_route">Recalculate route</string>
+    <string name="action_show_route">Show route</string>
+    <string name="title_items_qty_is_null">Out of stock</string>
+    <string name="price_variants">Available price variants</string>
+    <string name="attr_base_price">Base price</string>
+    <string name="available_quantity">available</string>
+    <string name="pref_item_editor_short_screen">Open item editor in brief variant</string>
+    <string name="pref_desc_item_editor_short_screen">Show less info about goods item on editor screen</string>
+    <string name="notification_channel_data_loader">Data updates</string>
+    <string name="notification_text_sending_message">Confirmation sent</string>
+    <string name="attr_unit">Unit</string>
+    <string name="attr_per_package">per package</string>
+    <string name="packages">packages</string>
+    <string name="unit_default">pc</string>
+    <string name="unit_package">pkg</string>
+    <string name="unit_kilo">kg</string>
+    <string name="error_no_unit_convertion">Quantity per package is not set</string>
+    <string name="enter_price_percent">Enter price markup percent</string>
+    <string name="pref_title_item_selection_screen">Item selection screen</string>
+    <string name="pref_title_items_list">Goods items list</string>
+    <string name="pref_title_order_fields">Order preferences</string>
+    <string name="pref_title_default_item_quantity">Default item quantity</string>
+    <string name="attr_weight">Weight</string>
+    <string name="error_no_unit_weight">This product is not sold by weight</string>
+    <string name="title_value_check">Values control</string>
+    <string name="error_no_delivery_date">No \"Date of delivery\" value</string>
+    <string name="error_no_client_description">You need to choose a client to continue</string>
+    <string name="data_server">Data server</string>
+    <string name="hint_press_to_edit">Press and hold for edit</string>
+    <string name="demo_mode">Demo mode</string>
+    <string name="title_location_pickup">Location pickup</string>
+    <string name="action_reset">Reset</string>
+    <string name="hint_move_marker">Move marker to disired position</string>
+    <string name="title_request_location">Request location</string>
+    <string name="message_request_location">Aquier current location from GPS service</string>
+    <string name="pref_options">Options</string>
+    <string name="pref_category_access">Access rights</string>
+    <string name="pref_title_allow_price">Allow price type choose</string>
+    <string name="pref_title_allow_cash">Allow create cash documents</string>
+    <string name="pref_title_delivery_date">Require delivery date</string>
+    <string name="pref_summary_delivery_date">Not allow to save document without date of delivery</string>
+    <string name="pref_category_other">Other</string>
+    <string name="currency_default_value">$</string>
+    <string name="attr_currency">Currency</string>
+    <string name="pref_category_system">System settings</string>
+    <string name="pref_title_location_service">Location service</string>
+    <string name="pref_title_clients_locations">Edit clients locations</string>
+    <string name="title_clients_map">Clients on map</string>
+    <string name="warn_no_clients_locations">No records with clients locations</string>
+    <string name="pref_title_user_id">Device ID</string>
+    <string name="pref_description_user_id">Unique device ID for this connection</string>
+    <string name="pref_title_licensed">License</string>
+    <string name="license_not_installed">not installed</string>
+    <string name="pref_title_check_order_location">Check client location while taking an order</string>
+    <string name="error_no_location_order">There is no location data. Probably location service is disabled.</string>
+    <string name="action_update_location">Update location</string>
+    <string name="weight">Weight</string>
+    <string name="warn_low_accuracy">Low accuracy</string>
+    <string name="header_price_list">Price list</string>
+    <string name="pref_title_load_images">Load images</string>
+    <string name="pref_title_image_cache_count">Max number of images in cache</string>
+    <string name="pref_title_image_cache_size">Max disk spase for images (in Mb)</string>
+    <string name="action_load_images">Load images</string>
+    <string name="warn_load_images_disabled">Image loading is disabled at your device</string>
+    <string name="images">Images</string>
+    <string name="pref_title_show_client_price_only">Show client\'s price only</string>
+    <string name="pref_title_set_client_price">Set client\'s price by default</string>
+    <string name="title_activity_goods_image">Image</string>
+    <string name="title_activity_debt_document">DebtDocument</string>
+    <string name="attr_company">Company</string>
+    <string name="attr_warehouse">Wareouse</string>
+    <string name="warn_no_document_data">Document data is not loaded from server</string>
+    <string name="request_finished">Request is finished</string>
+    <string name="request_error">Request is finished with errors</string>
+    <string name="data_type_client">Clients data</string>
+    <string name="data_type_item">Goods items data</string>
+    <string name="data_type_price">Prices</string>
+    <string name="data_type_debt">Clients debts</string>
+    <string name="data_type_image">Image parameters</string>
+    <string name="data_type_client_location">Clients locations</string>
+    <string name="ACCESS_DENIED">Access denied</string>
+    <string name="status_downloading">Syncing…</string>
+    <string name="data_type_debt_document">Debt document data</string>
+    <string name="data_type_document_sent">Documents sent</string>
+    <string name="time_counter">Execution time</string>
+    <string name="data_reading_error">Data reading error</string>
+    <string name="ERROR_SYNC_IS_ACTIVE">Another sync process is active</string>
+    <string name="CONNECTION_ERROR">Connection error</string>
+    <string name="attr_bonus">Bonuses</string>
+    <string name="header_clients_list_by_locations">Clients list by locations</string>
+    <string name="data_type_client_direction">Clients directions</string>
+    <string name="message_send_logs">Debug logs are copyed into clipboard, on next step choose a service to save it</string>
+    <string name="balance_in">Balance in</string>
+    <string name="balance_out">Balance out</string>
+    <string name="header_tasks_list">Tasks</string>
+    <string name="pref_title_clients_goods">Load clients goods info</string>
+    <string name="is_done">Completed</string>
+    <string name="created_femine">Created</string>
+    <string name="data_type_client_goods_item">Client\'s goods</string>
+    <string name="client_goods">Client\'s goods</string>
+    <string name="days_no_shipment">Shipped days ago</string>
+    <string name="shipment_date">Date of shipment</string>
+    <string name="shipment_quantity">Shipped quantity</string>
+    <string name="doc_client_goods">Client\'s</string>
+    <string name="rest_type">Rest type</string>
+    <string name="demand">Demand</string>
+    <string name="directions_api_limit_warn">You have reached Directions API requests daily limit</string>
+    <string name="menu_filter_category">Filter by category</string>
+    <string name="menu_filter_brand">Filter by brand</string>
+    <string name="category">Category</string>
+    <string name="you_are_here">You are here</string>
+    <string name="vendor_status">Vendor status</string>
+    <string name="title_client_is_banned">Client is banned</string>
+    <string name="ban_message">Order processing is forbidden</string>
+    <string name="data_type_competitor_price">Competitor prices</string>
+    <string name="competitor_price_list_title">Competitor prices</string>
+    <string name="error_indivisible">Item is indivisible, you must enter valid quantity</string>
+    <string name="menu_filter_status">Filter by status</string>
+    <string name="fiscal_check">Fiscal check</string>
+    <string name="action_print">Print</string>
+    <string name="error_printing_not_available">Printing is not available</string>
+    <string name="error_cannot_print">Printing is possible only after document is sent</string>
+    <string name="error_while_print">Printing error</string>
+    <string name="error_product_not_found">Product not found</string>
+    <string name="attr_barcode">Barcode</string>
+    <string name="document_state_icon">Document state icon</string>
+    <string name="error_no_current_account">Not selected current account</string>
+    <string name="product">Product</string>
+    <string name="delimiter_quantity" translatable="false">x</string>
+    <string name="events_log">Events log</string>
+    <string name="sync_settings">Sync settings</string>
+    <string name="weight_per_unit">per unit</string>
+    <string name="error_only_package">This product could be sold only by packages</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="warn_no_location">No data about client location</string>
+    <string name="pref_warn_read_only">Options are loaded from server and are not editable</string>
+    <string name="pref_summary_app_options">General application settings</string>
+    <string name="task">Task</string>
+    <string name="open_account_settings">Open account settings</string>
+    <string name="current_account_for_sync">Current sync settings</string>
+    <string name="data_deleted">Data deleted</string>
+    <string name="product_image">Product image</string>
+    <string name="client_menu">clientMenu</string>
+    <string name="data_copied">Data copied</string>
+    <string name="delimiter_sum" translatable="false">=</string>
+    <string name="title_data">Data</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="camera">Camera</string>
+    <string name="client_image">Client image</string>
+    <string name="change_description">Change description</string>
+    <string name="set_default">Set default</string>
+    <string name="delete">Delete</string>
+    <string name="description">Description</string>
+    <string name="rotate">Rotate</string>
+    <string name="data_type_client_image">Client image</string>
+    <string name="header_service">Service</string>
+    <string name="title_fiscal_service">Fiscal service</string>
+    <string name="fiscal_service_no_provider">Fiscal service is disabled</string>
+    <string name="fiscal_service_provider">Service provider</string>
+    <string name="cashier">Cashier</string>
+    <string name="authorized">Authorized</string>
+    <string name="last_action_result">Last action result</string>
+    <string name="offline_mode">Offline mode</string>
+    <string name="shift_opened">Shift is opened</string>
+    <string name="success">Success</string>
+    <string name="operation_successful">Operation performed successfully</string>
+    <string name="payment_type">Payment type</string>
+    <string name="fiscal_service_error">Fiscal service error</string>
+    <string name="error_cannot_fiscal">Cannot register fiscal receipt, check document</string>
+    <string name="view_receipt">Receipt preview</string>
+    <string name="error_fiscal_not_ready">Fiscal service not ready</string>
+    <string name="online_mode">Online mode</string>
+    <string name="close_shift_warn">Shift will be closed, proceed?</string>
+    <string name="service_operation_sum">Sum of service operation</string>
+    <string name="error_no_service_sum">No sum or incorrect value entered</string>
+
+</resources>

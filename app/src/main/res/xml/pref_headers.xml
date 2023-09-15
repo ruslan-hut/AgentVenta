@@ -1,0 +1,25 @@
+<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- These settings headers are only used on tablets. -->
+
+<!--    <header-->
+<!--        android:fragment="ua.com.programmer.agent.settings.SettingsActivity$DataSyncPreferenceFragment"-->
+<!--        android:icon="@drawable/ic_sync_black_24dp"-->
+<!--        android:title="@string/pref_header_data_sync" />-->
+
+    <header
+        android:fragment="ua.com.programmer.agentventa.settings.SettingsActivity$NotificationPreferenceFragment"
+        android:icon="@drawable/baseline_text_snippet_24"
+        android:title="@string/pref_header_notifications" />
+
+    <header
+        android:fragment="ua.com.programmer.agentventa.settings.SettingsActivity$GeneralPreferenceFragment"
+        android:icon="@drawable/baseline_shopping_cart_24"
+        android:title="@string/pref_header_general" />
+
+    <header
+        android:fragment="ua.com.programmer.agentventa.settings.SettingsActivity$ProgramOptionsFragment"
+        android:icon="@drawable/baseline_check_box_24"
+        android:title="@string/pref_options"/>
+
+</preference-headers>

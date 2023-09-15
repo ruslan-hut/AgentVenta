@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/print"
+        android:orderInCategory="10"
+        android:title="@string/action_print"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_print_24"
+        />
+    <item
+        android:id="@+id/edit_order"
+        android:orderInCategory="20"
+        android:title="@string/edit_order"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_edit_24"/>
+    <item
+        android:id="@+id/copy_previous"
+        android:orderInCategory="30"
+        android:title="@string/copy_previous"
+        app:showAsAction="never"
+        />
+    <item
+        android:id="@+id/update_location"
+        android:orderInCategory="40"
+        android:title="@string/action_update_location"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/view_fiscal_receipt"
+        android:orderInCategory="50"
+        android:title="@string/view_receipt"
+        app:showAsAction="never"
+        />
+    <item
+        android:id="@+id/delete_order"
+        android:orderInCategory="60"
+        android:title="@string/delete_order"
+        app:showAsAction="never"
+        android:icon="@drawable/baseline_delete_forever_24"/>
+
+</menu>

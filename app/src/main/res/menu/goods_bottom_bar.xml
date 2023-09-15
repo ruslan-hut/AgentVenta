@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        app:showAsAction="always"
+        android:id="@+id/menu_goods_plus"
+        android:title="plus"
+        android:icon="@drawable/baseline_add_circle_24" />
+    <item
+        app:showAsAction="always"
+        android:id="@+id/menu_goods_minus"
+        android:title="minus"
+        android:icon="@drawable/baseline_remove_circle_24" />
+    <item
+        app:showAsAction="always"
+        android:id="@+id/menu_goods_packed"
+        android:title="pack"
+        android:icon="@drawable/baseline_check_box_24" />
+    <item
+        app:showAsAction="always"
+        android:id="@+id/menu_goods_edit"
+        android:title="edit"
+        android:icon="@drawable/baseline_edit_24" />
+    <item
+        app:showAsAction="ifRoom"
+        android:id="@+id/menu_goods_clear"
+        android:title="clear" />
+</menu>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/save_location"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/save"
+        android:icon="@drawable/baseline_save_24"/>
+<!--    <item-->
+<!--        android:id="@+id/edit_location"-->
+<!--        android:orderInCategory="15"-->
+<!--        app:showAsAction="ifRoom"-->
+<!--        android:title="@string/edit_mode"-->
+<!--        android:icon="@drawable/baseline_not_listed_location_24"/>-->
+    <item
+        android:id="@+id/reset_location"
+        android:orderInCategory="20"
+        app:showAsAction="ifRoom"
+        android:title="@string/action_reset"
+        android:icon="@drawable/sharp_cached_24"/>
+    <item
+        android:id="@+id/clear_location"
+        android:orderInCategory="30"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/baseline_delete_forever_24"
+        android:title="@string/delete_order"/>
+</menu>
