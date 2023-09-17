@@ -66,7 +66,7 @@ class ClientImageFragment: Fragment(), MenuProvider{
                 } else {
                     View.GONE
                 }
-                isSent.visibility = if (it.isSent == 0) {
+                isSent.visibility = if (it.isSent == 0 && it.isLocal == 1) {
                     View.VISIBLE
                 } else {
                     View.GONE

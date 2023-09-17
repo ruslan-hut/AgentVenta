@@ -20,26 +20,32 @@ class ClientImageViewModel@Inject constructor(
     fun setImageParameters(guid: String) {
         viewModelScope.launch {
             filesRepository.getClientImage(guid).collect {
-                _image.value = it
+                _image.value = it ?: ClientImage(guid = "")
             }
         }
     }
 
     fun changeDescription(description: String) {
-        viewModelScope.launch {
-            filesRepository.saveClientImage(image.value!!.copy(description = description))
+        image.value?.let {
+            viewModelScope.launch {
+                filesRepository.saveClientImage(it.copy(description = description))
+            }
         }
     }
 
     fun setDefault() {
-        viewModelScope.launch {
-            filesRepository.setAsDefault(image.value!!)
+        image.value?.let {
+            viewModelScope.launch {
+                filesRepository.setAsDefault(it)
+            }
         }
     }
 
     fun deleteImage() {
-        viewModelScope.launch {
-            filesRepository.deleteClientImage(image.value!!.guid)
+        image.value?.let {
+            viewModelScope.launch {
+                filesRepository.deleteClientImage(it.guid)
+            }
         }
     }
 }

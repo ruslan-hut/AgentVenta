@@ -32,7 +32,7 @@ class ClientImageAdapter(
                 } else {
                     android.view.View.GONE
                 }
-                isSent.visibility = if (item.isSent == 0) {
+                isSent.visibility = if (item.isSent == 0 && item.isLocal == 1) {
                     android.view.View.VISIBLE
                 } else {
                     android.view.View.GONE

@@ -133,14 +133,48 @@ interface ClientDao {
     }
 
     @Query("SELECT * FROM client_images " +
-            "WHERE client_guid=:guid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "ORDER BY is_default DESC, timestamp DESC")
+        "WHERE client_guid=:guid " +
+        "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
+    "UNION ALL " +
+    "SELECT " +
+        "db_guid," +
+        "product_guid," +
+        "guid," +
+        "url," +
+        "description," +
+        "timestamp," +
+        "0," +
+        "0," +
+        "isDefault " +
+        "FROM product_images " +
+        "WHERE product_guid=:guid AND type='client' " +
+            "AND guid NOT IN " +
+            "(SELECT guid FROM client_images " +
+            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))" +
+        "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
+    "ORDER BY is_default DESC, timestamp DESC ")
     fun getClientImages(guid: String): Flow<List<ClientImage>>
 
     @Query("SELECT * FROM client_images " +
             "WHERE guid=:imageGuid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) ")
+            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
+            "UNION ALL " +
+            "SELECT " +
+            "db_guid," +
+            "product_guid," +
+            "guid," +
+            "url," +
+            "description," +
+            "timestamp," +
+            "0," +
+            "0," +
+            "isDefault " +
+            "FROM product_images " +
+            "WHERE guid=:imageGuid AND type='client' " +
+            "AND guid NOT IN " +
+            "(SELECT guid FROM client_images " +
+            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))" +
+            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
     fun getClientImage(imageGuid: String): Flow<ClientImage>
 
     @Query("DELETE FROM client_images " +
