@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.fiscal.checkbox.Checkbox
+import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.settings.UserOptions
@@ -21,7 +22,8 @@ import kotlin.reflect.KSuspendFunction2
 @HiltViewModel
 class FiscalViewModel @Inject constructor(
     private val userAccountRepository: UserAccountRepository,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val logger: Logger
 ): ViewModel() {
 
     val isLoading = MutableLiveData<Boolean>()
@@ -157,6 +159,9 @@ class FiscalViewModel @Inject constructor(
                         initResult
                     }
                 }
+            }
+            if (!actionResult.success) {
+                logger.w("FS", actionResult.message)
             }
             state.value = fiscalService?.currentState() ?: FiscalState()
             isLoading.value = false

@@ -1,6 +1,6 @@
 package ua.com.programmer.agentventa.fiscal.checkbox
 
-import android.util.Log
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -27,6 +27,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
     private var retrofit: Retrofit? = null
     private var api: CheckboxApi? = null
     private var options: FiscalOptions? = null
+    private val crashlytics = FirebaseCrashlytics.getInstance()
 
     private var token: String = ""
     private var license: String = ""
@@ -40,7 +41,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val okBuilder = OkHttpClient.Builder()
             .addInterceptor {chain ->
 
-                Log.d("Checkbox", "chain: ${chain.request()}")
+                crashlytics.log("Checkbox request: ${chain.request().url}")
                 val builder = chain.request().newBuilder()
                 builder
                     .addHeader("X-Client-Name", "ua.com.programmer.agentventa")
@@ -48,11 +49,9 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                     .addHeader("X-Device-ID", "${options?.deviceId}")
                 if (license.isNotBlank()) {
                     builder.addHeader("X-License-Key", license)
-                    Log.d("Checkbox", "X-License-Key: $license")
                 }
                 if (token.isNotBlank()) {
                     builder.addHeader("Authorization", "Bearer $token")
-                    Log.d("Checkbox", "Authorization: Bearer ${token.subSequence(0,10)}...")
                 }
                 val request = builder.build()
                 chain.proceed(request)
@@ -119,7 +118,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().checkStatus()
         }
-        Log.d("Checkbox", "checkStatus: ${response.toJson()}")
         val message = response.getString("message")
         offlineMode = response.getBoolean("offline_mode")
         if (response.getBoolean("has_shift")) {
@@ -134,7 +132,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().getShift(id)
         }
-        Log.d("Checkbox", "getShiftById: ${response.toJson()}")
         val message = response.getString("message")
         if (message.isNotBlank()) return OperationResult(false, message)
         val status = response.getString("status")
@@ -153,7 +150,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().createShift(Shift(newShiftId))
         }
-        Log.d("Checkbox", "openShift: ${response.toJson()}")
         val message = response.getString("message")
         if (message.isNotBlank()) {
             return OperationResult(false, message)
@@ -177,7 +173,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().closeShift()
         }
-        Log.d("Checkbox", "closeShift: ${response.toJson()}")
         val message = response.getString("message")
         if (message.isBlank()) {
             shiftId = ""
@@ -194,7 +189,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                     val fileResponse = build().getReportPng(id)
                     saveFileData(fileResponse, file)
                 } catch (e: Exception) {
-                    Log.e("Checkbox", "getReportPng failed", e)
+                    crashlytics.recordException(e)
                 }
             }
         }
@@ -223,7 +218,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val fileResponse = build().getReportPng(id)
             saveFileData(fileResponse, file)
         } catch (e: Exception) {
-            Log.e("Checkbox", "getReportPng failed", e)
+            crashlytics.recordException(e)
             return OperationResult(false, "Помилка отримання звіту. ${e.message}")
         }
 
@@ -265,7 +260,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().createReceipt(receipt)
         }
-        Log.d("Checkbox", "createReceipt: ${response.toJson()}")
         var message = response.getString("message")
 
         var status = response.getString("status")
@@ -278,7 +272,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val receiptResponse = callApi {
                 build().getReceipt(receipt.id)
             }
-            Log.d("Checkbox", "getReceipt: ${receiptResponse.toJson()}")
             message = response.getString("message")
             if (message.isNotBlank()) return OperationResult(false, "Помилка реєстрації чека. $message")
             status = receiptResponse.getString("status")
@@ -301,7 +294,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             saveFileData(response, file)
 
         } catch (e: Exception) {
-            Log.e("Checkbox", "getReceipt failed", e)
+            crashlytics.recordException(e)
             return OperationResult(false, "Помилка отримання чека. ${e.message}")
         }
 
@@ -324,7 +317,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().createServiceReceipt(receipt)
         }
-        Log.d("Checkbox", "createServiceReceipt: ${response.toJson()}")
         var message = response.getString("message")
 
         var status = response.getString("status")
@@ -337,7 +329,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val receiptResponse = callApi {
                 build().getReceipt(receipt.id)
             }
-            Log.d("Checkbox", "getReceipt: ${receiptResponse.toJson()}")
             message = response.getString("message")
             if (message.isNotBlank()) return OperationResult(false, "Помилка реєстрації чека. $message")
             status = receiptResponse.getString("status")
@@ -369,7 +360,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().getCashierShift()
         }
-        Log.d("Checkbox", "getShift: ${response.toJson()}")
         val message = response.getString("message")
         val status = response.getString("status")
         shiftId = if (status == "OPENED") {
@@ -393,7 +383,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                 mapOf("message" to e)
             }
         } catch (e: Exception) {
-            Log.e("Checkbox", "request failed", e)
+            crashlytics.recordException(e)
             mapOf("message" to e)
         }
         return XMap(response ?: mapOf("message" to "No response"))
@@ -405,6 +395,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val errorMap = XMap(errorBody)
             mapOf("message" to errorMap.getString("message"))
         } else {
+            crashlytics.recordException(e)
             mapOf("message" to e.message())
         }
     }
