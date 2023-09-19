@@ -402,4 +402,12 @@
     <string name="close_shift_warn">Смена будет закрыта с выполнением зет-отчета. Продолжить?</string>
     <string name="service_operation_sum">Сумма служебной операции</string>
     <string name="error_no_service_sum">Не указана сумма операции или введено некорретное значение</string>
+    <string name="cashier_login">Вход кассира</string>
+    <string name="cashier_logout">Выход кассира</string>
+    <string name="check_status">Проверить статус</string>
+    <string name="open_shift">Открыть смену</string>
+    <string name="service_in">Внос</string>
+    <string name="service_out">Вынос</string>
+    <string name="x_report">X отчет</string>
+    <string name="close_shift">Закрыть смену</string>
 </resources>

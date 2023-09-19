@@ -171,7 +171,8 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/baseline_person_24"
-                android:text="Cashier login" />
+                android:maxLines="1"
+                android:text="@string/cashier_login" />
             <TextView
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
@@ -181,7 +182,8 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/baseline_logout_24"
-                android:text="Cashier logout" />
+                android:maxLines="1"
+                android:text="@string/cashier_logout" />
         </LinearLayout>
 
         <Button
@@ -189,13 +191,15 @@
             android:id="@+id/btn_check_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Check status" />
+            android:maxLines="1"
+            android:text="@string/check_status" />
 
         <Button
             android:id="@+id/btn_open_shift"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Open shift" />
+            android:maxLines="1"
+            android:text="@string/open_shift" />
 
         <TextView
             android:layout_width="match_parent"
@@ -226,7 +230,8 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/baseline_add_circle_24"
-                android:text="Service In" />
+                android:maxLines="1"
+                android:text="@string/service_in" />
             <TextView
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
@@ -236,7 +241,8 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/baseline_remove_circle_24"
-                android:text="Service Out" />
+                android:maxLines="1"
+                android:text="@string/service_out" />
         </LinearLayout>
 
         <TextView
@@ -247,13 +253,15 @@
             android:id="@+id/btn_x_report"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="X report" />
+            android:maxLines="1"
+            android:text="@string/x_report"/>
         <Button
             android:id="@+id/btn_close_shift"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:icon="@drawable/baseline_functions_24"
-            android:text="Close shift" />
+            android:maxLines="1"
+            android:text="@string/close_shift"/>
 
 
     </LinearLayout>

@@ -432,5 +432,13 @@
     <string name="close_shift_warn">Shift will be closed, proceed?</string>
     <string name="service_operation_sum">Sum of service operation</string>
     <string name="error_no_service_sum">No sum or incorrect value entered</string>
+    <string name="cashier_login">Cashier login</string>
+    <string name="cashier_logout">Cashier logout</string>
+    <string name="check_status">Check status</string>
+    <string name="open_shift">Open shift</string>
+    <string name="service_in">Service In</string>
+    <string name="service_out">Service Out</string>
+    <string name="x_report">X report</string>
+    <string name="close_shift">Close shift</string>
 
 </resources>

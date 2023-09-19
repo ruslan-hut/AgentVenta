@@ -401,4 +401,12 @@
     <string name="close_shift_warn">Зміну буде закрито з виконанням зет-звіту. Продовжити?</string>
     <string name="service_operation_sum">Сума сервісної операції</string>
     <string name="error_no_service_sum">Не вказано суму операції або введено некоректне значення</string>
+    <string name="cashier_login">Вхід касира</string>
+    <string name="cashier_logout">Вихід касира</string>
+    <string name="check_status">Перевірити статус</string>
+    <string name="open_shift">Відкрити зміну</string>
+    <string name="service_in">Внесення</string>
+    <string name="service_out">Винос</string>
+    <string name="x_report">X звіт</string>
+    <string name="close_shift">Закрити зміну</string>
 </resources>
