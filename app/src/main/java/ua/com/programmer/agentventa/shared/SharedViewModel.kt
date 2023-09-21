@@ -11,12 +11,16 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.bumptech.glide.load.resource.bitmap.Rotate
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.R
+import ua.com.programmer.agentventa.dao.cloud.CUserAccount
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
@@ -162,9 +166,33 @@ class SharedViewModel @Inject constructor(
                 _priceTypes = orderRepository.getPriceTypes()
                 _paymentTypes = orderRepository.getPaymentTypes()
 
-                if (account.guid.isNotEmpty())
+                if (account.guid.isNotEmpty()) {
                     FirebaseCrashlytics.getInstance().setUserId(account.guid)
+                    sendUserInfo()
+                }
             }
+        }
+    }
+
+    private fun sendUserInfo() {
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser == null) {
+            auth.signInWithEmailAndPassword(BuildConfig.FIREBASE_EMAIL, BuildConfig.FIREBASE_PASSWORD)
+                .addOnSuccessListener { sendUserInfoContinue() }
+                .addOnFailureListener { e -> logger.w("FA", e.message ?: "sign in failed") }
+        } else {
+            sendUserInfoContinue()
+        }
+    }
+
+    private fun sendUserInfoContinue() {
+        val account = CUserAccount.build(_currentAccount.value)
+        if (account.guid.isBlank()) return
+        viewModelScope.launch {
+            val firebase = FirebaseFirestore.getInstance()
+            firebase.collection("users_venta")
+                .document(account.guid)
+                .set(account)
         }
     }
 
