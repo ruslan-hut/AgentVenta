@@ -12,4 +12,5 @@ interface ClientRepository {
     fun getDebt(guid: String, docId: String): Flow<Debt>
     fun getLocation(guid: String): Flow<ClientLocation>
     suspend fun updateLocation(location: ClientLocation)
+    suspend fun deleteLocation(location: ClientLocation)
 }

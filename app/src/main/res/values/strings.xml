@@ -289,9 +289,9 @@
     <string name="demo_mode">Demo mode</string>
     <string name="title_location_pickup">Location pickup</string>
     <string name="action_reset">Reset</string>
-    <string name="hint_move_marker">Move marker to disired position</string>
+    <string name="hint_move_marker">Move marker to desired position</string>
     <string name="title_request_location">Request location</string>
-    <string name="message_request_location">Aquier current location from GPS service</string>
+    <string name="message_request_location">Obtain current location from GPS service</string>
     <string name="pref_options">Options</string>
     <string name="pref_category_access">Access rights</string>
     <string name="pref_title_allow_price">Allow price type choose</string>
@@ -327,7 +327,7 @@
     <string name="title_activity_goods_image">Image</string>
     <string name="title_activity_debt_document">DebtDocument</string>
     <string name="attr_company">Company</string>
-    <string name="attr_warehouse">Wareouse</string>
+    <string name="attr_warehouse">Warehouse</string>
     <string name="warn_no_document_data">Document data is not loaded from server</string>
     <string name="request_finished">Request is finished</string>
     <string name="request_error">Request is finished with errors</string>
@@ -348,7 +348,7 @@
     <string name="attr_bonus">Bonuses</string>
     <string name="header_clients_list_by_locations">Clients list by locations</string>
     <string name="data_type_client_direction">Clients directions</string>
-    <string name="message_send_logs">Debug logs are copyed into clipboard, on next step choose a service to save it</string>
+    <string name="message_send_logs">Debug logs are copied into clipboard, on next step choose a service to save it</string>
     <string name="balance_in">Balance in</string>
     <string name="balance_out">Balance out</string>
     <string name="header_tasks_list">Tasks</string>
@@ -440,5 +440,6 @@
     <string name="service_out">Service Out</string>
     <string name="x_report">X report</string>
     <string name="close_shift">Close shift</string>
+    <string name="use_current_location">Use current location?</string>
 
 </resources>

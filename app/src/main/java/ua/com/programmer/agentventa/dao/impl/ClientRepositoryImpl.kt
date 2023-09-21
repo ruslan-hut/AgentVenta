@@ -46,4 +46,8 @@ class ClientRepositoryImpl @Inject constructor(
         updateDao.upsertClientLocation(listOf(location))
     }
 
+    override suspend fun deleteLocation(location: ClientLocation) {
+        updateDao.deleteClientLocation(location)
+    }
+
 }

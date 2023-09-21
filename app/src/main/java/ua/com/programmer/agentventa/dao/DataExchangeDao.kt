@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -118,6 +119,9 @@ interface DataExchangeDao {
             insertClientLocation(loc)
         }
     }
+
+    @Delete
+    suspend fun deleteClientLocation(location: ClientLocation): Int
 
     @Query("DELETE FROM clients WHERE db_guid=:id AND timestamp<:time")
     suspend fun deleteClients(id: String, time: Long): Int

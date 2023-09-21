@@ -2,6 +2,7 @@ package ua.com.programmer.agentventa.catalogs.locations.pickup
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -10,11 +11,13 @@ import ua.com.programmer.agentventa.dao.entity.isValid
 import ua.com.programmer.agentventa.geo.GeocodeHelper
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.ClientRepository
+import ua.com.programmer.agentventa.repository.LocationRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class LocationPickupViewModel @Inject constructor(
     private val repository: ClientRepository,
+    locationRepository: LocationRepository,
     private val geocode: GeocodeHelper,
     private val logger: Logger
 ) : ViewModel() {
@@ -23,6 +26,8 @@ class LocationPickupViewModel @Inject constructor(
     val clientLocation get() = _clientLocation
     private val _address = MutableLiveData<String>()
     val address get() = _address
+
+    val currentLocation = locationRepository.currentLocation().asLiveData()
 
     var canEditLocation = false
         private set
@@ -65,6 +70,25 @@ class LocationPickupViewModel @Inject constructor(
         }
     }
 
+    fun useCurrentLocation() {
+        if (!canEditLocation) return
+        val location = currentLocation.value ?: return
+        viewModelScope.launch {
+            val address = geocode.getAddress(location.latitude, location.longitude)
+            val clientLocation = ClientLocation(
+                databaseId = accountGuid,
+                clientGuid = clientGuid,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                address = address,
+                isModified = 1
+            )
+            if (clientLocation.isValid()) {
+                repository.updateLocation(clientLocation)
+            }
+        }
+    }
+
     fun saveLocation(): Boolean {
         if (!canEditLocation) return false
         if (latitude == 0.0 && longitude == 0.0) return false
@@ -90,8 +114,11 @@ class LocationPickupViewModel @Inject constructor(
 //    }
 
     fun onDeleteLocation(): Boolean {
+        val location = clientLocation.value ?: return false
         if (!canEditLocation) return false
-
+        viewModelScope.launch {
+            repository.deleteLocation(location)
+        }
         return true
     }
 

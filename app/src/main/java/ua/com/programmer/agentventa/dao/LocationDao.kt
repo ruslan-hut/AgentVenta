@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.LocationHistory
 
@@ -13,7 +14,10 @@ interface LocationDao {
     suspend fun insertLocation(location: LocationHistory): Long
 
     @Query("SELECT * FROM locations ORDER BY time DESC LIMIT 1")
-    fun getLastLocation(): LocationHistory?
+    suspend fun getLastLocation(): LocationHistory?
+
+    @Query("SELECT * FROM locations ORDER BY time DESC LIMIT 1")
+    fun currentLocation(): Flow<LocationHistory?>
 
     @Query("SELECT " +
             "client_locations.db_guid," +
