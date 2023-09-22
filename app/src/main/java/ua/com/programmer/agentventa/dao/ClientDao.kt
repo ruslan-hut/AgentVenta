@@ -109,8 +109,8 @@ interface ClientDao {
             "client_locations.client_guid AS clientGuid," +
             "client_locations.latitude," +
             "client_locations.longitude," +
-            "client.description," +
-            "CASE TRIM(client.address) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
+            "IFNULL(client.description, '') AS description," +
+            "CASE TRIM(IFNULL(client.address, '')) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
             "FROM client_locations " +
             "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients WHERE guid=:guid) AS client " +
             "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
@@ -123,8 +123,8 @@ interface ClientDao {
             "client_locations.client_guid AS clientGuid," +
             "client_locations.latitude," +
             "client_locations.longitude," +
-            "client.description," +
-            "CASE TRIM(client.address) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
+            "IFNULL(client.description, '') AS description," +
+            "CASE TRIM(IFNULL(client.address, '')) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
             "FROM client_locations " +
             "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients) AS client " +
             "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
