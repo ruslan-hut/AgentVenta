@@ -9,9 +9,9 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
-import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LClient
+import ua.com.programmer.agentventa.dao.entity.LClientLocation
 
 @Dao
 interface ClientDao {
@@ -105,18 +105,31 @@ interface ClientDao {
     fun getClientDebt(guid: String, docId: String): Flow<Debt?>
 
     @Query("SELECT " +
-            "client_locations.db_guid," +
-            "client_locations.client_guid," +
+            "client_locations.db_guid AS databaseId," +
+            "client_locations.client_guid AS clientGuid," +
             "client_locations.latitude," +
             "client_locations.longitude," +
-            "client_locations.is_modified," +
+            "client.description," +
             "CASE TRIM(client.address) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
             "FROM client_locations " +
-            "LEFT OUTER JOIN (SELECT guid, db_guid, address  FROM clients WHERE guid=:guid) AS client " +
+            "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients WHERE guid=:guid) AS client " +
             "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
             "WHERE client_locations.client_guid=:guid " +
             "AND client_locations.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
-    fun getClientLocation(guid: String): Flow<ClientLocation?>
+    fun getClientLocation(guid: String): Flow<LClientLocation?>
+
+    @Query("SELECT " +
+            "client_locations.db_guid AS databaseId," +
+            "client_locations.client_guid AS clientGuid," +
+            "client_locations.latitude," +
+            "client_locations.longitude," +
+            "client.description," +
+            "CASE TRIM(client.address) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
+            "FROM client_locations " +
+            "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients) AS client " +
+            "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
+            "AND client_locations.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    fun getClientLocations(): Flow<List<LClientLocation>?>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertClientImage(image: ClientImage): Long

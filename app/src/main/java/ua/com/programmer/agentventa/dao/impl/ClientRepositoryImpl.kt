@@ -7,6 +7,7 @@ import ua.com.programmer.agentventa.dao.DataExchangeDao
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LClient
+import ua.com.programmer.agentventa.dao.entity.LClientLocation
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.repository.ClientRepository
 import javax.inject.Inject
@@ -36,9 +37,15 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getLocation(guid: String): Flow<ClientLocation> {
+    override fun getLocation(guid: String): Flow<LClientLocation> {
         return dao.getClientLocation(guid).map {
-            it ?: ClientLocation()
+            it ?: LClientLocation()
+        }
+    }
+
+    override fun getLocations(): Flow<List<LClientLocation>> {
+        return dao.getClientLocations().map { locations ->
+            locations ?: listOf()
         }
     }
 

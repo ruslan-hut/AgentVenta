@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.LClientLocation
 import ua.com.programmer.agentventa.dao.entity.isValid
 import ua.com.programmer.agentventa.geo.GeocodeHelper
 import ua.com.programmer.agentventa.logger.Logger
@@ -22,7 +23,7 @@ class LocationPickupViewModel @Inject constructor(
     private val logger: Logger
 ) : ViewModel() {
 
-    private val _clientLocation = MutableLiveData <ClientLocation>()
+    private val _clientLocation = MutableLiveData <LClientLocation>()
     val clientLocation get() = _clientLocation
     private val _address = MutableLiveData<String>()
     val address get() = _address
@@ -92,11 +93,9 @@ class LocationPickupViewModel @Inject constructor(
     fun saveLocation(): Boolean {
         if (!canEditLocation) return false
         if (latitude == 0.0 && longitude == 0.0) return false
-        val loadedLocation = clientLocation.value ?: ClientLocation(
+        val location = ClientLocation(
             databaseId = accountGuid,
-            clientGuid = clientGuid
-        )
-        val location = loadedLocation.copy(
+            clientGuid = clientGuid,
             latitude = latitude,
             longitude = longitude,
             address = geocodedAddress,
@@ -109,15 +108,13 @@ class LocationPickupViewModel @Inject constructor(
         return true
     }
 
-//    fun onEditLocation() {
-//        if (!canEditLocation) return
-//    }
-
     fun onDeleteLocation(): Boolean {
         val location = clientLocation.value ?: return false
         if (!canEditLocation) return false
         viewModelScope.launch {
-            repository.deleteLocation(location)
+            repository.deleteLocation(
+                ClientLocation.build(location)
+            )
         }
         return true
     }

@@ -2,50 +2,60 @@ package ua.com.programmer.agentventa.catalogs.map.clients
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.collections.MarkerManager
+import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
-import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.LClientLocation
+import ua.com.programmer.agentventa.dao.entity.LocationHistory
 import ua.com.programmer.agentventa.dao.entity.hasLocation
+import ua.com.programmer.agentventa.databinding.LocationPickupFragmentBinding
 
+@AndroidEntryPoint
 class ClientsMapFragment: Fragment(), MenuProvider, OnMapReadyCallback {
-    private val viewModel: ClientsMapViewModel by viewModels()
-//    private var _binding: ClientsMapFragmentBinding? = null
 
-//    private val binding get() = _binding!!
+    private val viewModel: ClientsMapViewModel by viewModels()
+    private var _binding: LocationPickupFragmentBinding? = null
+    private val binding get() = _binding!!
 
     private var map: GoogleMap? = null
     private var markerCollection: MarkerManager.Collection? = null
+    private val markerTagCurrentLocation = "current_location"
 
-//    override fun onCreateView(
-//        inflater: LayoutInflater,
-//        container: ViewGroup?,
-//        savedInstanceState: Bundle?
-//    ): View {
-//        _binding = ClientsMapFragmentBinding.inflate(inflater,container,false)
-//        binding.lifecycleOwner = viewLifecycleOwner
-//
-//        val menuHost : MenuHost = requireActivity()
-//        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
-//
-//        return binding.root
-//    }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = LocationPickupFragmentBinding.inflate(inflater,container,false)
+        binding.lifecycleOwner = viewLifecycleOwner
+
+        val menuHost : MenuHost = requireActivity()
+        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        return binding.root
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.clientsLocation.observe(viewLifecycleOwner) {
+        viewModel.locations.observe(viewLifecycleOwner) {
             showLocation(it)
         }
 
@@ -55,7 +65,7 @@ class ClientsMapFragment: Fragment(), MenuProvider, OnMapReadyCallback {
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_location_pickup, menu)
+        //menuInflater.inflate(R.menu.menu_location_pickup, menu)
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -77,49 +87,79 @@ class ClientsMapFragment: Fragment(), MenuProvider, OnMapReadyCallback {
             markerCollection = markerManager.newCollection()
         }
 
-        // Set a listener for marker click.
-        map?.setOnMarkerClickListener { marker ->
-            val clientGuid = marker.tag as String
-            viewModel.clientsLocation.value?.find { it.clientGuid == clientGuid }?.let {
-                selectLocation(it)
-            }
-            true
+        viewModel.locations.observe(viewLifecycleOwner) {
+            showLocation(it)
         }
-        viewModel.setMapParameters()
+        viewModel.currentLocation.observe(viewLifecycleOwner) {
+            showCurrentLocation(it)
+        }
     }
 
-    private fun showLocation(clientsLocation: List<ClientLocation>) {
-        markerCollection?.clear()
-//        binding.bottomBar.visibility = View.VISIBLE
+    private fun currentLocationOptions(location: LocationHistory): MarkerOptions {
+        val latLng = LatLng(location.latitude, location.longitude)
+        return MarkerOptions()
+            .position(latLng)
+            //.flat(true)
+            //.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+            .icon(BitmapDescriptorFactory.fromResource(R.drawable.man_stands_green_32))
+            .anchor(0.5f, 1f)
+    }
+
+    private fun clientLocationOptions(location: LClientLocation): MarkerOptions {
+        val latLng = LatLng(location.latitude, location.longitude)
+        return MarkerOptions()
+            .position(latLng)
+            .icon(BitmapDescriptorFactory.fromResource(R.drawable.map_marker_flag_red_32))
+            .anchor(0.5f, 1f)
+    }
+
+    private fun showLocation(locations: List<LClientLocation>) {
+        markerCollection?.markers?.forEach {
+            if (it.tag != markerTagCurrentLocation) {
+                it.remove()
+            }
+        }
         map?.let {
-            for (clientLocation in clientsLocation) {
-                if (clientLocation.hasLocation()) {
-                    clientLocation.let { c ->
-                        val location = LatLng(c.latitude, c.longitude)
-                        val options = MarkerOptions()
-                            .position(location)
-                        val marker = markerCollection?.addMarker(options)
-                        marker?.apply {
-                            tag = c.clientGuid
-                            snippet = c.address
-                        }
+            for (location in locations) {
+                if (location.hasLocation()) {
+                    val marker = markerCollection?.addMarker(
+                        clientLocationOptions(location)
+                    )
+                    marker?.apply {
+                        tag = location.clientGuid
+                        title = location.description
+                        snippet = location.address
                     }
                 }
             }
         }
 
-        val center = centerOfMarkers(clientsLocation)
+        val center = centerOfMarkers(locations)
         selectLocation(center, 10f)
     }
 
-    private fun selectLocation(clientLocation: ClientLocation, zoom: Float = 17f) {
-        map?.let {m ->
-            val location = LatLng(clientLocation.latitude, clientLocation.longitude)
-            m.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(location, zoom))
+    private fun showCurrentLocation(location: LocationHistory?) {
+        if (location == null) return
+        markerCollection?.let { m ->
+            val latLng = LatLng(location.latitude, location.longitude)
+            val marker = m.markers?.find {
+                it.tag == markerTagCurrentLocation
+            } ?: m.addMarker(
+                currentLocationOptions(location)
+            )
+            marker?.apply {
+                tag = markerTagCurrentLocation
+                position = latLng
+            }
+            selectLocation(latLng, 17f)
         }
     }
 
-    private fun centerOfMarkers(markerCollection: List<ClientLocation>): ClientLocation {
+    private fun selectLocation(center: LatLng, zoom: Float = 17f) {
+        map?.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(center, zoom))
+    }
+
+    private fun centerOfMarkers(markerCollection: List<LClientLocation>): LatLng {
 
         val totalPositions = markerCollection.size
         var totalLat = 0.0
@@ -133,17 +173,12 @@ class ClientsMapFragment: Fragment(), MenuProvider, OnMapReadyCallback {
         val centerLat = totalLat / totalPositions
         val centerLng = totalLng / totalPositions
 
-        return ClientLocation(
-            clientGuid = "",
-            address = "",
-            latitude = centerLat,
-            longitude = centerLng
-        )
+        return LatLng(centerLat, centerLng)
     }
 
-//    override fun onDestroyView() {
-//        super.onDestroyView()
-//        _binding = null
-//    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 
 }

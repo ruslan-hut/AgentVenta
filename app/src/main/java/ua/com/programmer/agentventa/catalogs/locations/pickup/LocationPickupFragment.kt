@@ -1,7 +1,6 @@
 package ua.com.programmer.agentventa.catalogs.locations.pickup
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -28,7 +27,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.collections.MarkerManager
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
-import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.LClientLocation
 import ua.com.programmer.agentventa.dao.entity.LocationHistory
 import ua.com.programmer.agentventa.dao.entity.hasLocation
 import ua.com.programmer.agentventa.databinding.LocationPickupFragmentBinding
@@ -45,7 +44,7 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
     private var _binding: LocationPickupFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private var clientLocation: ClientLocation? = null
+    private var clientLocation: LClientLocation? = null
     private var currentLocation: LocationHistory? = null
     private var map: GoogleMap? = null
     private var markerCollection: MarkerManager.Collection? = null
@@ -153,7 +152,6 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
                 }
             )
             markerCollection?.setOnMarkerClickListener {
-                Log.d("LocationPickupFragment", "marker: $it")
                 if (it.tag == markerTagCurrentLocation && viewModel.canEditLocation) {
                     AlertDialog.Builder(requireContext())
                         .setTitle(R.string.warning)
@@ -164,7 +162,7 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
                         .setNegativeButton(R.string.cancel) { _, _ -> }
                         .show()
                 }
-                true
+                it.tag == markerTagCurrentLocation
             }
             viewModel.setClientParameters(navigationArgs.clientGuid)
         }
@@ -180,7 +178,7 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
             .anchor(0.5f, 1f)
     }
 
-    private fun clientLocationOptions(location: ClientLocation): MarkerOptions {
+    private fun clientLocationOptions(location: LClientLocation): MarkerOptions {
         val latLng = LatLng(location.latitude, location.longitude)
         return MarkerOptions()
             .position(latLng)
@@ -230,7 +228,7 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
                 } ?: markerCollection?.addMarker(clientLocationOptions(c))
                 marker?.apply {
                     tag = c.clientGuid
-                    //title = c.description
+                    title = c.description
                     snippet = c.address
                 }
                 val location = LatLng(c.latitude, c.longitude)
