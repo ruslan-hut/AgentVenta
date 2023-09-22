@@ -59,3 +59,14 @@ fun ClientLocation.hasLocation(): Boolean {
 fun LClientLocation.hasLocation(): Boolean {
     return latitude != 0.0 && longitude != 0.0
 }
+
+fun ClientLocation.toMap(): Map<String, Any> {
+    return mapOf(
+        "db_guid" to databaseId,
+        "client_guid" to clientGuid,
+        "latitude" to latitude,
+        "longitude" to longitude,
+        "address" to address,
+        "type" to "client_location"
+    )
+}

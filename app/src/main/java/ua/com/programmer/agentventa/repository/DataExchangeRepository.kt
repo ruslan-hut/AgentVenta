@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.repository
 
 import ua.com.programmer.agentventa.dao.entity.ClientImage
+import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.http.SendResult
@@ -14,4 +15,5 @@ interface DataExchangeRepository {
     suspend fun getOrderContent(accountGuid: String, orderGuid: String): List<LOrderContent>
     suspend fun saveDebtContent(accountGuid: String, debtGuid: String, content: String)
     suspend fun getClientImages(accountGuid: String): List<ClientImage>
+    suspend fun getClientLocations(accountGuid: String): List<ClientLocation>
 }

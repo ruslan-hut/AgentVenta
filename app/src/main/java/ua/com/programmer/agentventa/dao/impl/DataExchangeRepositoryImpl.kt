@@ -144,6 +144,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
         when (result.type) {
             Constants.DOCUMENT_ORDER -> dataExchangeDao.updateOrder(result.account, result.guid, result.status)
             Constants.DATA_CLIENT_IMAGE -> dataExchangeDao.updateClientImage(result.account, result.guid)
+            Constants.DATA_CLIENT_LOCATION -> dataExchangeDao.updateClientLocation(result.account, result.guid)
         }
     }
 
@@ -161,6 +162,10 @@ class DataExchangeRepositoryImpl @Inject constructor(
 
     override suspend fun getClientImages(accountGuid: String): List<ClientImage> {
         return dataExchangeDao.getClientImages(accountGuid) ?: emptyList()
+    }
+
+    override suspend fun getClientLocations(accountGuid: String): List<ClientLocation> {
+        return dataExchangeDao.getClientLocations(accountGuid) ?: emptyList()
     }
 
 }

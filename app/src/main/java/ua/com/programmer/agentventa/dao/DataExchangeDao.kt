@@ -112,6 +112,9 @@ interface DataExchangeDao {
     @Update(onConflict = OnConflictStrategy.IGNORE)
     suspend fun updateClientLocation(loc: List<ClientLocation>): Int
 
+    @Query("UPDATE client_locations SET is_modified=0 WHERE db_guid=:accountGuid AND client_guid=:guid")
+    suspend fun updateClientLocation(accountGuid: String, guid: String): Int
+
     @Transaction
     suspend fun upsertClientLocation(loc: List<ClientLocation>) {
         val updateCount = updateClientLocation(loc)
@@ -173,5 +176,8 @@ interface DataExchangeDao {
 
     @Query("UPDATE client_images SET is_sent=1, is_local=0, url='' WHERE db_guid=:accountGuid AND guid=:guid")
     suspend fun updateClientImage(accountGuid: String, guid: String): Int
+
+    @Query("SELECT * FROM client_locations WHERE db_guid=:accountGuid AND is_modified=1")
+    suspend fun getClientLocations(accountGuid: String): List<ClientLocation>?
 
 }

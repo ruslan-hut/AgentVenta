@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.http
 
 import android.util.Base64
+import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineScope
@@ -350,6 +351,7 @@ class NetworkRepositoryImpl @Inject constructor(
         val response = apiService?.post(token, data)
 
         response?.let {
+            Log.d("NetworkRepositoryImpl", "response: $it")
             val result = XMap(it)
             val error = result.getString("error")
             val status = result.getString("status")
@@ -383,23 +385,39 @@ class NetworkRepositoryImpl @Inject constructor(
         val documents = dataRepository.getOrders(account)
         val type = Constants.DOCUMENT_ORDER
 
-        for (document in documents) {
-            val content = dataRepository.getOrderContent(account, document.guid).map { it.toMap() }
-            val documentData = document.toMap(account, content)
-            val json = gson.toJsonTree(documentData).asJsonObject
-            makePostRequest(json, account, document.guid, type)
+        if (documents.isNotEmpty()) {
+            for (document in documents) {
+                val content = dataRepository.getOrderContent(account, document.guid).map { it.toMap() }
+                val documentData = document.toMap(account, content)
+                val json = gson.toJsonTree(documentData).asJsonObject
+                makePostRequest(json, account, document.guid, type)
+            }
+            emit(Result.Progress("$type: ${documents.size}"))
         }
-        emit(Result.Progress("$type: ${documents.size}"))
 
         val images = dataRepository.getClientImages(account)
         val typeImage = Constants.DATA_CLIENT_IMAGE
 
-        for (image in images) {
-            val imageContent = image.toMap()
-            val json = gson.toJsonTree(imageContent).asJsonObject
-            makePostRequest(json, account, image.guid, typeImage)
+        if (images.isNotEmpty()) {
+            for (image in images) {
+                val imageContent = image.toMap()
+                val json = gson.toJsonTree(imageContent).asJsonObject
+                makePostRequest(json, account, image.guid, typeImage)
+            }
+            emit(Result.Progress("$typeImage: ${images.size}"))
         }
-        emit(Result.Progress("$typeImage: ${images.size}"))
+
+        val locations = dataRepository.getClientLocations(account)
+        val typeLocation = Constants.DATA_CLIENT_LOCATION
+
+        if (locations.isNotEmpty()) {
+            for (location in locations) {
+                val locationContent = location.toMap()
+                val json = gson.toJsonTree(locationContent).asJsonObject
+                makePostRequest(json, account, location.clientGuid, typeLocation)
+            }
+            emit(Result.Progress("$typeLocation: ${locations.size}"))
+        }
 
     }
 
