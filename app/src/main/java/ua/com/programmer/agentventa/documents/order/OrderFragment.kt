@@ -111,13 +111,6 @@ class OrderFragment: Fragment(), MenuProvider {
         sharedModel.selectProductAction = { product, popUp ->
             viewModel.onProductClick(product, popUp)
         }
-        sharedModel.barcode.observe(this.viewLifecycleOwner) {
-            if (it.isEmpty()) return@observe
-            viewModel.onBarcodeRead(it) {
-                Toast.makeText(requireContext(), getString(R.string.error_product_not_found), Toast.LENGTH_SHORT).show()
-            }
-            sharedModel.clearBarcode()
-        }
 
     }
 
