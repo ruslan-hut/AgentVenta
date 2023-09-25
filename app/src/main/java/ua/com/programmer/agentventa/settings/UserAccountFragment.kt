@@ -26,6 +26,7 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.dao.entity.getGuid
 import ua.com.programmer.agentventa.dao.entity.getLicense
+import ua.com.programmer.agentventa.dao.entity.isDemo
 import ua.com.programmer.agentventa.databinding.ActivityConnectionEditBinding
 
 @AndroidEntryPoint
@@ -67,6 +68,16 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 binding.accountId.text = account.getGuid()
                 binding.license.text = account.getLicense()
                 binding.syncFormatSpinner.setSelection(viewModel.formatSpinner.value?.indexOf(account.dataFormat) ?: 0)
+
+                if (account.isDemo()) {
+                    binding.description.isEnabled = false
+                    binding.server.isEnabled = false
+                    binding.dbName.isEnabled = false
+                    binding.dbUser.isEnabled = false
+                    binding.dbPassword.isEnabled = false
+                    binding.syncFormatSpinner.isEnabled = false
+                }
+
                 _account = account
             }
         }

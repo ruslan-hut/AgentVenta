@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.dao.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import ua.com.programmer.agentventa.utility.Constants
+import java.util.UUID
 
 @Entity(tableName = "user_accounts", primaryKeys = ["guid"])
 data class UserAccount(
@@ -18,7 +19,21 @@ data class UserAccount(
     @ColumnInfo(name = "db_password") val dbPassword: String = "",
     val token: String = "",
     val options: String = ""
-)
+){
+    companion object Builder {
+        fun buildDemo(): UserAccount {
+            return UserAccount(
+                guid = UUID.randomUUID().toString(),
+                description = "Demo",
+                dataFormat = Constants.SYNC_FORMAT_HTTP,
+                dbServer = "hoot.com.ua",
+                dbName = "simple",
+                dbUser = "Агент",
+                dbPassword = "112233",
+            )
+        }
+    }
+}
 
 fun UserAccount.equalTo(account: UserAccount): Boolean {
     return this.guid == account.guid &&
@@ -71,4 +86,8 @@ fun UserAccount.getGuid(): String {
 // Returns truncated license number for log or UI
 fun UserAccount.getLicense(): String {
     return if (license.length > 5) license.subSequence(0,6).toString() else ""
+}
+
+fun UserAccount.isDemo(): Boolean {
+    return dbServer == "hoot.com.ua" && dbName == "simple" && dbUser == "Агент" && dbPassword == "112233"
 }

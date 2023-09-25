@@ -30,6 +30,7 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.dao.entity.fileName
 import ua.com.programmer.agentventa.dao.entity.getBaseUrl
 import ua.com.programmer.agentventa.dao.entity.hasImageData
+import ua.com.programmer.agentventa.dao.entity.isDemo
 import ua.com.programmer.agentventa.http.Result
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.FilesRepository
@@ -38,9 +39,7 @@ import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.settings.UserOptionsBuilder
-import ua.com.programmer.agentventa.utility.Constants
 import java.io.File
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -166,7 +165,7 @@ class SharedViewModel @Inject constructor(
                 _priceTypes = orderRepository.getPriceTypes()
                 _paymentTypes = orderRepository.getPaymentTypes()
 
-                if (account.guid.isNotEmpty()) {
+                if (account.guid.isNotEmpty() && !account.isDemo()) {
                     FirebaseCrashlytics.getInstance().setUserId(account.guid)
                     sendUserInfo()
                 }
@@ -278,18 +277,9 @@ class SharedViewModel @Inject constructor(
     }
 
     private suspend fun setupDemoAccount() {
-        val newGuid = UUID.randomUUID().toString()
-        val demo = UserAccount(
-            guid = newGuid,
-            description = "Demo",
-            dataFormat = Constants.SYNC_FORMAT_HTTP,
-            dbServer = "hoot.com.ua",
-            dbName = "simple",
-            dbUser = "Агент",
-            dbPassword = "112233",
-        )
+        val demo = UserAccount.buildDemo()
         userAccountRepository.saveAccount(demo)
-        userAccountRepository.setIsCurrent(newGuid)
+        userAccountRepository.setIsCurrent(demo.guid)
     }
 
     fun callDiffSync(afterSync: () -> Unit) {
