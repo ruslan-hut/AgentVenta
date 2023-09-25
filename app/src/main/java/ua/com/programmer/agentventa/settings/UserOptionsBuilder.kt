@@ -34,6 +34,7 @@ class UserOptionsBuilder {
             clientsLocations = optionsMap.getBoolean("clientsLocations"),
             clientsDirections = optionsMap.getBoolean("clientsDirections"),
             clientsProducts = optionsMap.getBoolean("clientsProducts"),
+            defaultClient = optionsMap.getString("defaultClient"),
             useDemands = optionsMap.getBoolean("useDemands"),
             usePackageMark = optionsMap.getBoolean("usePackageMark"),
             fiscalNumber = optionsMap.getString("fiscalNumber"),

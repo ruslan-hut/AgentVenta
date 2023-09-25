@@ -19,6 +19,7 @@ import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import ua.com.programmer.agentventa.utility.Utils
 import java.util.Date
 import javax.inject.Inject
@@ -46,9 +47,11 @@ class OrderRepositoryImpl @Inject constructor(
 
     override suspend fun newDocument(): Order? {
 
+        val userAccount = userAccountDao.getCurrent() ?: return null
+        val options = UserOptionsBuilder.build(userAccount)
         val newNumber = (orderDao.getLastDocumentNumber() ?: 0) + 1
         val time = utils.currentTime()
-        val dbGuid = userAccountDao.getCurrent()?.guid ?: return null
+        val dbGuid = userAccount.guid
         val priceTypes = getPriceTypes()
         val paymentTypes = getPaymentTypes()
 
@@ -64,6 +67,12 @@ class OrderRepositoryImpl @Inject constructor(
             payment.paymentType
         }
 
+        val client = if (options.defaultClient.isNotBlank()) {
+            getClient(options.defaultClient)
+        } else {
+            null
+        }
+
         val document = Order(
             databaseId = dbGuid,
             number = newNumber,
@@ -72,6 +81,9 @@ class OrderRepositoryImpl @Inject constructor(
             date = utils.dateLocal(time),
             priceType = defaultPriceType,
             paymentType = defaultPaymentType,
+            clientGuid = options.defaultClient,
+            clientCode2 = client?.code2 ?: "",
+            clientDescription = client?.description ?: "",
         )
 
         val lastLocation = locationDao.getLastLocation() ?: LocationHistory()

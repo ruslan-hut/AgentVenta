@@ -24,6 +24,7 @@ data class UserOptions(
     val clientsLocations: Boolean = false,
     val clientsDirections: Boolean = false,
     val clientsProducts: Boolean = false,
+    val defaultClient: String = "",
     val useDemands: Boolean = false,
     val usePackageMark: Boolean = false,
     val fiscalNumber: String = "",
