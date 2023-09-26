@@ -12,7 +12,9 @@ import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
 
-class OrderListAdapter(private val onDocumentClicked: (Order) -> Unit)
+class OrderListAdapter(
+    private val onDocumentClicked: (Order) -> Unit,
+    private val onDocumentLongClicked: (Order) -> Unit)
     : ListAdapter<Order, OrderListAdapter.DocumentViewHolder>(DiffCallback) {
 
     class DocumentViewHolder(private var binding: ModelDocumentsListItemBinding): RecyclerView.ViewHolder(binding.root) {
@@ -82,6 +84,11 @@ class OrderListAdapter(private val onDocumentClicked: (Order) -> Unit)
         viewHolder.itemView.setOnClickListener {
             val position = viewHolder.absoluteAdapterPosition
             onDocumentClicked(getItem(position))
+        }
+        viewHolder.itemView.setOnLongClickListener {
+            val position = viewHolder.absoluteAdapterPosition
+            onDocumentLongClicked(getItem(position))
+            true
         }
         return viewHolder
     }
