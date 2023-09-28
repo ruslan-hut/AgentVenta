@@ -37,6 +37,8 @@ class OrderViewModel @Inject constructor(
     val selectedPriceType get() = _selectedPriceType
     private var selectedPriceCode = ""
 
+    val navigateToPage = MutableLiveData<Int>()
+
     val document = _documentGuid.switchMap {
         orderRepository.getDocument(it).asLiveData()
     }
@@ -251,6 +253,7 @@ class OrderViewModel @Inject constructor(
                     quantity = product.quantity + 1,
                 )
                 onProductClick(updated) {}
+                navigateToPage.value = 1
             } else {
                 logger.w("OrderVM", "product not found; barcode=$barcode")
                 withContext(Dispatchers.Main) {

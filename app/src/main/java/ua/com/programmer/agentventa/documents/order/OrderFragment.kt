@@ -83,6 +83,10 @@ class OrderFragment: Fragment(), MenuProvider {
             }
         }.attach()
 
+        viewModel.navigateToPage.observe(this.viewLifecycleOwner) {
+            binding.container.setCurrentItem(it, true)
+        }
+
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
             var title = getString(R.string.order)
             var guid = ""
