@@ -70,7 +70,7 @@ class OrderFragment: Fragment(), MenuProvider {
             if (viewModel.isFiscal()) {
                 registerFiscalReceipt()
             } else {
-                viewModel.saveDocument()
+                saveAndProcess()
             }
         }
 
@@ -246,24 +246,55 @@ class OrderFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun registerFiscalReceipt() {
-        if (viewModel.notReadyToFiscal()) {
+    private fun notReadyToProcess(): Boolean {
+        if (viewModel.notReadyToProcess()) {
             AlertDialog.Builder(requireContext())
                 .setTitle(getString(R.string.warning))
-                .setMessage(getString(R.string.error_cannot_fiscal))
+                .setMessage(getString(R.string.error_cannot_process))
                 .setPositiveButton(getString(R.string.OK), null)
                 .show()
-            return
+            return true
         }
+        return false
+    }
+
+    private fun saveAndProcess() {
+        if (notReadyToProcess()) return
+        viewModel.saveDocument {
+            if (it) {
+                view?.findNavController()?.popBackStack()
+            } else {
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.error))
+                    .setMessage(getString(R.string.data_not_saved))
+                    .setPositiveButton(getString(R.string.OK), null)
+                    .show()
+            }
+        }
+    }
+
+    private fun registerFiscalReceipt() {
+        if (notReadyToProcess()) return
         if (fiscalServiceNotReady()) return
         binding.menuSave.visibility = View.GONE
         binding.menuProgress.visibility = View.VISIBLE
-        fiscalModel.createReceipt(viewModel.getGuid()) {
-            if (it.success) {
-                viewModel.saveDocument()
-                receiptPreview()
+        fiscalModel.createReceipt(viewModel.getGuid()) { result ->
+            if (result.success) {
+                viewModel.saveDocument { saved ->
+                    receiptPreview()
+                    if (saved) {
+                        view?.findNavController()?.popBackStack()
+                    } else {
+                        AlertDialog.Builder(requireContext())
+                            .setTitle(getString(R.string.error))
+                            .setMessage(getString(R.string.data_not_saved))
+                            .setPositiveButton(getString(R.string.OK), null)
+                            .show()
+                    }
+                }
+
             } else {
-                val msg = "${getString(R.string.fiscal_service_error)}:\n${it.message}"
+                val msg = "${getString(R.string.fiscal_service_error)}:\n${result.message}"
                 AlertDialog.Builder(requireContext())
                     .setTitle(getString(R.string.error))
                     .setMessage(msg)

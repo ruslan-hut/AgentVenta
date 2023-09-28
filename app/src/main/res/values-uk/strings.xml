@@ -410,4 +410,5 @@
     <string name="x_report">X звіт</string>
     <string name="close_shift">Закрити зміну</string>
     <string name="use_current_location">Використати поточні координати?</string>
+    <string name="error_cannot_process">Перевірте заповнення документа</string>
 </resources>

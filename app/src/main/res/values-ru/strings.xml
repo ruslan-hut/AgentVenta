@@ -411,4 +411,5 @@
     <string name="x_report">X отчет</string>
     <string name="close_shift">Закрыть смену</string>
     <string name="use_current_location">Использовать текущие координаты?</string>
+    <string name="error_cannot_process">Проверьте заполнение документа</string>
 </resources>

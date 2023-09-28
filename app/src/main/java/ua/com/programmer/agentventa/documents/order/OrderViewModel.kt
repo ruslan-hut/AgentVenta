@@ -173,11 +173,19 @@ class OrderViewModel @Inject constructor(
         updateDocument(currentDocument.copy(notes = notes))
     }
 
-    fun saveDocument() {
-        updateDocument(currentDocument.copy(
+    fun saveDocument(onResult: (Boolean) -> Unit) {
+        val updated = currentDocument.copy(
             isProcessed = 1,
             timeSaved = System.currentTimeMillis() / 1000
-        ))
+        )
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val saved = orderRepository.updateDocument(updated)
+                withContext(Dispatchers.Main) {
+                    onResult(saved)
+                }
+            }
+        }
     }
 
     fun deleteDocument() {
@@ -200,11 +208,13 @@ class OrderViewModel @Inject constructor(
 
     fun canPrint() = currentDocument.isSent > 0 && currentDocument.guid.isNotEmpty()
 
-    fun notReadyToFiscal(): Boolean {
+    fun notReadyToProcess(): Boolean {
         if (currentDocument.clientGuid.isNullOrEmpty()) return true
-        if (currentDocument.price == 0.0) return true
-        if (currentDocument.quantity == 0.0) return true
-        if (currentDocument.paymentType.isEmpty()) return true
+        if (currentDocument.isFiscal == 1) {
+            if (currentDocument.price == 0.0) return true
+            if (currentDocument.quantity == 0.0) return true
+            if (currentDocument.paymentType.isEmpty()) return true
+        }
         return false
     }
 
