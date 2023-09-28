@@ -80,6 +80,7 @@ public final class Constants {
     public static final String DATA_TIME_STAMP = "time_stamp";
     public static final String DATA_PRINT = "print_file";
     public static final String DATA_CLIENT_IMAGE = "client_image";
+    public static final String DATA_PAYMENT_TYPE = "payment_type";
 
     /**
      * options names

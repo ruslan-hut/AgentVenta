@@ -13,6 +13,7 @@ import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.Product
 import ua.com.programmer.agentventa.dao.entity.ProductImage
@@ -120,6 +121,20 @@ interface DataExchangeDao {
         val updateCount = updateClientLocation(loc)
         if (updateCount != loc.size) {
             insertClientLocation(loc)
+        }
+    }
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertPaymentTypes(list: List<PaymentType>): List<Long>
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun updatePaymentTypes(list: List<PaymentType>): Int
+
+    @Transaction
+    suspend fun upsertPaymentTypes(list: List<PaymentType>) {
+        val updateCount = updatePaymentTypes(list)
+        if (updateCount != list.size) {
+            insertPaymentTypes(list)
         }
     }
 

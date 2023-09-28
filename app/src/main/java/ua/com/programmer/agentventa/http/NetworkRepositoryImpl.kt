@@ -202,6 +202,7 @@ class NetworkRepositoryImpl @Inject constructor(
         queue.add("clients")
         queue.add("debts")
         queue.add("goods")
+        queue.add("payment_types")
         if (_options.clientsLocations) queue.add("clients_locations")
         if (_options.clientsDirections) queue.add("clients_directions")
         if (_options.clientsProducts) queue.add("clients_goods")
@@ -227,6 +228,10 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         dataRepository.cleanUp(accountGuid, _timestamp)
+        // simulate update of account for observers to load changed data
+        account?.let {
+            userAccountRepository.saveAccount(it)
+        }
 
         val timeSpent = showTime(_timestamp, System.currentTimeMillis())
         logger.d(logTag, "finish update: $timeSpent")

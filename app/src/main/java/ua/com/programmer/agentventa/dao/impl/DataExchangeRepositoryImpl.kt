@@ -7,6 +7,7 @@ import ua.com.programmer.agentventa.dao.entity.ClientLocation
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.Product
 import ua.com.programmer.agentventa.dao.entity.ProductImage
@@ -49,6 +50,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
             Constants.DATA_CLIENT -> loadClients(data)
             Constants.DATA_CLIENT_LOCATION -> loadClientLocations(data)
             Constants.DATA_DEBT -> loadDebts(data)
+            Constants.DATA_PAYMENT_TYPE -> loadPaymentTypes(data)
             else -> logger.e(logTag, "missed loader for ${data.first().getValueId()}")
         }
     }
@@ -124,6 +126,16 @@ class DataExchangeRepositoryImpl @Inject constructor(
             for (item in invalid) logger.w(logTag, "invalid debt: ${item.docId}")
         }
         dataExchangeDao.upsertDebtList(valid)
+    }
+
+    private suspend fun loadPaymentTypes(data: List<XMap>) {
+        val prepared = data.map { PaymentType.build(it) }
+        val valid = prepared.filter { it.isValid() }
+        if (valid.size < data.size) {
+            val invalid = prepared.filter { !it.isValid() }
+            for (item in invalid) logger.w(logTag, "invalid payment type: ${item.paymentType}")
+        }
+        dataExchangeDao.upsertPaymentTypes(valid)
     }
 
     override suspend fun cleanUp(accountGuid: String, timestamp: Long) {
