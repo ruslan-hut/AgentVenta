@@ -61,10 +61,10 @@ class OrderRepositoryImpl @Inject constructor(
             priceTypes.first().priceType
         }
         val defaultPaymentType = if (paymentTypes.isEmpty()) {
-            ""
+            PaymentType()
         } else {
             val payment = paymentTypes.find { it.isDefault == 1 } ?: paymentTypes.first()
-            payment.paymentType
+            payment
         }
 
         val client = if (options.defaultClient.isNotBlank()) {
@@ -80,7 +80,8 @@ class OrderRepositoryImpl @Inject constructor(
             time = time,
             date = utils.dateLocal(time),
             priceType = defaultPriceType,
-            paymentType = defaultPaymentType,
+            paymentType = defaultPaymentType.paymentType,
+            isFiscal = defaultPaymentType.isFiscal,
             clientGuid = options.defaultClient,
             clientCode2 = client?.code2 ?: "",
             clientDescription = client?.description ?: "",

@@ -29,6 +29,7 @@ class OrderListViewModel @Inject constructor(
                 clientDescription = document.clientDescription,
                 priceType = document.priceType,
                 paymentType = document.paymentType,
+                isFiscal = document.isFiscal,
             )
             if (orderRepository.updateDocument(copy)) {
                 onResult(copy.guid)
