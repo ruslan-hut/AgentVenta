@@ -93,7 +93,10 @@ class OrderRepositoryImpl @Inject constructor(
             document.locationTime = lastLocation.time / 1000
         }
 
-        return if (orderDao.save(document)) document else null
+        // after document is saved, it has id
+        orderDao.save(document)
+        // so need to load new data
+        return orderDao.getOrder(document.guid)
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Order>> {

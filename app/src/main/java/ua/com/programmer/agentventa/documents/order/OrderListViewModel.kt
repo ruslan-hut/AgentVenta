@@ -1,7 +1,9 @@
 package ua.com.programmer.agentventa.documents.order
 
 import android.view.View
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.documents.common.DocumentListViewModel
 import ua.com.programmer.agentventa.repository.OrderRepository
@@ -10,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OrderListViewModel @Inject constructor(
-    orderRepository: OrderRepository,
+    private val orderRepository: OrderRepository,
     userAccountRepository: UserAccountRepository
 ): DocumentListViewModel<Order>(orderRepository, userAccountRepository) {
 
@@ -18,4 +20,21 @@ class OrderListViewModel @Inject constructor(
         totalsVisibility.value = View.VISIBLE
     }
 
+    fun copyDocument(document: Order, onResult: (String) -> Unit) {
+        viewModelScope.launch {
+            val newDocument = orderRepository.newDocument() ?: return@launch onResult("")
+            val copy = newDocument.copy(
+                clientGuid = document.clientGuid,
+                clientCode2 = document.clientCode2,
+                clientDescription = document.clientDescription,
+                priceType = document.priceType,
+                paymentType = document.paymentType,
+            )
+            if (orderRepository.updateDocument(copy)) {
+                onResult(copy.guid)
+            } else {
+                onResult("")
+            }
+        }
+    }
 }

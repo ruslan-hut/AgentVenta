@@ -7,6 +7,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
+import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListBinding
 import ua.com.programmer.agentventa.shared.SharedViewModel
 import java.text.SimpleDateFormat
@@ -79,7 +81,7 @@ class OrderListFragment: Fragment(), MenuProvider {
 
         val documentListAdapter = OrderListAdapter (
             onDocumentClicked = { openDocument(it.guid) },
-            onDocumentLongClicked = { copyDocument(it.guid) }
+            onDocumentLongClicked = { copyDocument(it) }
         )
         recyclerView?.adapter = documentListAdapter
         viewModel.documents.observe(this.viewLifecycleOwner) {
@@ -106,8 +108,14 @@ class OrderListFragment: Fragment(), MenuProvider {
         binding?.root?.findNavController()?.navigate(action)
     }
 
-    private fun copyDocument(documentId: String) {
-
+    private fun copyDocument(document: Order) {
+        viewModel.copyDocument(document) { newGuid ->
+            if (newGuid.isNotEmpty()) {
+                openDocument(newGuid)
+            } else {
+                Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onDestroyView() {
