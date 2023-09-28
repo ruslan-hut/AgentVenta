@@ -442,5 +442,6 @@
     <string name="close_shift">Close shift</string>
     <string name="use_current_location">Use current location?</string>
     <string name="error_cannot_process">Cannot process, check document fields</string>
+    <string name="error_open_file">No application found to open file</string>
 
 </resources>

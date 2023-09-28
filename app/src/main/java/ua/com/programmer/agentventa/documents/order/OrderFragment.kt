@@ -354,7 +354,11 @@ class OrderFragment: Fragment(), MenuProvider {
         val intent = Intent(Intent.ACTION_VIEW)
         intent.setDataAndType(uri, type)
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-        startActivity(intent)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
+        }
     }
 }
 

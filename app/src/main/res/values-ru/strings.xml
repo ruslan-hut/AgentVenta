@@ -412,4 +412,5 @@
     <string name="close_shift">Закрыть смену</string>
     <string name="use_current_location">Использовать текущие координаты?</string>
     <string name="error_cannot_process">Проверьте заполнение документа</string>
+    <string name="error_open_file">Нет приложения для просмотра файла</string>
 </resources>
