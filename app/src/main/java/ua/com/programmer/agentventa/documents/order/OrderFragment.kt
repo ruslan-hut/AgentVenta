@@ -281,9 +281,8 @@ class OrderFragment: Fragment(), MenuProvider {
         fiscalModel.createReceipt(viewModel.getGuid()) { result ->
             if (result.success) {
                 viewModel.saveDocument { saved ->
-                    receiptPreview()
                     if (saved) {
-                        view?.findNavController()?.popBackStack()
+                        receiptPreview(true)
                     } else {
                         AlertDialog.Builder(requireContext())
                             .setTitle(getString(R.string.error))
@@ -306,12 +305,15 @@ class OrderFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun receiptPreview() {
+    private fun receiptPreview(autoClose: Boolean = false) {
         if (fiscalServiceNotReady()) return
         val guid = viewModel.getGuid()
         fiscalModel.getReceipt(guid) {
             if (it.success) {
                 openFile("$guid.png", "png")
+                if (autoClose) {
+                    view?.findNavController()?.popBackStack()
+                }
             } else {
                 val msg = "${getString(R.string.fiscal_service_error)}:\n${it.message}"
                 AlertDialog.Builder(requireContext())
