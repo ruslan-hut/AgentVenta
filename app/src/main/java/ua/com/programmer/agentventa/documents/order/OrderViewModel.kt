@@ -253,13 +253,13 @@ class OrderViewModel @Inject constructor(
                     quantity = product.quantity + 1,
                 )
                 onProductClick(updated) {}
-                navigateToPage.value = 1
             } else {
                 logger.w("OrderVM", "product not found; barcode=$barcode")
                 withContext(Dispatchers.Main) {
                     onFail()
                 }
             }
+            navigateToPage.value = 1
         }
     }
 

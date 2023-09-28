@@ -248,15 +248,22 @@ class MainActivity : AppCompatActivity() {
                 return super.dispatchKeyEvent(event)
             }
             if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB) {
+
+                if (barcode.isEmpty()) return super.dispatchKeyEvent(event)
+
                 sharedViewModel.onBarcodeRead(barcode)
                 barcode = ""
+                return true
+
             } else {
+
                 val char = it.unicodeChar.toChar()
                 if (Character.isDigit(char) || Character.isLetter(char)) {
                     barcode += char
                 } else {
                     barcode = ""
                 }
+
             }
         }
         return super.dispatchKeyEvent(event)
