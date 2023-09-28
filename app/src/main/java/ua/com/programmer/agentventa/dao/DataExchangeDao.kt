@@ -147,6 +147,9 @@ interface DataExchangeDao {
     @Query("DELETE FROM debts WHERE db_guid=:id AND timestamp<:time")
     suspend fun deleteDebts(id: String, time: Long): Int
 
+    @Query("DELETE FROM payment_types WHERE db_guid=:id AND timestamp<:time")
+    suspend fun deletePaymentTypes(id: String, time: Long): Int
+
     @Query("SELECT * FROM orders WHERE db_guid=:accountGuid AND is_processed=1")
     suspend fun getOrders(accountGuid: String): List<Order>?
 

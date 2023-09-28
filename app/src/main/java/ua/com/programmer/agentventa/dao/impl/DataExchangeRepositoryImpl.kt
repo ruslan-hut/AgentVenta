@@ -141,6 +141,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
     override suspend fun cleanUp(accountGuid: String, timestamp: Long) {
         try {
             var del = dataExchangeDao.deletePriceTypes(accountGuid, timestamp)
+            del += dataExchangeDao.deletePaymentTypes(accountGuid, timestamp)
             del += dataExchangeDao.deletePrices(accountGuid, timestamp)
             del += dataExchangeDao.deleteImages(accountGuid, timestamp)
             del += dataExchangeDao.deleteProducts(accountGuid, timestamp)
