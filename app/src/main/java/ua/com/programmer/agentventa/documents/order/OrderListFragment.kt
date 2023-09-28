@@ -77,7 +77,10 @@ class OrderListFragment: Fragment(), MenuProvider {
             binding?.documentsSwipe?.isRefreshing = it
         }
 
-        val documentListAdapter = OrderListAdapter { openDocument(it.guid) }
+        val documentListAdapter = OrderListAdapter (
+            onDocumentClicked = { openDocument(it.guid) },
+            onDocumentLongClicked = { copyDocument(it.guid) }
+        )
         recyclerView?.adapter = documentListAdapter
         viewModel.documents.observe(this.viewLifecycleOwner) {
             documentListAdapter.submitList(it)
@@ -101,6 +104,10 @@ class OrderListFragment: Fragment(), MenuProvider {
             clientGuid = null
         )
         binding?.root?.findNavController()?.navigate(action)
+    }
+
+    private fun copyDocument(documentId: String) {
+
     }
 
     override fun onDestroyView() {
