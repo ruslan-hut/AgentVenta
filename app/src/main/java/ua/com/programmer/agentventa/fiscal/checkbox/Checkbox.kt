@@ -173,25 +173,47 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val response = callApi {
             build().closeShift()
         }
-        val message = response.getString("message")
+        var message = response.getString("message")
+        if (message.isNotBlank()) {
+            return OperationResult(false, message)
+        }
+
+        var status = response.getString("status")
+        while (status == "CLOSING") {
+            withContext(Dispatchers.IO) {
+                Thread.sleep(1000)
+            }
+            val shift = callApi {
+                build().getShift(shiftId)
+            }
+            message = shift.getString("message")
+            status = shift.getString("status")
+            if (message.isNotBlank()) return OperationResult(false, message)
+        }
+
         if (message.isBlank()) {
             shiftId = ""
         }
 
-        val zReportData = response.getString("z_report")
         var id = ""
-        if (zReportData.isNotBlank()) {
-            val report = XMap(zReportData)
-            id = report.getString("id")
-            if (id.isNotBlank()) {
-                val file = File(options?.fileDir, "$id.png")
-                try {
-                    val fileResponse = build().getReportPng(id)
-                    saveFileData(fileResponse, file)
-                } catch (e: Exception) {
-                    crashlytics.recordException(e)
+        if (status == "CLOSED") {
+
+            val zReportData = response.getString("z_report")
+            if (zReportData.isNotBlank()) {
+                val report = XMap(zReportData)
+                id = report.getString("id")
+                if (id.isNotBlank()) {
+                    val file = File(options?.fileDir, "$id.png")
+                    try {
+                        val fileResponse = build().getReportPng(id)
+                        saveFileData(fileResponse, file)
+                    } catch (e: Exception) {
+                        id = ""
+                        message = "Помилка отримання звіту. ${e.message}"
+                    }
                 }
             }
+
         }
 
         return OperationResult(
