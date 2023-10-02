@@ -160,7 +160,6 @@ class FiscalFragment: Fragment(), MenuProvider {
     }
 
     private fun onResult(result: OperationResult) {
-        Log.d("Checkbox", "onResult: $result")
         if (result.success) {
             if (result.fileId.isNotEmpty()) {
                 openReportFile(result.fileId)

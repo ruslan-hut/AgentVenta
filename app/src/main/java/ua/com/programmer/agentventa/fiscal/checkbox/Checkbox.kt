@@ -141,7 +141,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             ""
         }
         shiftOpenedAt = convertDate(response.getString("opened_at"))
-        return OperationResult(shiftId.isNotBlank())
+        return OperationResult(true)
     }
 
     override suspend fun openShift(fiscalOptions: FiscalOptions): OperationResult {
