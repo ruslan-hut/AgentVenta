@@ -16,6 +16,7 @@ import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.setClient
 import ua.com.programmer.agentventa.dao.entity.toUi
 import ua.com.programmer.agentventa.extensions.localFormatted
+import ua.com.programmer.agentventa.extensions.round
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.ProductRepository
@@ -121,11 +122,16 @@ class OrderViewModel @Inject constructor(
         viewModelScope.launch {
 
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
+
+            val quantity = product.quantity.round(3)
+            val price = product.price.round(2)
+            val sum = (price * quantity).round(2)
+
             val updated = contentLine.copy(
                 unitCode = product.unit,
-                price = product.price,
-                quantity = product.quantity,
-                sum = product.price * product.quantity,
+                price = price,
+                quantity = quantity,
+                sum = sum,
                 weight = product.weight * product.quantity,
                 isPacked = if (product.isPacked) 1 else 0,
                 isDemand = if (product.isDemand) 1 else 0,
