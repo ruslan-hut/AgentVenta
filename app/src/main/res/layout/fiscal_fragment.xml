@@ -8,12 +8,12 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="?attr/colorSurfaceVariant">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="?attr/colorSurfaceVariant"
+            android:layout_height="wrap_content"
             android:padding="16dp"
             android:orientation="vertical">
 
@@ -190,20 +190,30 @@
                     android:text="@string/cashier_logout" />
             </LinearLayout>
 
-            <Button
-                android:visibility="gone"
-                android:id="@+id/btn_check_status"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxLines="1"
-                android:text="@string/check_status" />
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btn_check_status"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:text="@string/check_status" />
+                <TextView
+                    android:layout_width="8dp"
+                    android:layout_height="match_parent"/>
+                <Button
+                    android:id="@+id/btn_open_shift"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:backgroundTint="?attr/colorTertiary"
+                    android:text="@string/open_shift" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/btn_open_shift"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxLines="1"
-                android:text="@string/open_shift" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -253,20 +263,30 @@
                 android:layout_width="match_parent"
                 android:layout_height="32dp" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
             <Button
                 android:id="@+id/btn_x_report"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:maxLines="1"
                 android:text="@string/x_report"/>
+            <TextView
+                android:layout_width="8dp"
+                android:layout_height="match_parent"/>
             <Button
                 android:id="@+id/btn_close_shift"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
                 app:icon="@drawable/baseline_functions_24"
+                android:backgroundTint="?attr/colorError"
                 android:maxLines="1"
                 android:text="@string/close_shift"/>
-
+        </LinearLayout>
 
         </LinearLayout>
 

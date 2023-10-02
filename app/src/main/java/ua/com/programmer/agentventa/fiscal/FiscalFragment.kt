@@ -32,9 +32,6 @@ class FiscalFragment: Fragment(), MenuProvider {
     private var _binding: FiscalFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private var yes = ""
-    private var no = ""
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -51,9 +48,6 @@ class FiscalFragment: Fragment(), MenuProvider {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        yes = getString(R.string.yes)
-        no = getString(R.string.no)
 
         if (!viewModel.initialise(sharedViewModel.options, sharedViewModel.cacheDir)) {
             AlertDialog.Builder(requireContext())
@@ -117,7 +111,7 @@ class FiscalFragment: Fragment(), MenuProvider {
             binding.progressBar.visibility = if (it) View.VISIBLE else View.INVISIBLE
             binding.btnCashierLogin.isEnabled = !it
             binding.btnCashierLogout.isEnabled = !it
-            //binding.btnCheckStatus.isEnabled = !it
+            binding.btnCheckStatus.isEnabled = !it
             binding.btnOpenShift.isEnabled = !it
             binding.btnCloseShift.isEnabled = !it
             binding.btnXReport.isEnabled = !it
