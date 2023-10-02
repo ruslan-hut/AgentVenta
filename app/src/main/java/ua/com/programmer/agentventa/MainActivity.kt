@@ -45,7 +45,8 @@ class MainActivity : AppCompatActivity() {
     private var backPressedTime: Long = 0
 
     private var currentFragment: Fragment? = null
-    var barcode: String = ""
+    private var barcode = StringBuilder()
+    private var lastKeystrokeTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -243,27 +244,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         event?.let {
-            val keyCode = it.keyCode
-            if (it.action == KeyEvent.ACTION_UP || keyCode == KeyEvent.KEYCODE_BACK) {
-                return super.dispatchKeyEvent(event)
-            }
-            if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB) {
+            if (it.action == KeyEvent.ACTION_DOWN) {
+                val currentTime = System.currentTimeMillis()
 
-                if (barcode.isEmpty()) return super.dispatchKeyEvent(event)
-
-                sharedViewModel.onBarcodeRead(barcode)
-                barcode = ""
-                return true
-
-            } else {
-
-                val char = it.unicodeChar.toChar()
-                if (Character.isDigit(char) || Character.isLetter(char)) {
-                    barcode += char
-                } else {
-                    barcode = ""
+                if (barcode.isNotEmpty() && currentTime - lastKeystrokeTime > 60) {
+                    barcode.clear()
+                }
+                when (it.keyCode) {
+                    KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_TAB -> {
+                        sharedViewModel.onBarcodeRead(barcode.toString())
+                        barcode.clear()
+                        return true
+                    }
+                    else -> {
+                        val char = it.unicodeChar.toChar()
+                        if (Character.isDigit(char) || Character.isLetter(char)) {
+                            barcode.append(char)
+                        }
+                    }
                 }
 
+                lastKeystrokeTime = currentTime
             }
         }
         return super.dispatchKeyEvent(event)
