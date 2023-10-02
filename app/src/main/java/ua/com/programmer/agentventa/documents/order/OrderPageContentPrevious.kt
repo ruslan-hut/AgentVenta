@@ -26,6 +26,7 @@ class OrderPageContentPrevious: Fragment() {
     ): View {
         _binding = ModelContentOrderGoodsBinding.inflate(inflater,container,false)
         binding.lifecycleOwner = viewLifecycleOwner
+        binding.elementPaymentType.visibility = View.GONE
         return binding.root
     }
 
