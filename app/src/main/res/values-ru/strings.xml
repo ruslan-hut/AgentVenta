@@ -6,7 +6,7 @@
     <string name="data_connection_error">Нет соединения</string>
     <string name="data_inserted">Добавлено</string>
     <string name="data_total_rows_count">Всего записей</string>
-    <string name="data_updated">Обмен завершен</string>
+    <string name="data_updated">Данные обновлены</string>
     <string name="data_xml_error">Ошибка чтения данных</string>
     <string name="header_goods_list">Список товаров</string>
     <string name="header_orders_list">Заказы</string>
@@ -302,8 +302,8 @@
     <string name="title_activity_debt_document">Просмотр документа</string>
     <string name="attr_warehouse">Склад</string>
     <string name="warn_no_document_data">Данные документа не удалось загрузить с сервера</string>
-    <string name="request_finished">Обмен данными завершен</string>
-    <string name="request_error">Обмен завершен с ошибками</string>
+    <string name="request_finished">Обмен завершен</string>
+    <string name="request_error">Завершено с ошибками</string>
     <string name="data_type_client">Данные клиентов</string>
     <string name="data_type_item">Данные товаров</string>
     <string name="data_type_price">Прайс-лист</string>
@@ -413,4 +413,5 @@
     <string name="use_current_location">Использовать текущие координаты?</string>
     <string name="error_cannot_process">Проверьте заполнение документа</string>
     <string name="error_open_file">Нет приложения для просмотра файла</string>
+    <string name="data_type_payment_type">Тип расчета</string>
 </resources>

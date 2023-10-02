@@ -68,7 +68,7 @@
     </string-array>
     <string name="data_inserted">Нових</string>
     <string name="data_total_rows_count">Всього записів</string>
-    <string name="data_updated">Обмін завершений</string>
+    <string name="data_updated">Дані оновлено</string>
     <string name="data_connection_error">Немає з\'єднання</string>
     <string name="data_xml_error">Помилка розбору даних</string>
     <string name="attr_code">Код</string>
@@ -301,8 +301,8 @@
     <string name="title_activity_debt_document">Перегляд документа</string>
     <string name="attr_warehouse">Склад</string>
     <string name="warn_no_document_data">Дані документа не вдалося завантажити з сервера</string>
-    <string name="request_finished">Обмін даними завершено</string>
-    <string name="request_error">Обмін завершений з помилками</string>
+    <string name="request_finished">Обмін завершено</string>
+    <string name="request_error">Завершено з помилками</string>
     <string name="data_type_client">Дані про клієнтів</string>
     <string name="data_type_item">Дані про товари</string>
     <string name="data_type_price">Прайс-лист</string>
@@ -412,4 +412,5 @@
     <string name="use_current_location">Використати поточні координати?</string>
     <string name="error_cannot_process">Перевірте заповнення документа</string>
     <string name="error_open_file">Немає додатка для перегляду файла</string>
+    <string name="data_type_payment_type">Тип розрахунку</string>
 </resources>

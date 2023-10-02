@@ -9,6 +9,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
@@ -117,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                     sharedViewModel.addProgressText(message)
                     showProgress(sharedViewModel.progressMessage)
                 }
-                else -> {}
+                else -> onSuccess()
             }
         }
         hideProgress()
@@ -186,6 +188,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun hideProgress() {
         binding.progressView.visibility = View.GONE
+    }
+
+    private fun onSuccess() {
+        // Wait for 3 seconds before dismissing the message
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
+            hideProgress()
+        }, 3000)
     }
 
     private fun checkPermissions(): Boolean {
