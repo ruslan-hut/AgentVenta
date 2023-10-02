@@ -59,70 +59,24 @@
         </LinearLayout>
 
         <LinearLayout
-            android:visibility="gone"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSecondaryContainer"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp">
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="64dp"
-                    android:layout_height="match_parent"
-                    android:text="@string/attr_code" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_weight="5"
-                android:orientation="vertical"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/attr_description" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/attr_group" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/attr_price"
-                    android:textAlignment="viewEnd"
-                    android:layout_gravity="end" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/attr_quantity" />
-
-            </LinearLayout>
+            android:id="@+id/element_payment_type"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            style="@style/DocumentElement">
 
             <TextView
-                android:maxLines="1"
-                android:layout_weight="2"
-                android:layout_width="0dp"
+                android:id="@+id/doc_payment_type_title"
+                style="@style/DocumentName"
+                android:layout_weight="1"
+                android:text="@string/payment_type" />
+
+            <Spinner
+                android:id="@+id/doc_payment_type"
                 android:layout_height="match_parent"
-                android:text="@string/sum"
-                android:textAlignment="viewEnd"
-                android:gravity="end" />
+                android:gravity="center_vertical|end"
+                android:layout_weight="3"
+                android:layout_width="0dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
 
         </LinearLayout>
 
