@@ -275,6 +275,7 @@ class OrderViewModel @Inject constructor(
 
     fun onDestroy() {
         _documentGuid.value = ""
+        navigateToPage.value = -1
     }
 
 }
