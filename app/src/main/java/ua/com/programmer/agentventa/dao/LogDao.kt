@@ -14,6 +14,9 @@ interface LogDao {
     @Query("SELECT * FROM log_events ORDER BY id DESC")
     fun fetchLogs(): Flow<List<LogEvent>>
 
+    @Query("SELECT * FROM log_events ORDER BY id DESC LIMIT 50")
+    suspend fun readLogs(): List<LogEvent>?
+
     // The number 604800000 is the number of milliseconds in a week (7 * 24 * 60 * 60 * 1000)
     @Query("DELETE FROM log_events WHERE timestamp < (:currentTimestamp - 604800000)")
     suspend fun deleteOldEvents(currentTimestamp: Long): Int

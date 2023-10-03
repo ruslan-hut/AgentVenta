@@ -1,17 +1,28 @@
 package ua.com.programmer.agentventa.catalogs.logger
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.LogEvent
 import ua.com.programmer.agentventa.databinding.LogFragmentBinding
 import ua.com.programmer.agentventa.databinding.LogListItemBinding
@@ -22,7 +33,7 @@ import java.util.GregorianCalendar
 import java.util.Locale
 
 @AndroidEntryPoint
-class LogFragment: Fragment() {
+class LogFragment: Fragment(), MenuProvider {
 
     private val viewModel: LogViewModel by viewModels()
     private var _binding: LogFragmentBinding? = null
@@ -50,6 +61,8 @@ class LogFragment: Fragment() {
         viewModel.logs.observe(viewLifecycleOwner) {
             (recyclerView.adapter as ItemsListAdapter).submitList(it)
         }
+        val menuHost : MenuHost = requireActivity()
+        menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private class ItemsListAdapter(
@@ -152,5 +165,31 @@ class LogFragment: Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        menuInflater.inflate(R.menu.menu_log, menu)
+    }
+
+    override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+        when (menuItem.itemId) {
+            R.id.share -> {
+                shareLogs()
+            }
+            else -> return false
+        }
+        return true
+    }
+
+    private fun shareLogs() {
+        viewModel.shareLogs {
+            if (it.isBlank()) {
+                Toast.makeText(requireContext(), R.string.no_data_list, Toast.LENGTH_SHORT).show()
+            } else {
+                val clipboard = activity?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText(getString(R.string.events_log), it)
+                clipboard.setPrimaryClip(clip)
+            }
+        }
     }
 }

@@ -414,4 +414,5 @@
     <string name="error_cannot_process">Проверьте заполнение документа</string>
     <string name="error_open_file">Нет приложения для просмотра файла</string>
     <string name="data_type_payment_type">Тип расчета</string>
+    <string name="action_share">Share</string>
 </resources>

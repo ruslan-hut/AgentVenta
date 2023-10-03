@@ -444,5 +444,6 @@
     <string name="error_cannot_process">Cannot process, check document fields</string>
     <string name="error_open_file">No application found to open file</string>
     <string name="data_type_payment_type">Payment type</string>
+    <string name="action_share">Share</string>
 
 </resources>

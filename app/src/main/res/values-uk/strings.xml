@@ -413,4 +413,5 @@
     <string name="error_cannot_process">Перевірте заповнення документа</string>
     <string name="error_open_file">Немає додатка для перегляду файла</string>
     <string name="data_type_payment_type">Тип розрахунку</string>
+    <string name="action_share">Share</string>
 </resources>

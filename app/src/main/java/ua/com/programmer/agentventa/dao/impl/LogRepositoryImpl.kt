@@ -26,6 +26,10 @@ class LogRepositoryImpl @Inject constructor(
         return logDao.fetchLogs()
     }
 
+    override suspend fun readLogs(): List<LogEvent> {
+        return logDao.readLogs() ?: emptyList()
+    }
+
     override suspend fun cleanUp(): Int {
         val today = GregorianCalendar.getInstance().time.beginOfDay()
         return logDao.deleteOldEvents(today)
