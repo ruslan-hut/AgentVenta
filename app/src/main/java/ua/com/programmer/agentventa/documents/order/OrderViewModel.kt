@@ -125,7 +125,8 @@ class OrderViewModel @Inject constructor(
 
             val quantity = product.quantity.round(3)
             val price = product.price.round(2)
-            val sum = (price * quantity).round(2)
+            val sumTotal = (price * 100).toInt() * (quantity * 1000).toInt()
+            val sum = (sumTotal.toDouble() / 100000).round(2)
 
             val updated = contentLine.copy(
                 unitCode = product.unit,

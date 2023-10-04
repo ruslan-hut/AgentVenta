@@ -1,13 +1,16 @@
 package ua.com.programmer.agentventa.extensions
 
+import java.math.BigDecimal
+import java.math.RoundingMode
+
 fun Double.format(digits: Int, ifNull: String = "", append: String = ""): String {
     return if (this == 0.0) ifNull
-    else "%.${digits}f".format(this).replace(",",".").plus(" $append")
+    else "%.${digits}f".format(this.round(digits)).replace(",",".").plus(" $append")
 }
 
 fun Double.round(digits: Int): Double {
     return try {
-        "%.${digits}f".format(this).replace(",", ".").toDouble()
+        BigDecimal(this).setScale(digits, RoundingMode.HALF_UP).toDouble()
     } catch (e: Exception) {
         0.0
     }
