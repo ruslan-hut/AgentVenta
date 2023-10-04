@@ -38,7 +38,7 @@ class OrderFragment: Fragment(), MenuProvider {
     private val fiscalModel: FiscalViewModel by activityViewModels()
     private val navigationArgs: OrderFragmentArgs by navArgs()
     private var _binding: ModelActivityOrderBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,39 +49,43 @@ class OrderFragment: Fragment(), MenuProvider {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ): View? {
         _binding = ModelActivityOrderBinding.inflate(layoutInflater)
-        binding.lifecycleOwner = viewLifecycleOwner
-        binding.viewModel = viewModel
+        binding?.lifecycleOwner = viewLifecycleOwner
+        binding?.viewModel = viewModel
 
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        return binding.root
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.menuSelectClient.setOnClickListener { openClientList() }
-        binding.menuSelectGoods.setOnClickListener { openProductList() }
-        binding.menuEditNotes.setOnClickListener { editNotes() }
-        binding.menuSave.setOnClickListener {
+        val adapter = OrderViewPagerAdapter(this)
+
+        binding?.apply {
+            menuSelectClient.setOnClickListener { openClientList() }
+            menuSelectGoods.setOnClickListener { openProductList() }
+            menuEditNotes.setOnClickListener { editNotes() }
+
+            container.adapter = adapter
+            TabLayoutMediator(orderTabs, container) { tab, position ->
+                when (position) {
+                    1 -> tab.text = getString(R.string.title_content)
+                    2 -> tab.text = getString(R.string.title_previous)
+                    else -> tab.text = getString(R.string.title_attributes)
+                }
+            }.attach()
+        }
+        binding?.menuSave?.setOnClickListener {
             if (viewModel.isFiscal()) {
                 registerFiscalReceipt()
             } else {
                 saveAndProcess()
             }
         }
-
-        binding.container.adapter = OrderViewPagerAdapter(this)
-        TabLayoutMediator(binding.orderTabs, binding.container) { tab, position ->
-            when (position) {
-                1 -> tab.text = getString(R.string.title_content)
-                2 -> tab.text = getString(R.string.title_previous)
-                else -> tab.text = getString(R.string.title_attributes)
-            }
-        }.attach()
 
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
             var title = getString(R.string.order)
@@ -95,9 +99,9 @@ class OrderFragment: Fragment(), MenuProvider {
             (activity as AppCompatActivity).supportActionBar?.title = title
             sharedModel.setDocumentGuid(guid)
             if (isProcessed) {
-                binding.orderBottomBar.visibility = View.GONE
+                binding?.orderBottomBar?.visibility = View.GONE
             } else {
-                binding.orderBottomBar.visibility = View.VISIBLE
+                binding?.orderBottomBar?.visibility = View.VISIBLE
             }
             // will run once if document has GUID an client is not already set
             viewModel.setClient(navigationArgs.clientGuid)
@@ -113,7 +117,7 @@ class OrderFragment: Fragment(), MenuProvider {
         }
 
         viewModel.navigateToPage.observe(this.viewLifecycleOwner) {
-            binding.container.setCurrentItem(it, false)
+            binding?.container?.setCurrentItem(it, false)
         }
         sharedModel.barcode.observe(this.viewLifecycleOwner) {
             if (it.isEmpty()) return@observe
@@ -283,8 +287,8 @@ class OrderFragment: Fragment(), MenuProvider {
     private fun registerFiscalReceipt() {
         if (notReadyToProcess()) return
         if (fiscalServiceNotReady()) return
-        binding.menuSave.visibility = View.GONE
-        binding.menuProgress.visibility = View.VISIBLE
+        binding?.menuSave?.visibility = View.GONE
+        binding?.menuProgress?.visibility = View.VISIBLE
         fiscalModel.createReceipt(viewModel.getGuid()) { result ->
             if (result.success) {
                 viewModel.saveDocument { saved ->
@@ -307,8 +311,8 @@ class OrderFragment: Fragment(), MenuProvider {
                     .setPositiveButton(getString(R.string.OK), null)
                     .show()
             }
-            binding.menuSave.visibility = View.VISIBLE
-            binding.menuProgress.visibility = View.GONE
+            binding?.menuSave?.visibility = View.VISIBLE
+            binding?.menuProgress?.visibility = View.GONE
         }
     }
 
@@ -366,6 +370,11 @@ class OrderFragment: Fragment(), MenuProvider {
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
 
