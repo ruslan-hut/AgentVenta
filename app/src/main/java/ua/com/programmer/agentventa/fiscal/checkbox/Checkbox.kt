@@ -279,6 +279,7 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                 ),
             ),
         )
+        //Log.d("PRG", "Receipt: $receipt")
         val response = callApi {
             build().createReceipt(receipt)
         }

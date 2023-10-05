@@ -142,10 +142,10 @@ class OrderViewModel @Inject constructor(
 
                 val totals = orderRepository.getDocumentTotals(orderGuid)
                 updateDocument(currentDocument.copy(
-                    price = totals.sum,
-                    quantity = totals.quantity,
-                    weight = totals.weight,
-                    discountValue = totals.discount,
+                    price = totals.sum.round(2),
+                    quantity = totals.quantity.round(3),
+                    weight = totals.weight.round(3),
+                    discountValue = totals.discount.round(2),
                 ))
 
                 withContext(Dispatchers.Main) {
