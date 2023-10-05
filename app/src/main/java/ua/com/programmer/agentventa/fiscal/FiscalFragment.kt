@@ -160,6 +160,8 @@ class FiscalFragment: Fragment(), MenuProvider {
     }
 
     private fun onResult(result: OperationResult) {
+        val context = context ?: return
+
         if (result.success) {
             if (result.fileId.isNotEmpty()) {
                 openReportFile(result.fileId)
@@ -169,7 +171,7 @@ class FiscalFragment: Fragment(), MenuProvider {
                     if (it.success) {
                         openReportFile(it.fileId)
                     } else {
-                        AlertDialog.Builder(requireContext())
+                        AlertDialog.Builder(context)
                             .setTitle(R.string.error)
                             .setMessage(it.message)
                             .setPositiveButton(R.string.OK) { _,_ -> }
@@ -177,10 +179,10 @@ class FiscalFragment: Fragment(), MenuProvider {
                     }
                 }
             } else {
-                Toast.makeText(requireContext(), R.string.operation_successful, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.operation_successful, Toast.LENGTH_SHORT).show()
             }
         } else {
-            AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(context)
                 .setTitle(R.string.error)
                 .setMessage(result.message)
                 .setPositiveButton(R.string.OK) { _,_ -> }
@@ -189,9 +191,11 @@ class FiscalFragment: Fragment(), MenuProvider {
     }
 
     private fun openReportFile(id: String) {
+        val context = context ?: return
+
         val file = sharedViewModel.fileInCache("$id.png")
         if (!file.exists()) {
-            AlertDialog.Builder(requireContext())
+            AlertDialog.Builder(context)
                 .setTitle(R.string.warning)
                 .setMessage(R.string.data_reading_error)
                 .setPositiveButton(R.string.OK) { _,_ -> }
@@ -202,7 +206,7 @@ class FiscalFragment: Fragment(), MenuProvider {
         val mime = MimeTypeMap.getSingleton()
         val type = mime.getMimeTypeFromExtension("png")
         val uri = FileProvider.getUriForFile(
-            requireContext(),
+            context,
             "ua.com.programmer.agentventa",
             file
         )
@@ -211,5 +215,10 @@ class FiscalFragment: Fragment(), MenuProvider {
         intent.setDataAndType(uri, type)
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         startActivity(intent)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
