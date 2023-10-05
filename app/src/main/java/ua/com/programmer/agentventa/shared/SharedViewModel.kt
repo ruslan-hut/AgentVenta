@@ -381,7 +381,7 @@ class SharedViewModel @Inject constructor(
     }
 
     fun onBarcodeRead(value: String) {
-        if (value.isBlank()) return
+        if (value.isBlank() || value.length < 10) return
         barcode.value = value
     }
 
