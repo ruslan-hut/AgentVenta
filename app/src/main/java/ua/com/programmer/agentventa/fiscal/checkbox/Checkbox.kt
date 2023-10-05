@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.fiscal.checkbox
 
+import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -8,6 +9,7 @@ import okhttp3.ResponseBody
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import ua.com.programmer.agentventa.extensions.roundToInt
 import ua.com.programmer.agentventa.fiscal.FiscalOptions
 import ua.com.programmer.agentventa.fiscal.FiscalService
 import ua.com.programmer.agentventa.fiscal.FiscalState
@@ -266,27 +268,31 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                     good = Good(
                         code = it.code,
                         name = it.description,
-                        price = (it.price * 100).toInt(),
+                        price = it.price.roundToInt(100),
                     ),
-                    quantity = (it.quantity * 1000).toInt(),
+                    quantity = it.quantity.roundToInt(1000),
                     isReturn = order.isReturn == 1,
                 )
             },
             payments = listOf(
                 Payment(
                     type = mapPaymentType(order.paymentType),
-                    value = (order.price * 100).toInt(),
+                    value = order.price.roundToInt(100),
                 ),
             ),
         )
-        //Log.d("PRG", "Receipt: $receipt")
         val response = callApi {
             build().createReceipt(receipt)
         }
         var message = response.getString("message")
 
         var status = response.getString("status")
-        if (status.isBlank()) return OperationResult(false, "Не вдалося створити чек. $message")
+        if (status.isBlank()) {
+            Log.d("Checkbox", "Receipt: $receipt")
+            crashlytics.log("Receipt: $receipt")
+            crashlytics.recordException(Exception("Checkbox createReceipt failed; $message"))
+            return OperationResult(false, "Не вдалося створити чек. $message")
+        }
 
         while (status == "CREATED") {
             withContext(Dispatchers.IO) {
