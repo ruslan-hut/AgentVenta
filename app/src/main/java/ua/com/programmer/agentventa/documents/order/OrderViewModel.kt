@@ -17,9 +17,12 @@ import ua.com.programmer.agentventa.dao.entity.setClient
 import ua.com.programmer.agentventa.dao.entity.toUi
 import ua.com.programmer.agentventa.extensions.localFormatted
 import ua.com.programmer.agentventa.extensions.round
+import ua.com.programmer.agentventa.extensions.roundToInt
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.ProductRepository
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.Date
 import javax.inject.Inject
 
@@ -123,15 +126,19 @@ class OrderViewModel @Inject constructor(
 
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
 
-            val quantity = product.quantity.round(3)
-            val price = product.price.round(2)
-            val sumTotal = (price * 100).toInt() * (quantity * 1000).toInt()
-            val sum = (sumTotal.toDouble() / 100000).round(2)
+            val quantity = product.quantity.roundToInt(1000)
+            val price = product.price.roundToInt(100)
+            val sumTotal = price * quantity
+            val sum = BigDecimal(sumTotal)
+                .divide(BigDecimal(100000))
+                .setScale(2, RoundingMode.HALF_UP)
+                .toDouble()
+            //Log.d("Checkbox", "$sumTotal --> ${sumTotal.toDouble() / 100000} --> $sum")
 
             val updated = contentLine.copy(
                 unitCode = product.unit,
-                price = price,
-                quantity = quantity,
+                price = product.price,
+                quantity = product.quantity,
                 sum = sum,
                 weight = product.weight * product.quantity,
                 isPacked = if (product.isPacked) 1 else 0,

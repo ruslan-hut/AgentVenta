@@ -26,7 +26,8 @@ fun Double.format(digits: Int, ifNull: String = "", append: String = ""): String
 
 fun Double.round(digits: Int): Double {
     return try {
-        BigDecimal(this).setScale(digits, RoundingMode.HALF_UP).toDouble()
+        val mc = BigDecimal(this).setScale(digits, RoundingMode.HALF_UP)
+        mc.toDouble()
     } catch (e: Exception) {
         0.0
     }
@@ -44,7 +45,8 @@ fun Double.round(digits: Int): Double {
 fun Double.roundToInt(multi: Int): Int {
     val number = this * multi
     return try {
-        BigDecimal(number).setScale(0, RoundingMode.HALF_UP).toInt()
+        val mc = BigDecimal(number).setScale(0, RoundingMode.HALF_UP)
+        mc.toInt()
     } catch (e: Exception) {
         0
     }
