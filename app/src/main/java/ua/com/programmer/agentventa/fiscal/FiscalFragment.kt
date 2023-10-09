@@ -2,7 +2,6 @@ package ua.com.programmer.agentventa.fiscal
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -58,25 +57,25 @@ class FiscalFragment: Fragment(), MenuProvider {
         }
 
         binding.btnCashierLogin.setOnClickListener {
-            viewModel.onCashierLogin(onResult = ::onResult)
+            viewModel.onCashierLogin()
         }
         binding.btnCashierLogout.setOnClickListener {
-            viewModel.onCashierLogout(onResult = ::onResult)
+            viewModel.onCashierLogout()
         }
         binding.btnCheckStatus.setOnClickListener {
-            viewModel.onCheckStatus(onResult = ::onResult)
+            viewModel.onCheckStatus()
         }
         binding.btnOpenShift.setOnClickListener {
-            viewModel.onOpenShift(onResult = ::onResult)
+            viewModel.onOpenShift()
         }
         binding.btnXReport.setOnClickListener {
-            viewModel.onCreateXReport(onResult = ::onResult)
+            viewModel.onCreateXReport()
         }
         binding.btnCloseShift.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setTitle(R.string.warning)
                 .setMessage(R.string.close_shift_warn)
-                .setPositiveButton(R.string.OK) { _,_ -> viewModel.onCloseShift(onResult = ::onResult)}
+                .setPositiveButton(R.string.OK) { _,_ -> viewModel.onCloseShift()}
                 .setNegativeButton(R.string.cancel) { _,_ -> }
                 .show()
         }
@@ -90,7 +89,7 @@ class FiscalFragment: Fragment(), MenuProvider {
                     .show()
             } else {
                 binding.serviceValue.setText("")
-                viewModel.createServiceReceipt(value, onResult = ::onResult)
+                viewModel.createServiceReceipt(value)
             }
         }
         binding.btnServiceOut.setOnClickListener {
@@ -103,7 +102,7 @@ class FiscalFragment: Fragment(), MenuProvider {
                     .show()
             } else {
                 binding.serviceValue.setText("")
-                viewModel.createServiceReceipt(-value, onResult = ::onResult)
+                viewModel.createServiceReceipt(-value)
             }
         }
 
@@ -118,9 +117,7 @@ class FiscalFragment: Fragment(), MenuProvider {
             binding.btnServiceIn.isEnabled = !it
             binding.btnServiceOut.isEnabled = !it
         }
-//        viewModel.message.observe(viewLifecycleOwner) {
-//            binding.tvMessage.text = it
-//        }
+
         viewModel.state.observe(viewLifecycleOwner) { state ->
             if (state.authorized) {
                 binding.authGreen.visibility = View.VISIBLE
@@ -147,6 +144,10 @@ class FiscalFragment: Fragment(), MenuProvider {
             }
         }
 
+        viewModel.operationResult.observe(viewLifecycleOwner) {
+            onResult(it)
+        }
+
         binding.tvFiscalServiceProvider.text = viewModel.fiscalOptions.provider
         binding.tvCashier.text = viewModel.fiscalOptions.cashier
     }
@@ -159,25 +160,15 @@ class FiscalFragment: Fragment(), MenuProvider {
         TODO("Not yet implemented")
     }
 
-    private fun onResult(result: OperationResult) {
+    private fun onResult(result: OperationResult?) {
         val context = context ?: return
+        result ?: return
 
         if (result.success) {
             if (result.fileId.isNotEmpty()) {
                 openReportFile(result.fileId)
             } else if (result.receiptId.isNotEmpty()) {
-                Log.d("Checkbox", "call getReceipt")
-                viewModel.getReceipt(result.receiptId) {
-                    if (it.success) {
-                        openReportFile(it.fileId)
-                    } else {
-                        AlertDialog.Builder(context)
-                            .setTitle(R.string.error)
-                            .setMessage(it.message)
-                            .setPositiveButton(R.string.OK) { _,_ -> }
-                            .show()
-                    }
-                }
+                viewModel.getReceipt(result.receiptId)
             } else {
                 Toast.makeText(context, R.string.operation_successful, Toast.LENGTH_SHORT).show()
             }
@@ -219,6 +210,7 @@ class FiscalFragment: Fragment(), MenuProvider {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.clearOperationResult()
         _binding = null
     }
 }

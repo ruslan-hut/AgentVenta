@@ -42,6 +42,7 @@ class OrderViewModel @Inject constructor(
     private var selectedPriceCode = ""
 
     val navigateToPage = MutableLiveData<Int>()
+    val saveResult = MutableLiveData<Boolean?>()
 
     val document = _documentGuid.switchMap {
         orderRepository.getDocument(it).asLiveData()
@@ -187,7 +188,7 @@ class OrderViewModel @Inject constructor(
         updateDocument(currentDocument.copy(notes = notes))
     }
 
-    fun saveDocument(onResult: (Boolean) -> Unit) {
+    fun saveDocument() {
         val updated = currentDocument.copy(
             isProcessed = 1,
             timeSaved = System.currentTimeMillis() / 1000
@@ -196,7 +197,7 @@ class OrderViewModel @Inject constructor(
             withContext(Dispatchers.IO) {
                 val saved = orderRepository.updateDocument(updated)
                 withContext(Dispatchers.Main) {
-                    onResult(saved)
+                    saveResult.value = saved
                 }
             }
         }
@@ -290,6 +291,7 @@ class OrderViewModel @Inject constructor(
     fun onDestroy() {
         _documentGuid.value = ""
         navigateToPage.value = -1
+        saveResult.value = null
     }
 
 }

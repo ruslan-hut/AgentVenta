@@ -28,6 +28,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.ModelActivityOrderBinding
 import ua.com.programmer.agentventa.fiscal.FiscalViewModel
+import ua.com.programmer.agentventa.fiscal.OperationResult
 import ua.com.programmer.agentventa.shared.SharedViewModel
 
 @AndroidEntryPoint
@@ -119,6 +120,28 @@ class OrderFragment: Fragment(), MenuProvider {
         viewModel.navigateToPage.observe(this.viewLifecycleOwner) {
             binding?.container?.setCurrentItem(it, false)
         }
+        viewModel.saveResult.observe(this.viewLifecycleOwner) {
+            it ?: return@observe
+            if (it) {
+                if (viewModel.isFiscal()) {
+                    receiptPreview()
+                } else {
+                    view.findNavController().popBackStack()
+                }
+            } else {
+                saveInProgress(false)
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.error))
+                    .setMessage(getString(R.string.data_not_saved))
+                    .setPositiveButton(getString(R.string.OK), null)
+                    .show()
+            }
+        }
+
+        fiscalModel.operationResult.observe(viewLifecycleOwner) {
+            onFiscalServiceResult(it)
+        }
+
         sharedModel.barcode.observe(this.viewLifecycleOwner) {
             if (it.isEmpty()) return@observe
             viewModel.onBarcodeRead(it) {
@@ -127,13 +150,6 @@ class OrderFragment: Fragment(), MenuProvider {
             sharedModel.clearBarcode()
         }
 
-    }
-
-    override fun onDestroy() {
-        sharedModel.clearActions()
-        viewModel.onDestroy()
-        _binding = null
-        super.onDestroy()
     }
 
     private fun openProductList() {
@@ -271,68 +287,50 @@ class OrderFragment: Fragment(), MenuProvider {
 
     private fun saveAndProcess() {
         if (notReadyToProcess()) return
-        viewModel.saveDocument {
-            if (it) {
-                view?.findNavController()?.popBackStack()
-            } else {
-                AlertDialog.Builder(requireContext())
-                    .setTitle(getString(R.string.error))
-                    .setMessage(getString(R.string.data_not_saved))
-                    .setPositiveButton(getString(R.string.OK), null)
-                    .show()
-            }
+        viewModel.saveDocument()
+    }
+
+    private fun saveInProgress(progress: Boolean) {
+        binding?.apply {
+            menuSelectClient.isEnabled = !progress
+            menuSelectGoods.isEnabled = !progress
+            menuEditNotes.isEnabled = !progress
+            menuSave.visibility = if (progress) View.GONE else View.VISIBLE
+            menuProgress.visibility = if (progress) View.VISIBLE else View.GONE
         }
     }
 
     private fun registerFiscalReceipt() {
         if (notReadyToProcess()) return
         if (fiscalServiceNotReady()) return
-        binding?.menuSave?.visibility = View.GONE
-        binding?.menuProgress?.visibility = View.VISIBLE
-        fiscalModel.createReceipt(viewModel.getGuid()) { result ->
-            if (result.success) {
-                viewModel.saveDocument { saved ->
-                    if (saved) {
-                        receiptPreview(true)
-                    } else {
-                        AlertDialog.Builder(requireContext())
-                            .setTitle(getString(R.string.error))
-                            .setMessage(getString(R.string.data_not_saved))
-                            .setPositiveButton(getString(R.string.OK), null)
-                            .show()
-                    }
-                }
 
-            } else {
-                val msg = "${getString(R.string.fiscal_service_error)}:\n${result.message}"
-                AlertDialog.Builder(requireContext())
-                    .setTitle(getString(R.string.error))
-                    .setMessage(msg)
-                    .setPositiveButton(getString(R.string.OK), null)
-                    .show()
-            }
-            binding?.menuSave?.visibility = View.VISIBLE
-            binding?.menuProgress?.visibility = View.GONE
-        }
+        saveInProgress(true)
+        fiscalModel.createReceipt(viewModel.getGuid())
     }
 
-    private fun receiptPreview(autoClose: Boolean = false) {
+    private fun receiptPreview() {
         if (fiscalServiceNotReady()) return
         val guid = viewModel.getGuid()
-        fiscalModel.getReceipt(guid) {
-            if (it.success) {
-                openFile("$guid.png", "png")
-                if (autoClose) {
-                    view?.findNavController()?.popBackStack()
-                }
-            } else {
-                val msg = "${getString(R.string.fiscal_service_error)}:\n${it.message}"
-                AlertDialog.Builder(requireContext())
-                    .setTitle(getString(R.string.error))
-                    .setMessage(msg)
-                    .setPositiveButton(getString(R.string.OK), null)
-                    .show()
+        fiscalModel.getReceipt(guid)
+    }
+
+    private fun onFiscalServiceResult(result: OperationResult?) {
+        val context = context ?: return
+        result ?: return
+        if (result.success) {
+            if (result.fileId.isNotBlank()) {
+                openFile("${result.fileId}.png", "png")
             }
+            if (result.receiptId.isNotBlank()) {
+                viewModel.saveDocument()
+            }
+        } else {
+            val msg = "${getString(R.string.fiscal_service_error)}:\n${result.message}"
+            AlertDialog.Builder(context)
+                .setTitle(getString(R.string.error))
+                .setMessage(msg)
+                .setPositiveButton(getString(R.string.OK), null)
+                .show()
         }
     }
 
@@ -370,10 +368,17 @@ class OrderFragment: Fragment(), MenuProvider {
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
         }
+
+        if (viewModel.saveResult.value == true) {
+            view?.findNavController()?.popBackStack()
+        }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
+    override fun onDestroy() {
+        super.onDestroy()
+        fiscalModel.clearOperationResult()
+        sharedModel.clearActions()
+        viewModel.onDestroy()
         _binding = null
     }
 }

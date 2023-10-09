@@ -29,6 +29,7 @@ class FiscalViewModel @Inject constructor(
     val isLoading = MutableLiveData<Boolean>()
     val message = MutableLiveData<String>()
     val state = MutableLiveData<FiscalState>()
+    val operationResult = MutableLiveData<OperationResult?>()
 
     var fiscalOptions = FiscalOptions()
     private var fiscalService: FiscalService? = null
@@ -44,6 +45,10 @@ class FiscalViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun clearOperationResult() {
+        operationResult.value = null
     }
 
     /**
@@ -84,60 +89,60 @@ class FiscalViewModel @Inject constructor(
 
     fun isNotReady() = fiscalService == null
 
-    fun onCashierLogin(onResult: (OperationResult) -> Unit) {
+    fun onCashierLogin() {
         callService(FiscalService::cashierLogin) {
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun onCashierLogout(onResult: (OperationResult) -> Unit) {
+    fun onCashierLogout() {
         callService(FiscalService::cashierLogout){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun onCheckStatus(onResult: (OperationResult) -> Unit) {
+    fun onCheckStatus() {
         callService(FiscalService::checkStatus){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun onOpenShift(onResult: (OperationResult) -> Unit) {
+    fun onOpenShift() {
         callService(FiscalService::openShift){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun onCloseShift(onResult: (OperationResult) -> Unit) {
+    fun onCloseShift() {
         callService(FiscalService::closeShift){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun onCreateXReport(onResult: (OperationResult) -> Unit) {
+    fun onCreateXReport() {
         callService(FiscalService::createXReport){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun createReceipt(orderGuid: String, onResult: (OperationResult) -> Unit) {
+    fun createReceipt(orderGuid: String) {
         fiscalOptions = fiscalOptions.copy(orderGuid = orderGuid)
         callService(FiscalService::createReceipt){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun createServiceReceipt(value: Int, onResult: (OperationResult) -> Unit) {
+    fun createServiceReceipt(value: Int) {
         fiscalOptions = fiscalOptions.copy(value = value)
         callService(FiscalService::createServiceReceipt){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
-    fun getReceipt(orderGuid: String, onResult: (OperationResult) -> Unit) {
+    fun getReceipt(orderGuid: String) {
         fiscalOptions = fiscalOptions.copy(orderGuid = orderGuid)
         callService(FiscalService::getReceipt){
-            onResult(it)
+            operationResult.value = it
         }
     }
 
