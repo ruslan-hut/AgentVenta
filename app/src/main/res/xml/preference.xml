@@ -11,5 +11,10 @@
         app:icon="@drawable/baseline_app_settings_alt_24"
         app:title="@string/title_activity_settings"
         app:summary="@string/pref_summary_app_options"/>
+    <Preference
+        android:key="printer"
+        app:icon="@drawable/baseline_print_24"
+        app:title="@string/title_printer_settings"
+        app:summary="@string/pref_summary_printer_settings"/>
 
 </PreferenceScreen>

@@ -415,4 +415,6 @@
     <string name="error_open_file">Нет приложения для просмотра файла</string>
     <string name="data_type_payment_type">Тип расчета</string>
     <string name="action_share">Share</string>
+    <string name="title_printer_settings">Настройки принтера</string>
+    <string name="pref_summary_printer_settings">Подключение к принтеру и настройка печати документов</string>
 </resources>

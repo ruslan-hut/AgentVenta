@@ -216,6 +216,9 @@
         <action
             android:id="@+id/action_settingsFragment_to_optionsFragment"
             app:destination="@id/optionsFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_printerSettingsFragment"
+            app:destination="@id/printerSettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/optionsFragment"
@@ -275,4 +278,8 @@
         android:id="@+id/fiscalFragment"
         android:name="ua.com.programmer.agentventa.fiscal.FiscalFragment"
         android:label="@string/title_fiscal_service" />
+    <fragment
+        android:id="@+id/printerSettingsFragment"
+        android:name="ua.com.programmer.agentventa.printer.PrinterSettingsFragment"
+        android:label="@string/title_printer_settings" />
 </navigation>

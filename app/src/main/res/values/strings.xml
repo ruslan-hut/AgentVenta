@@ -445,5 +445,7 @@
     <string name="error_open_file">No application found to open file</string>
     <string name="data_type_payment_type">Payment type</string>
     <string name="action_share">Share</string>
+    <string name="title_printer_settings">Printer settings</string>
+    <string name="pref_summary_printer_settings">Connect to a printer and setup document printing</string>
 
 </resources>

@@ -414,4 +414,6 @@
     <string name="error_open_file">Немає додатка для перегляду файла</string>
     <string name="data_type_payment_type">Тип розрахунку</string>
     <string name="action_share">Share</string>
+    <string name="title_printer_settings">Налаштування принтера</string>
+    <string name="pref_summary_printer_settings">Підключення до принтера і налаштування друку документів</string>
 </resources>
