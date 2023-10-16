@@ -17,6 +17,13 @@ class SettingsFragment: PreferenceFragmentCompat() {
             true
         }
 
+        val appPref = findPreference<Preference>("app_settings")
+        appPref?.setOnPreferenceClickListener {
+            val action = SettingsFragmentDirections.actionSettingsFragmentToApplicationSettingsFragment()
+            view?.findNavController()?.navigate(action)
+            true
+        }
+
         val printerPref = findPreference<Preference>("printer")
         printerPref?.setOnPreferenceClickListener {
             val action = SettingsFragmentDirections.actionSettingsFragmentToPrinterSettingsFragment()

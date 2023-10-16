@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         val menu = binding.navigationView.menu
         menu.findItem(R.id.locationHistoryFragment).isVisible = options.locations
         menu.findItem(R.id.clientsMapFragment).isVisible = options.clientsLocations
+        menu.findItem(R.id.fiscalFragment).isVisible = options.fiscalProvider.isNotBlank()
 
         if (options.locations) {
             if (!checkPermissions()) {

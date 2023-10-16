@@ -219,6 +219,9 @@
         <action
             android:id="@+id/action_settingsFragment_to_printerSettingsFragment"
             app:destination="@id/printerSettingsFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_applicationSettingsFragment"
+            app:destination="@id/applicationSettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/optionsFragment"
@@ -282,4 +285,8 @@
         android:id="@+id/printerSettingsFragment"
         android:name="ua.com.programmer.agentventa.printer.PrinterSettingsFragment"
         android:label="@string/title_printer_settings" />
+    <fragment
+        android:id="@+id/applicationSettingsFragment"
+        android:name="ua.com.programmer.agentventa.settings.ApplicationSettingsFragment"
+        android:label="@string/pref_header_general" />
 </navigation>

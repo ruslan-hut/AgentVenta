@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.shared
 
+import android.content.SharedPreferences
 import android.widget.ImageView
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -49,7 +50,8 @@ class SharedViewModel @Inject constructor(
     private val filesRepository: FilesRepository,
     private val logger: Logger,
     private val imager: RequestManager,
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val preference: SharedPreferences,
 ): ViewModel() {
 
     private val logTag = "Shared"
@@ -93,8 +95,15 @@ class SharedViewModel @Inject constructor(
         _sharedParams.value = state.copy(sortByName = !state.sortByName)
     }
 
+    // method is used in the product list screen menu
     fun toggleRestsOnly() {
         _sharedParams.value = state.copy(restsOnly = !state.restsOnly)
+        preference.edit().putBoolean("show_rests_only", state.restsOnly).apply()
+    }
+
+    // method is used in a preference screen and should not change the value of the preference
+    fun setRestsOnly(value: Boolean) {
+        _sharedParams.value = state.copy(restsOnly = value)
     }
 
     fun toggleClientProducts() {
@@ -171,6 +180,10 @@ class SharedViewModel @Inject constructor(
                 }
             }
         }
+        preference.getBoolean("show_rests_only", false).let {
+            _sharedParams.value = state.copy(restsOnly = it)
+        }
+
     }
 
     private fun sendUserInfo() {

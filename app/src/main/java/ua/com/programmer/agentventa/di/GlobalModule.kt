@@ -1,6 +1,8 @@
 package ua.com.programmer.agentventa.di
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.preference.PreferenceManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import dagger.Module
@@ -23,6 +25,12 @@ class GlobalModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
         return AppDatabase.getDatabase(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePreferences(@ApplicationContext context: Context): SharedPreferences {
+        return PreferenceManager.getDefaultSharedPreferences(context)
     }
 
     @Provides
