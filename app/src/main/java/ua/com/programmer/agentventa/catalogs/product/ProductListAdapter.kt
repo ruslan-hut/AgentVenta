@@ -177,4 +177,9 @@ class ProductListAdapter(
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         holder.bind(getItem(position), showImages, sharedImageLoader, onImageClicked)
     }
+
+    override fun getItem(position: Int): LProduct {
+        if (position < 0 || position >= itemCount) return LProduct()
+        return super.getItem(position)
+    }
 }
