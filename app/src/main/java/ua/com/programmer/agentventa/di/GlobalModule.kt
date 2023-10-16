@@ -11,27 +11,13 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.geo.GeocodeHelperImpl
 import ua.com.programmer.agentventa.dao.AppDatabase
-import ua.com.programmer.agentventa.data.DataBase
 import ua.com.programmer.agentventa.geo.GeocodeHelper
-import ua.com.programmer.agentventa.settings.AppSettings
 import ua.com.programmer.agentventa.utility.Utils
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 class GlobalModule {
-
-    @Provides
-    @Singleton
-    fun provideAppSettings(@ApplicationContext context: Context): AppSettings {
-        return AppSettings.getInstance(context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): DataBase {
-        return DataBase.getInstance(context)
-    }
 
     @Provides
     @Singleton

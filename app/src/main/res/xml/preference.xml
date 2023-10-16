@@ -8,6 +8,7 @@
         app:title="@string/pref_options"
         app:summary="@string/pref_warn_read_only"/>
     <Preference
+        android:key="app_settings"
         app:icon="@drawable/baseline_app_settings_alt_24"
         app:title="@string/title_activity_settings"
         app:summary="@string/pref_summary_app_options"/>
