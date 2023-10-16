@@ -41,7 +41,7 @@ class PickerFragment: Fragment(), MenuProvider {
     private val sharedModel: SharedViewModel by activityViewModels()
     private val navigationArgs: PickerFragmentArgs by navArgs()
     private var _binding: PickerFragmentBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding
     private val utils = Utils()
 
     private var loadedProduct: LProduct? = null
@@ -61,49 +61,49 @@ class PickerFragment: Fragment(), MenuProvider {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ): View? {
         _binding = PickerFragmentBinding.inflate(inflater,container,false)
-        binding.lifecycleOwner = viewLifecycleOwner
-        binding.viewModel = viewModel
+        binding?.lifecycleOwner = viewLifecycleOwner
+        binding?.viewModel = viewModel
 
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        binding.editQuantity.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
-        binding.editPrice.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+        binding?.editQuantity?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+        binding?.editPrice?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
 
-        binding.buttonCancel.setOnClickListener {
+        binding?.buttonCancel?.setOnClickListener {
             it.findNavController().navigateUp()
         }
-        binding.buttonYes.setOnClickListener {
+        binding?.buttonYes?.setOnClickListener {
             saveAndExit()
         }
 
-        return binding.root
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val priceRecycler = binding.priceRecycler
-        priceRecycler.layoutManager = LinearLayoutManager(requireContext())
+        val priceRecycler = binding?.priceRecycler
+        priceRecycler?.layoutManager = LinearLayoutManager(requireContext())
 
         val adapter = PriceAdapter(
             onItemClicked = {
                 if (it.price > 0) {
-                    binding.editPrice.setText(it.price.format(2))
+                    binding?.editPrice?.setText(it.price.format(2))
                 }
             },
             onItemLongClicked = {},
         )
-        priceRecycler.adapter = adapter
+        priceRecycler?.adapter = adapter
 
         viewModel.priceList.observe(viewLifecycleOwner) { list ->
             loadedPriceList = list
             adapter.submitList(list)
             if (list.isEmpty()) {
-                binding.blockPriceList.visibility = View.GONE
+                binding?.blockPriceList?.visibility = View.GONE
             } else {
-                binding.blockPriceList.visibility = View.VISIBLE
+                binding?.blockPriceList?.visibility = View.VISIBLE
             }
         }
 
@@ -113,11 +113,13 @@ class PickerFragment: Fragment(), MenuProvider {
             updateView()
         }
 
-        binding.editQuantity.requestFocus()
-        binding.editQuantity.postDelayed({
-            val inputMethodManager = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            inputMethodManager.showSoftInput(binding.editQuantity, InputMethodManager.SHOW_IMPLICIT)
-        }, 200)
+        binding?.apply {
+            editQuantity.requestFocus()
+            editQuantity.postDelayed({
+                val inputMethodManager = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                inputMethodManager.showSoftInput(this.editQuantity, InputMethodManager.SHOW_IMPLICIT)
+            }, 200)
+        }
     }
 
     private fun updateView() {
@@ -126,7 +128,7 @@ class PickerFragment: Fragment(), MenuProvider {
         val options = sharedModel.options
         val currentUnitName = unitName(currentUnit, product.unit)
 
-        binding.apply {
+        binding?.apply {
 
             itemDescription.text = product.description
             itemCode.text = product.code
@@ -269,8 +271,8 @@ class PickerFragment: Fragment(), MenuProvider {
     }
 
     private fun saveAndExit() {
-        val enteredQuantity = binding.editQuantity.text.toString().replace(",",".")
-        val enteredPrice = binding.editPrice.text.toString().replace(",",".")
+        val enteredQuantity = binding?.editQuantity?.text.toString().replace(",",".")
+        val enteredPrice = binding?.editPrice?.text.toString().replace(",",".")
 
         var quantity = utils.round(loadedProduct?.quantity ?: 0.0, 3)
 
@@ -295,8 +297,8 @@ class PickerFragment: Fragment(), MenuProvider {
         val updatedProduct = loadedProduct?.copy(
             quantity = quantity,
             price = price,
-            isDemand = binding.boxIsDemand.isChecked,
-            isPacked = binding.boxIsPacked.isChecked
+            isDemand = binding?.boxIsDemand?.isChecked ?: false,
+            isPacked = binding?.boxIsPacked?.isChecked ?: false,
         )
         sharedModel.selectProductAction(updatedProduct) {
             view?.findNavController()?.popBackStack()
