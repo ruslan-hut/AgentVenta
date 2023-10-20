@@ -12,6 +12,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,7 +30,7 @@ import java.util.Locale
 @AndroidEntryPoint
 class CashListFragment: Fragment(), MenuProvider {
 
-    private val viewModel: CashListViewModel by activityViewModels()
+    private val viewModel: CashListViewModel by viewModels()
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private var _binding: ModelDocumentsListBinding? = null
     private val binding get() = _binding
@@ -96,12 +97,6 @@ class CashListFragment: Fragment(), MenuProvider {
         )
         view?.findNavController()?.navigate(action)
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_documents_list, menu)

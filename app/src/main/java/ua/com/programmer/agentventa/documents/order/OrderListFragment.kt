@@ -13,6 +13,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -31,7 +32,7 @@ import java.util.Locale
 @AndroidEntryPoint
 class OrderListFragment: Fragment(), MenuProvider {
 
-    private val viewModel: OrderListViewModel by activityViewModels()
+    private val viewModel: OrderListViewModel by viewModels()
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private var _binding: ModelDocumentsListBinding? = null
     private val binding get() = _binding
