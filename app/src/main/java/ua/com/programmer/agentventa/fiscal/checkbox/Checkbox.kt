@@ -441,7 +441,12 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             crashlytics.recordException(e)
             mapOf("message" to e)
         }
-        return XMap(response ?: mapOf("message" to "No response"))
+        val mappedResponse = XMap(response ?: mapOf("message" to "No response"))
+        val message = mappedResponse.getString("message")
+        if (message.isNotBlank()) {
+            crashlytics.log("Checkbox error: $message")
+        }
+        return mappedResponse
     }
 
     private fun readErrorMessage(e: HttpException): Map<String,String> {
