@@ -106,7 +106,11 @@ class OrderListFragment: Fragment(), MenuProvider {
             orderGuid = documentId,
             clientGuid = null
         )
-        binding?.root?.findNavController()?.navigate(action)
+        try {
+            binding?.root?.findNavController()?.navigate(action)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun copyDocument(document: Order) {
