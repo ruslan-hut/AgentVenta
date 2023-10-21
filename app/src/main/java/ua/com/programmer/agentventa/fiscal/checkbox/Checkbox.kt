@@ -257,6 +257,17 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
 
     override suspend fun createReceipt(fiscalOptions: FiscalOptions): OperationResult {
         if (shiftId.isBlank()) return OperationResult(false, "Немає відкритої зміни")
+
+        // before create receipt check receipt status
+        val checkResult = checkReceiptStatus(fiscalOptions.orderGuid)
+        if (checkResult.success) {
+            // receipt is already registered
+            return OperationResult(true, receiptId = fiscalOptions.orderGuid)
+        }else if (checkResult.receiptId.isNotBlank()) {
+            // receipt is already registered but not done
+            return checkResult
+        }
+
         val order = orderRepository.getOrder(fiscalOptions.orderGuid)
             ?: return OperationResult(false, "Не знайдено документ")
 
@@ -281,12 +292,14 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
                 ),
             ),
         )
+
         val response = callApi {
             build().createReceipt(receipt)
         }
-        var message = response.getString("message")
 
-        var status = response.getString("status")
+        val message = response.getString("message")
+        val status = response.getString("status")
+
         if (status.isBlank()) {
             Log.d("Checkbox", "Receipt: $receipt")
             crashlytics.log("Receipt: $receipt")
@@ -294,22 +307,35 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             return OperationResult(false, "Не вдалося створити чек. $message")
         }
 
+        return checkReceiptStatus(receipt.id)
+    }
+
+    private suspend fun checkReceiptStatus(id: String): OperationResult {
+
+        val response = callApi {
+            build().getReceipt(id)
+        }
+        val message = response.getString("message")
+        if (message.isNotBlank()) return OperationResult(false, "Помилка отримання чека. $message")
+
+        var status = response.getString("status")
+
         while (status == "CREATED") {
             withContext(Dispatchers.IO) {
                 Thread.sleep(1000)
             }
             val receiptResponse = callApi {
-                build().getReceipt(receipt.id)
+                build().getReceipt(id)
             }
-            message = response.getString("message")
-            if (message.isNotBlank()) return OperationResult(false, "Помилка реєстрації чека. $message")
+            val msg = receiptResponse.getString("message")
+            if (msg.isNotBlank()) return OperationResult(false, "Помилка реєстрації чека. $msg", receiptId = id)
             status = receiptResponse.getString("status")
         }
         if (status == "DONE") {
-            return OperationResult(true, receiptId = receipt.id)
+            return OperationResult(true, receiptId = id)
         }
 
-        return OperationResult(false, "Помилка реєстрації чека. $status")
+        return OperationResult(false, "Помилка реєстрації чека. $status", receiptId = id)
     }
 
     override suspend fun getReceipt(fiscalOptions: FiscalOptions): OperationResult {
