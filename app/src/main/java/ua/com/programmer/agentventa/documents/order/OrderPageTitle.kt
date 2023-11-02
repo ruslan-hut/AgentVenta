@@ -68,6 +68,8 @@ class OrderPageTitle: Fragment() {
 
     private fun updateView(order: Order?) {
         if (order != null) {
+            val options = sharedModel.options
+
             binding.apply {
 
                 docNumber.text = order.number.toString()
@@ -83,6 +85,7 @@ class OrderPageTitle: Fragment() {
                 docNotes.text = order.notes
 
                 docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
+                elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
 
                 if (order.isProcessed > 0) {
                     docClient.isClickable = false

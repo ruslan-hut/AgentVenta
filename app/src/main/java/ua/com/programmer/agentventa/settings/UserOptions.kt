@@ -4,6 +4,7 @@ data class UserOptions(
     val isEmpty: Boolean,
     val userId: String = "",
     val allowPriceTypeChoose: Boolean = false,
+    val allowReturn: Boolean = false,
     val requireDeliveryDate: Boolean = false,
     val locations: Boolean = false,
     val lastLocationTime: Long = 0,

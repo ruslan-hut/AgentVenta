@@ -14,6 +14,7 @@ class UserOptionsBuilder {
             isEmpty = false,
             userId = userId,
             allowPriceTypeChoose = optionsMap.getBoolean("allowPriceTypeChoose"),
+            allowReturn = optionsMap.getBoolean("allowReturn"),
             requireDeliveryDate = optionsMap.getBoolean("requireDeliveryDate"),
             locations = optionsMap.getBoolean("locations"),
             lastLocationTime = optionsMap.getLong("lastLocationTime"),
