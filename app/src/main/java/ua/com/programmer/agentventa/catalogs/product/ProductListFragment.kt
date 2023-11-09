@@ -133,10 +133,14 @@ class ProductListFragment: Fragment(), MenuProvider {
             }
         }
 
-        val priceSubMenu = menu.findItem(R.id.sub_menu_price).subMenu
-        priceSubMenu?.clear()
-        sharedModel.priceTypes.forEachIndexed { index, priceType ->
-            priceSubMenu?.add(R.id.sub_menu_price, index, index, priceType.description)
+        if (viewModel.selectMode) {
+            menu.findItem(R.id.sub_menu_price).isVisible = false
+        }else{
+            val priceSubMenu = menu.findItem(R.id.sub_menu_price).subMenu
+            priceSubMenu?.clear()
+            sharedModel.priceTypes.forEachIndexed { index, priceType ->
+                priceSubMenu?.add(R.id.sub_menu_price, index, index, priceType.description)
+            }
         }
 
     }

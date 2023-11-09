@@ -97,7 +97,7 @@ class OrderPageTitle: Fragment() {
                 } else {
                     docClient.isClickable = true
                     docDeliveryDate.isClickable = true
-                    docPriceType.isEnabled = true
+                    docPriceType.isEnabled = options.allowPriceTypeChoose
                     docPaymentType.isEnabled = true
                     docIsReturn.isClickable = true
                     docNextPayment.isClickable = true

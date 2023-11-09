@@ -105,7 +105,9 @@ class OrderViewModel @Inject constructor(
         viewModelScope.launch {
             orderRepository.getOrder(orderGuid)?.let {order ->
                 order.setClient(client)
-                order.priceType = selectedPriceCode
+                if (order.priceType.isEmpty()) {
+                    order.priceType = client.priceType
+                }
                 if (orderRepository.updateDocument(order)) {
                     withContext(Dispatchers.Main) {
                         popUp()

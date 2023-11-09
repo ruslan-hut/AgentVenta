@@ -144,6 +144,7 @@ class PickerFragment: Fragment(), MenuProvider {
             priceUnit.text = priceUnitText
 
             editPrice.setText(product.price.format(2))
+            editPrice.isEnabled = !(product.price > 0 && !options.allowPriceTypeChoose)
 
             when (currentUnit) {
                 Constants.UNIT_WEIGHT -> {
