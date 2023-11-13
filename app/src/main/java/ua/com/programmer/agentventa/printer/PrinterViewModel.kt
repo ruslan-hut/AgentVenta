@@ -13,6 +13,7 @@ class PrinterViewModel @Inject constructor(
 ): ViewModel() {
 
     val devices = MutableLiveData<List<BluetoothDevice>>()
+    val permissionGranted = MutableLiveData(false)
 
     init {
 //        if (ActivityCompat.checkSelfPermission(
@@ -30,6 +31,10 @@ class PrinterViewModel @Inject constructor(
 //            return
 //        }
 //        devices.value = bluetoothAdapter?.bondedDevices?.toList()
+    }
+
+    fun onCheckPermission(result: Boolean) {
+        permissionGranted.value = result
     }
 
 }
