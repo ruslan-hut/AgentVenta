@@ -1,12 +1,16 @@
 package ua.com.programmer.agentventa.printer
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -14,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import dagger.hilt.android.AndroidEntryPoint
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.PrinterSettingsFragmentBinding
 
 @AndroidEntryPoint
@@ -37,6 +42,14 @@ class PrinterSettingsFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        viewModel.devices.observe(viewLifecycleOwner) {
+            setupDeviceSpinner(it)
+        }
+
+        viewModel.currentDeviceIndex.observe(viewLifecycleOwner) {
+            binding.deviceSpinner.setSelection(it)
+        }
 
         viewModel.permissionGranted.observe(viewLifecycleOwner) {
             if (it) {
@@ -96,6 +109,26 @@ class PrinterSettingsFragment: Fragment() {
                 Manifest.permission.BLUETOOTH_ADMIN
             )
         )
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun setupDeviceSpinner(devices: List<BluetoothDevice>) {
+
+        val spinnerList = devices.map { it.name }
+        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
+        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
+        binding.deviceSpinner.adapter = adapter
+
+        binding.deviceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                val description = spinnerList[position]
+                viewModel.onDeviceSelected(description)
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                // Another interface callback
+            }
+        }
     }
 
 }

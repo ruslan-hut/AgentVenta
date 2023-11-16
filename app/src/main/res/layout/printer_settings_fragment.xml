@@ -30,6 +30,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="?attr/colorError"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     android:text="To use printer, you should  grant permission to use Bluetooth devices"
                     />
                 <TextView
@@ -45,13 +46,23 @@
                     />
             </LinearLayout>
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:text="Add printer to pared devices in system settings and select it here"
+                />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="device"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:text="Printer name"
                     />
                 <TextView
                     android:layout_width="16dp"

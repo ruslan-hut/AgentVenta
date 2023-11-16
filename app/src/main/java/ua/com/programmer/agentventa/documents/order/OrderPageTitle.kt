@@ -128,7 +128,7 @@ class OrderPageTitle: Fragment() {
     private fun setupPriceSpinner() {
 
         val spinnerList = sharedModel.priceTypes.map { it.description }
-        val adapter = ArrayAdapter(requireContext(), R.layout.price_spinner_item, spinnerList)
+        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
         adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
         binding.docPriceType.adapter = adapter
 
@@ -153,7 +153,7 @@ class OrderPageTitle: Fragment() {
     private fun setupPaymentSpinner() {
 
         val spinnerList = sharedModel.paymentTypes.map { it.description }
-        val adapter = ArrayAdapter(requireContext(), R.layout.price_spinner_item, spinnerList)
+        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
         adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
         binding.docPaymentType.adapter = adapter
 
