@@ -26,7 +26,7 @@ class PrinterSettingsFragment: Fragment() {
 
     private val viewModel: PrinterViewModel by activityViewModels()
     private var _binding: PrinterSettingsFragmentBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding
 
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
 
@@ -34,10 +34,11 @@ class PrinterSettingsFragment: Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
+    ): View? {
         _binding = PrinterSettingsFragmentBinding.inflate(inflater,container,false)
-        binding.lifecycleOwner = viewLifecycleOwner
-        return binding.root
+        binding?.lifecycleOwner = viewLifecycleOwner
+        binding?.viewModel = viewModel
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -48,21 +49,36 @@ class PrinterSettingsFragment: Fragment() {
         }
 
         viewModel.currentDeviceIndex.observe(viewLifecycleOwner) {
-            binding.deviceSpinner.setSelection(it)
+            binding?.deviceSpinner?.setSelection(it)
         }
 
-        viewModel.permissionGranted.observe(viewLifecycleOwner) {
-            if (it) {
-                binding.permissionMessage.visibility = View.GONE
-            } else {
-                binding.requestPermissionButton.setOnClickListener {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        requestNeededPermissions()
-                    } else {
-                        requestNeededPermissionsOld()
+        viewModel.progress.observe(viewLifecycleOwner) { isProgress ->
+            binding?.let {
+                it.progressBar.visibility = if (isProgress) View.VISIBLE else View.INVISIBLE
+                it.testButton.isEnabled = !isProgress
+                it.deviceSpinner.isEnabled = !isProgress
+            }
+        }
+
+        viewModel.permissionGranted.observe(viewLifecycleOwner) { granted ->
+            binding?.let {
+                if (granted) {
+                    it.permissionMessage.visibility = View.GONE
+                    it.testButton.isEnabled = true
+                    it.testButton.setOnClickListener {
+                        viewModel.printTest()
                     }
+                } else {
+                    it.testButton.isEnabled = false
+                    it.requestPermissionButton.setOnClickListener {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            requestNeededPermissions()
+                        } else {
+                            requestNeededPermissionsOld()
+                        }
+                    }
+                    it.permissionMessage.visibility = View.VISIBLE
                 }
-                binding.permissionMessage.visibility = View.VISIBLE
             }
         }
 
@@ -117,9 +133,9 @@ class PrinterSettingsFragment: Fragment() {
         val spinnerList = devices.map { it.name }
         val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
         adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-        binding.deviceSpinner.adapter = adapter
+        binding?.deviceSpinner?.adapter = adapter
 
-        binding.deviceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        binding?.deviceSpinner?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val description = spinnerList[position]
                 viewModel.onDeviceSelected(description)
@@ -129,6 +145,11 @@ class PrinterSettingsFragment: Fragment() {
                 // Another interface callback
             }
         }
+    }
+
+    override fun onDestroy() {
+        _binding = null
+        super.onDestroy()
     }
 
 }

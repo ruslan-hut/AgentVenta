@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
-
+        <variable
+            name="viewModel"
+            type="ua.com.programmer.agentventa.printer.PrinterViewModel" />
     </data>
 
     <ScrollView
@@ -64,16 +65,39 @@
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                     android:text="Printer name"
                     />
-                <TextView
-                    android:layout_width="16dp"
-                    android:layout_height="wrap_content"
-                    />
+
+                <ProgressBar
+                    android:id="@+id/progress_bar"
+                    android:layout_width="32dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_horizontal" />
                 <Spinner
                     android:id="@+id/device_spinner"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content" />
             </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="32dp" />
+
+            <Button
+                android:id="@+id/test_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Print test page"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"/>
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:textColor="?attr/colorError"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:text="@{viewModel.status}"/>
 
         </LinearLayout>
 
