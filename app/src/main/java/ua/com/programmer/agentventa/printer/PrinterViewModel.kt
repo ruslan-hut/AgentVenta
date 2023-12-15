@@ -94,6 +94,8 @@ class PrinterViewModel @Inject constructor(
                 // Reset to left align (if necessary)
                 outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))
                 outputStream.write("123456789*123456789*123456789*123456789*\n".toByteArray())
+                outputStream.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n".toByteArray())
+                outputStream.write("АБВГҐЕЄЖЗИІЇКЛМНОПРСТУФХЦЧШЩЬЮЯ\n".toByteArray())
 
 //                // Left Align
 //                outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))  // ESC a n
