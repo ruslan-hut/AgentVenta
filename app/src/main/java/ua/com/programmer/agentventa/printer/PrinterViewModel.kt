@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ua.com.programmer.agentventa.BuildConfig
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.UUID
@@ -71,9 +72,9 @@ class PrinterViewModel @Inject constructor(
 //                outputStream.write("Regular text line\n".toByteArray())
 
                 // Bold text
-//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x1))  // ESC E n
-//                outputStream.write("Bold text line\n".toByteArray())
-//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
+                outputStream.write(byteArrayOf(0x1B, 0x45, 0x1))  // ESC E n
+                outputStream.write("Printing test. Build ${BuildConfig.VERSION_CODE} ${BuildConfig.FLAVOR}\n".toByteArray())
+                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
 
                 // Double height
 //                outputStream.write(byteArrayOf(0x1D, 0x21, 0x01)) // GS ! n
@@ -94,13 +95,13 @@ class PrinterViewModel @Inject constructor(
 //                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
 
                 //outputStream.write("printing test\n".toByteArray())
-                outputStream.write("-->\n".toByteArray())
+                outputStream.write("Begin -->\n".toByteArray())
                 // Reset to left align (if necessary)
                 //outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))
                 //outputStream.write("123456789*123456789*123456789*123456789*\n".toByteArray())
                 //outputStream.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n".toByteArray())
-                val testString = "АБВГҐЕЄЖЗИІЇКЛМНОПРСТУФХЦЧШЩЬЮЯ"
-                outputStream.write(byteArrayOf(27, 116, 17))
+                val testString = "Їхав єдиний москаль. Чув, що віз царю жезл, п'ять шуб і гофр."
+                outputStream.write(byteArrayOf(27, 116, 17)) // ESC t n (switch to cp866)
                 outputStream.write(testString.toByteArray(charset))
                 outputStream.write(byteArrayOf(13, 10)) // CR
                 //outputStream.write(byteArrayOf((0x92).toByte(), (0x93).toByte(), (0x94).toByte()))
@@ -112,7 +113,7 @@ class PrinterViewModel @Inject constructor(
 //                val byteArray = text.toByteArray(Charset.forName("CP866"))
 //                Log.d("Printer", "byteArray: $byteArray")
 
-                outputStream.write("<--\n".toByteArray())
+                outputStream.write("<-- End\n".toByteArray())
 
 //                // Left Align
 //                outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))  // ESC a n
