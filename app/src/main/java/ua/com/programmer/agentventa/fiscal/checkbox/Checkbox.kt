@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.fiscal.checkbox
 
-import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,9 +18,10 @@ import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.XMap
 import java.io.File
 import java.net.ProtocolException
+import java.net.SocketTimeoutException
 import java.util.UUID
 
-class Checkbox constructor(private val orderRepository: OrderRepository): FiscalService {
+class Checkbox(private val orderRepository: OrderRepository): FiscalService {
 
     override val serviceId = Constants.FISCAL_PROVIDER_CHECKBOX
 
@@ -43,7 +43,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val okBuilder = OkHttpClient.Builder()
             .addInterceptor {chain ->
 
-                crashlytics.log("Checkbox request: ${chain.request().url}")
                 val builder = chain.request().newBuilder()
                 builder
                     .addHeader("X-Client-Name", "ua.com.programmer.agentventa")
@@ -242,7 +241,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val fileResponse = build().getReportPng(id)
             saveFileData(fileResponse, file)
         } catch (e: Exception) {
-            crashlytics.recordException(e)
             return OperationResult(false, "Помилка отримання звіту. ${e.message}")
         }
 
@@ -301,7 +299,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
         val status = response.getString("status")
 
         if (status.isBlank()) {
-            Log.d("Checkbox", "Receipt: $receipt")
             crashlytics.log("Receipt: $receipt")
             crashlytics.recordException(Exception("Checkbox createReceipt failed; $message"))
             return OperationResult(false, "Не вдалося створити чек. $message")
@@ -349,7 +346,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             saveFileData(response, file)
 
         } catch (e: Exception) {
-            crashlytics.recordException(e)
             return OperationResult(false, "Помилка отримання чека. ${e.message}")
         }
 
@@ -437,11 +433,12 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             } else {
                 mapOf("message" to e)
             }
+        } catch (e: SocketTimeoutException) {
+            mapOf("message" to "Таймаут з'єднання з сервером фіскалізації")
         } catch (e: Exception) {
-            crashlytics.recordException(e)
             mapOf("message" to e)
         }
-        val mappedResponse = XMap(response ?: mapOf("message" to "No response"))
+        val mappedResponse = XMap(response ?: mapOf("message" to "Немає відповіді від сервера фіскалізації"))
         val message = mappedResponse.getString("message")
         if (message.isNotBlank()) {
             crashlytics.log("Checkbox error: $message")
@@ -455,7 +452,6 @@ class Checkbox constructor(private val orderRepository: OrderRepository): Fiscal
             val errorMap = XMap(errorBody)
             mapOf("message" to errorMap.getString("message"))
         } else {
-            crashlytics.recordException(e)
             mapOf("message" to e.message())
         }
     }
