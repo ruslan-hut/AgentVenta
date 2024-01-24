@@ -422,7 +422,7 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
         return OperationResult(message.isBlank(), message)
     }
 
-    private suspend fun callApi(action: suspend () -> Map<String,Any>?): XMap {
+    private suspend fun callApi(action: suspend () -> Map<String, Any>?): XMap {
         val response = try {
             action()
         } catch (e: HttpException) {
@@ -438,12 +438,7 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
         } catch (e: Exception) {
             mapOf("message" to e)
         }
-        val mappedResponse = XMap(response ?: mapOf("message" to "Немає відповіді від сервера фіскалізації"))
-        val message = mappedResponse.getString("message")
-        if (message.isNotBlank()) {
-            crashlytics.log("Checkbox error: $message")
-        }
-        return mappedResponse
+        return XMap(response ?: mapOf("message" to "Немає відповіді від сервера фіскалізації"))
     }
 
     private fun readErrorMessage(e: HttpException): Map<String,String> {
