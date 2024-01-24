@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
 
@@ -56,6 +57,9 @@ class PrinterViewModel @Inject constructor(
         setProgress(true)
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val charset = Charset.forName("cp866")
+                //Log.d("Printer", "charset: $charset")
+
                 val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch setStatus("Not connected")
                 val socket = device.createRfcommSocketToServiceRecord(serialPortId)
                 socket.connect()
@@ -64,37 +68,65 @@ class PrinterViewModel @Inject constructor(
                 outputStream.write(byteArrayOf(0x1B, 0x40)) // ESC @
 
                 // Print a regular line of text
-                outputStream.write("Regular text line\n".toByteArray())
+//                outputStream.write("Regular text line\n".toByteArray())
 
                 // Bold text
-                outputStream.write(byteArrayOf(0x1B, 0x45, 0x1))  // ESC E n
-                outputStream.write("Bold text line\n".toByteArray())
-                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
+//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x1))  // ESC E n
+//                outputStream.write("Bold text line\n".toByteArray())
+//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
 
                 // Double height
-                outputStream.write(byteArrayOf(0x1D, 0x21, 0x01)) // GS ! n
-                outputStream.write("Double height text line\n".toByteArray())
-                outputStream.write(byteArrayOf(0x1D, 0x21, 0x00)) // Cancel double height
+//                outputStream.write(byteArrayOf(0x1D, 0x21, 0x01)) // GS ! n
+//                outputStream.write("Double height text line\n".toByteArray())
+//                outputStream.write(byteArrayOf(0x1D, 0x21, 0x00)) // Cancel double height
 
                 // Center Align
-                outputStream.write(byteArrayOf(0x1B, 0x61, 0x1))  // ESC a n
-                outputStream.write("Centered text\n".toByteArray())
+                //outputStream.write(byteArrayOf(0x1B, 0x61, 0x1))  // ESC a n
 
-                // Left Align
-                outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))  // ESC a n
-                outputStream.write("Left aligned text\n".toByteArray())
+                // Double height
+//                outputStream.write(byteArrayOf(0x1D, 0x21, 0x01)) // GS ! n
+//                outputStream.write("Agent Venta\n".toByteArray())
+//                outputStream.write(byteArrayOf(0x1D, 0x21, 0x00)) // Cancel double height
 
-                // Right Align
-                outputStream.write(byteArrayOf(0x1B, 0x61, 0x2))  // ESC a n
-                outputStream.write("Right aligned text\n".toByteArray())
+                // Bold text
+//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x1))
+//                outputStream.write("${BuildConfig.VERSION_NAME}\n".toByteArray())
+//                outputStream.write(byteArrayOf(0x1B, 0x45, 0x0))  // Cancel bold
 
+                //outputStream.write("printing test\n".toByteArray())
+                outputStream.write("-->\n".toByteArray())
                 // Reset to left align (if necessary)
-                outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))
+                //outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))
+                //outputStream.write("123456789*123456789*123456789*123456789*\n".toByteArray())
+                //outputStream.write("ABCDEFGHIJKLMNOPQRSTUVWXYZ\n".toByteArray())
+                val testString = "АБВГҐЕЄЖЗИІЇКЛМНОПРСТУФХЦЧШЩЬЮЯ"
+                outputStream.write(byteArrayOf(27, 116, 17))
+                outputStream.write(testString.toByteArray(charset))
+                outputStream.write(byteArrayOf(13, 10)) // CR
+                //outputStream.write(byteArrayOf((0x92).toByte(), (0x93).toByte(), (0x94).toByte()))
+                //outputStream.write(byteArrayOf(13, 10))
+
+                //outputStream.write("АБВГҐЕЄЖЗИІЇКЛМНОПРСТУФХЦЧШЩЬЮЯ\n".toByteArray())
+
+//                val text = "Съешь еще этих мягких французских булок"
+//                val byteArray = text.toByteArray(Charset.forName("CP866"))
+//                Log.d("Printer", "byteArray: $byteArray")
+
+                outputStream.write("<--\n".toByteArray())
+
+//                // Left Align
+//                outputStream.write(byteArrayOf(0x1B, 0x61, 0x0))  // ESC a n
+//                outputStream.write("Left aligned text\n".toByteArray())
+//
+//                // Right Align
+//                outputStream.write(byteArrayOf(0x1B, 0x61, 0x2))  // ESC a n
+//                outputStream.write("Right aligned text\n".toByteArray())
 
                 // Feed and Cut
                 outputStream.write(byteArrayOf(0x0A))  // Print and line feed
                 outputStream.write(byteArrayOf(0x1D, 0x56, 0x01)) // Partial cut
 
+                outputStream.flush()
                 outputStream.close()
                 socket.close()
             } catch (e: IOException) {
