@@ -12,5 +12,6 @@ interface FiscalService {
     suspend fun createXReport(fiscalOptions: FiscalOptions): OperationResult
     suspend fun createReceipt(fiscalOptions: FiscalOptions): OperationResult
     suspend fun getReceipt(fiscalOptions: FiscalOptions): OperationResult
+    suspend fun getReceiptText(fiscalOptions: FiscalOptions): OperationResult
     suspend fun createServiceReceipt(fiscalOptions: FiscalOptions): OperationResult
 }

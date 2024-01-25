@@ -356,6 +356,27 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
         return OperationResult(false, "Помилка отримання чека. Файл не збережено")
     }
 
+    override suspend fun getReceiptText(fiscalOptions: FiscalOptions): OperationResult {
+        val id = fiscalOptions.orderGuid
+        if (id.isBlank()) return OperationResult(false, "Не вказано ID чека")
+
+        try {
+            val response = build().getReceiptTxt(id)
+
+            val file = File(options?.fileDir, "$id.txt")
+            saveFileData(response, file)
+
+        } catch (e: Exception) {
+            return OperationResult(false, "Помилка отримання чека. ${e.message}")
+        }
+
+        val file = File(options?.fileDir, "$id.txt")
+        if (file.exists()) {
+            return OperationResult(true, fileId = id)
+        }
+        return OperationResult(false, "Помилка отримання чека. Файл не збережено")
+    }
+
     override suspend fun createServiceReceipt(fiscalOptions: FiscalOptions): OperationResult {
         if (shiftId.isBlank()) return OperationResult(false, "Немає відкритої зміни")
         val receipt = ServiceReceipt(

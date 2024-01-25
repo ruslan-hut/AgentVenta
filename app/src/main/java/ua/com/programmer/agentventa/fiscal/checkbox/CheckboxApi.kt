@@ -43,6 +43,10 @@ interface CheckboxApi {
     @GET("api/v1/receipts/{id}/png")
     suspend fun getReceiptPng(@Path("id") id: String): ResponseBody
 
+    @Streaming
+    @GET("api/v1/receipts/{id}/text")
+    suspend fun getReceiptTxt(@Path("id") id: String): ResponseBody
+
     @POST("api/v1/reports")
     suspend fun createXReport(): Map<String,Any>?
 

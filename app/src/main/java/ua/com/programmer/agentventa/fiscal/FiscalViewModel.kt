@@ -146,6 +146,13 @@ class FiscalViewModel @Inject constructor(
         }
     }
 
+    fun getReceiptText(orderGuid: String) {
+        fiscalOptions = fiscalOptions.copy(orderGuid = orderGuid)
+        callService(FiscalService::getReceiptText){
+            operationResult.value = it
+        }
+    }
+
     private fun callService(action: KSuspendFunction2<FiscalService, FiscalOptions, OperationResult>, onResult: (OperationResult) -> Unit = {}) {
         if (isLoading.value == true) return
         if (fiscalService == null) {
