@@ -1,6 +1,9 @@
 package ua.com.programmer.agentventa.documents.order
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -14,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -23,12 +27,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.adapter.FragmentStateAdapter
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.ModelActivityOrderBinding
+import ua.com.programmer.agentventa.extensions.fileExtension
 import ua.com.programmer.agentventa.fiscal.FiscalViewModel
 import ua.com.programmer.agentventa.fiscal.OperationResult
+import ua.com.programmer.agentventa.printer.PrinterViewModel
 import ua.com.programmer.agentventa.shared.SharedViewModel
 
 @AndroidEntryPoint
@@ -37,6 +44,7 @@ class OrderFragment: Fragment(), MenuProvider {
     private val viewModel: OrderViewModel by activityViewModels()
     private val sharedModel: SharedViewModel by activityViewModels()
     private val fiscalModel: FiscalViewModel by activityViewModels()
+    private val printerModel: PrinterViewModel by activityViewModels()
     private val navigationArgs: OrderFragmentArgs by navArgs()
     private var _binding: ModelActivityOrderBinding? = null
     private val binding get() = _binding
@@ -57,6 +65,8 @@ class OrderFragment: Fragment(), MenuProvider {
 
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        checkPrinterPermissionGranted()
 
         return binding?.root
     }
@@ -140,6 +150,10 @@ class OrderFragment: Fragment(), MenuProvider {
 
         fiscalModel.operationResult.observe(viewLifecycleOwner) {
             onFiscalServiceResult(it)
+        }
+
+        printerModel.status.observe(viewLifecycleOwner) {
+            showPrinterState(it)
         }
 
         sharedModel.barcode.observe(this.viewLifecycleOwner) {
@@ -251,18 +265,23 @@ class OrderFragment: Fragment(), MenuProvider {
     }
 
     private fun printDocument() {
+        val guid = viewModel.getGuid()
+        if (viewModel.isFiscal() && printerModel.useInFiscalService()) {
+            if (fiscalServiceNotReady()) return
+            fiscalModel.getReceiptText(guid)
+            return
+        }
         if (!sharedModel.options.printingEnabled) {
             Toast.makeText(requireContext(), getString(R.string.error_printing_not_available), Toast.LENGTH_SHORT).show()
             return
         }
         if (viewModel.canPrint()) {
-            val guid = viewModel.getGuid()
             sharedModel.callPrintDocument(guid) {success ->
                 if (!success) {
                     Toast.makeText(requireContext(), getString(R.string.error_while_print), Toast.LENGTH_SHORT).show()
                     return@callPrintDocument
                 }
-                openFile("$guid.pdf", "pdf")
+                openFile("$guid.pdf")
             }
         } else {
             AlertDialog.Builder(requireContext())
@@ -319,7 +338,7 @@ class OrderFragment: Fragment(), MenuProvider {
         result ?: return
         if (result.success) {
             if (result.fileId.isNotBlank()) {
-                openFile("${result.fileId}.png", "png")
+                openFile(result.fileId)
             }
             if (result.receiptId.isNotBlank()) {
                 viewModel.saveDocument()
@@ -349,8 +368,14 @@ class OrderFragment: Fragment(), MenuProvider {
         return false
     }
 
-    private fun openFile(fileName: String, extension: String) {
+    private fun openFile(fileName: String) {
         val file = sharedModel.fileInCache(fileName)
+        val extension = fileName.fileExtension()
+
+        if (printerModel.readyToPrint() && extension == "txt") {
+            printerModel.printTextFile(file.path)
+            return
+        }
 
         val mime = MimeTypeMap.getSingleton()
         val type = mime.getMimeTypeFromExtension(extension)
@@ -372,6 +397,34 @@ class OrderFragment: Fragment(), MenuProvider {
         if (viewModel.saveResult.value == true) {
             view?.findNavController()?.popBackStack()
         }
+    }
+
+    private fun checkPrinterPermissionGranted() {
+        val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH
+            ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH_ADMIN
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        printerModel.onCheckPermission(granted)
+    }
+
+    private fun showPrinterState(state: String) {
+        if (state.isEmpty()) return
+        val text = getText(R.string.error_while_print).toString()+": "+state
+        Snackbar.make(requireView(), text, Snackbar.LENGTH_INDEFINITE)
+            .setAction(getString(R.string.OK)) {
+                printerModel.setStatus("")
+            }
+            .show()
     }
 
     override fun onDestroy() {

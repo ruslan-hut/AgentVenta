@@ -1,6 +1,9 @@
 package ua.com.programmer.agentventa.fiscal
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -11,16 +14,20 @@ import android.view.ViewGroup
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.FiscalFragmentBinding
+import ua.com.programmer.agentventa.extensions.fileExtension
 import ua.com.programmer.agentventa.extensions.toInt100
+import ua.com.programmer.agentventa.printer.PrinterViewModel
 import ua.com.programmer.agentventa.shared.SharedViewModel
 
 @AndroidEntryPoint
@@ -28,6 +35,7 @@ class FiscalFragment: Fragment(), MenuProvider {
 
     private val viewModel: FiscalViewModel by activityViewModels()
     private val sharedViewModel: SharedViewModel by activityViewModels()
+    private val printerModel: PrinterViewModel by activityViewModels()
     private var _binding: FiscalFragmentBinding? = null
     private val binding get() = _binding!!
 
@@ -41,6 +49,8 @@ class FiscalFragment: Fragment(), MenuProvider {
 
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+        checkPrinterPermissionGranted()
 
         return binding.root
     }
@@ -148,6 +158,10 @@ class FiscalFragment: Fragment(), MenuProvider {
             onResult(it)
         }
 
+        printerModel.status.observe(viewLifecycleOwner) {
+            showPrinterState(it)
+        }
+
         binding.tvFiscalServiceProvider.text = viewModel.fiscalOptions.provider
         binding.tvCashier.text = viewModel.fiscalOptions.cashier
     }
@@ -181,10 +195,12 @@ class FiscalFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun openReportFile(id: String) {
+    private fun openReportFile(fileName: String) {
         val context = context ?: return
 
-        val file = sharedViewModel.fileInCache("$id.png")
+        val file = sharedViewModel.fileInCache(fileName)
+        val extension = fileName.fileExtension()
+
         if (!file.exists()) {
             AlertDialog.Builder(context)
                 .setTitle(R.string.warning)
@@ -194,8 +210,13 @@ class FiscalFragment: Fragment(), MenuProvider {
             return
         }
 
+        if (printerModel.readyToPrint() && extension == "txt") {
+            printerModel.printTextFile(file.path)
+            return
+        }
+
         val mime = MimeTypeMap.getSingleton()
-        val type = mime.getMimeTypeFromExtension("png")
+        val type = mime.getMimeTypeFromExtension(extension)
         val uri = FileProvider.getUriForFile(
             context,
             "ua.com.programmer.agentventa",
@@ -206,6 +227,34 @@ class FiscalFragment: Fragment(), MenuProvider {
         intent.setDataAndType(uri, type)
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         startActivity(intent)
+    }
+
+    private fun checkPrinterPermissionGranted() {
+        val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH
+            ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.BLUETOOTH_ADMIN
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+        printerModel.onCheckPermission(granted)
+    }
+
+    private fun showPrinterState(state: String) {
+        if (state.isEmpty()) return
+        val text = getText(R.string.error_while_print).toString()+": "+state
+        Snackbar.make(requireView(), text, Snackbar.LENGTH_INDEFINITE)
+            .setAction(getString(R.string.OK)) {
+                printerModel.setStatus("")
+            }
+            .show()
     }
 
     override fun onDestroyView() {

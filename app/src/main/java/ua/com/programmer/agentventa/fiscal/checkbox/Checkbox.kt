@@ -196,31 +196,20 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
             shiftId = ""
         }
 
-        var id = ""
         if (status == "CLOSED") {
 
             val zReportData = response.getString("z_report")
             if (zReportData.isNotBlank()) {
                 val report = XMap(zReportData)
-                id = report.getString("id")
-                if (id.isNotBlank()) {
-                    val file = File(options?.fileDir, "$id.png")
-                    try {
-                        val fileResponse = build().getReportPng(id)
-                        saveFileData(fileResponse, file)
-                    } catch (e: Exception) {
-                        id = ""
-                        message = "Помилка отримання звіту. ${e.message}"
-                    }
-                }
+                val id = report.getString("id")
+                return getReportFile(fiscalOptions, id)
             }
 
         }
 
         return OperationResult(
-            success = message.isBlank(),
-            message = message,
-            fileId = id,
+            success = false,
+            message = "$status $message",
         )
     }
 
@@ -235,19 +224,37 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
         }
 
         val id = response.getString("id")
-        val file = File(options?.fileDir, "$id.png")
+        return getReportFile(fiscalOptions, id)
+    }
 
-        try {
-            val fileResponse = build().getReportPng(id)
-            saveFileData(fileResponse, file)
-        } catch (e: Exception) {
-            return OperationResult(false, "Помилка отримання звіту. ${e.message}")
+    private suspend fun getReportFile(fiscalOptions: FiscalOptions, id: String): OperationResult {
+        val file: File
+        val fileName: String
+
+        if (fiscalOptions.useTextPrinter) {
+            fileName = "$id.txt"
+            file = File(options?.fileDir, fileName)
+            try {
+                val fileResponse = build().getReportText(id, fiscalOptions.printAreaWidth)
+                saveFileData(fileResponse, file)
+            } catch (e: Exception) {
+                return OperationResult(false, "Помилка отримання звіту. ${e.message}")
+            }
+        } else {
+            fileName = "$id.png"
+            file = File(options?.fileDir, fileName)
+            try {
+                val fileResponse = build().getReportPng(id)
+                saveFileData(fileResponse, file)
+            } catch (e: Exception) {
+                return OperationResult(false, "Помилка отримання звіту. ${e.message}")
+            }
         }
 
         if (file.exists()) {
             return OperationResult(
                 success = true,
-                fileId = id,
+                fileId = fileName,
             )
         }
         return OperationResult(false, "Помилка отримання звіту. Файл не збережено")
@@ -336,43 +343,47 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
     }
 
     override suspend fun getReceipt(fiscalOptions: FiscalOptions): OperationResult {
+        if (fiscalOptions.useTextPrinter) return getReceiptText(fiscalOptions)
+
         val id = fiscalOptions.orderGuid
+        val fileName = "${id}.png"
         if (id.isBlank()) return OperationResult(false, "Не вказано ID чека")
 
         try {
             val response = build().getReceiptPng(id)
 
-            val file = File(options?.fileDir, "$id.png")
+            val file = File(options?.fileDir, fileName)
             saveFileData(response, file)
 
         } catch (e: Exception) {
             return OperationResult(false, "Помилка отримання чека. ${e.message}")
         }
 
-        val file = File(options?.fileDir, "$id.png")
+        val file = File(options?.fileDir, fileName)
         if (file.exists()) {
-            return OperationResult(true, fileId = id)
+            return OperationResult(true, fileId = fileName)
         }
         return OperationResult(false, "Помилка отримання чека. Файл не збережено")
     }
 
     override suspend fun getReceiptText(fiscalOptions: FiscalOptions): OperationResult {
         val id = fiscalOptions.orderGuid
+        val fileName = "${id}.txt"
         if (id.isBlank()) return OperationResult(false, "Не вказано ID чека")
 
         try {
-            val response = build().getReceiptTxt(id)
+            val response = build().getReceiptTxt(id, fiscalOptions.printAreaWidth)
 
-            val file = File(options?.fileDir, "$id.txt")
+            val file = File(options?.fileDir, fileName)
             saveFileData(response, file)
 
         } catch (e: Exception) {
             return OperationResult(false, "Помилка отримання чека. ${e.message}")
         }
 
-        val file = File(options?.fileDir, "$id.txt")
+        val file = File(options?.fileDir, fileName)
         if (file.exists()) {
-            return OperationResult(true, fileId = id)
+            return OperationResult(true, fileId = fileName)
         }
         return OperationResult(false, "Помилка отримання чека. Файл не збережено")
     }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.BuildConfig
+import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.UUID
@@ -37,7 +38,7 @@ class PrinterViewModel @Inject constructor(
         permissionGranted.value = result
         if (result) {
             devices.value = bluetoothAdapter?.bondedDevices?.toList()
-            val address = preferences.getString("printer_address", "")
+            val address = printerAddress()
             val index = devices.value?.indexOfFirst { it.address == address } ?: -1
             currentDeviceIndex.value = index
         }
@@ -54,12 +55,12 @@ class PrinterViewModel @Inject constructor(
     fun printTest() {
         setStatus("")
         if (permissionGranted.value != true)  return setStatus("Permission not granted")
-        val address = preferences.getString("printer_address", "") ?: return setStatus("No printer selected")
+        val address = printerAddress()
+        if (address.isEmpty()) return setStatus("Printer not selected")
         setProgress(true)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val charset = Charset.forName("cp866")
-                //Log.d("Printer", "charset: $charset")
 
                 val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch setStatus("Not connected")
                 val socket = device.createRfcommSocketToServiceRecord(serialPortId)
@@ -104,10 +105,6 @@ class PrinterViewModel @Inject constructor(
                 outputStream.write(byteArrayOf(27, 116, 17)) // ESC t n (switch to cp866)
                 outputStream.write(testString.toByteArray(charset))
                 outputStream.write(byteArrayOf(13, 10)) // CR
-                //outputStream.write(byteArrayOf((0x92).toByte(), (0x93).toByte(), (0x94).toByte()))
-                //outputStream.write(byteArrayOf(13, 10))
-
-                //outputStream.write("АБВГҐЕЄЖЗИІЇКЛМНОПРСТУФХЦЧШЩЬЮЯ\n".toByteArray())
 
 //                val text = "Съешь еще этих мягких французских булок"
 //                val byteArray = text.toByteArray(Charset.forName("CP866"))
@@ -146,11 +143,86 @@ class PrinterViewModel @Inject constructor(
         }
     }
 
-    private fun setStatus(newStatus: String) {
+    @SuppressLint("MissingPermission")
+    fun printTextFile(filePath: String) {
+        if (!readyToPrint()) return
+        val address = printerAddress()
+
+        viewModelScope.launch(Dispatchers.IO) {
+
+            try {
+
+                val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch
+                val socket = device.createRfcommSocketToServiceRecord(serialPortId)
+                socket.connect()
+
+                val outputStream = socket.outputStream
+                outputStream.write(byteArrayOf(27, 116, 17)) // ESC t n (switch to cp866)
+
+                val file = File(filePath)
+                val fileInputStream = file.inputStream()
+                val buffer = ByteArray(1024)
+                var bytes: Int
+
+                while (fileInputStream.read(buffer).also { bytes = it } != -1) {
+                    outputStream?.write(buffer, 0, bytes)
+                }
+
+                outputStream?.flush()
+                fileInputStream.close()
+                socket?.close()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    setStatus(e.message ?: "Unknown error")
+                }
+            }
+
+        }
+
+    }
+
+    fun setStatus(newStatus: String) {
         status.value = newStatus
     }
 
     private fun setProgress(inProgress: Boolean) {
         progress.value = inProgress
+    }
+
+    fun useInFiscalService(): Boolean {
+        return preferences.getBoolean("use_in_fiscal_service", false) && readyToPrint()
+    }
+
+    fun saveUseInFiscalService(use: Boolean) {
+        preferences.edit().putBoolean("use_in_fiscal_service", use).apply()
+    }
+
+    fun autoPrint(): Boolean {
+        return preferences.getBoolean("auto_print", false) && readyToPrint()
+    }
+
+    fun saveAutoPrint(use: Boolean) {
+        preferences.edit().putBoolean("auto_print", use).apply()
+    }
+
+    fun readPrintAreaWidth(): Int {
+        return preferences.getInt("print_area_width", 32)
+    }
+
+    fun savePrintAreaWidth(width: Int) {
+        val correctWidth = if (width < 10 || width > 250) {
+            32
+        } else {
+            width
+        }
+        preferences.edit().putInt("print_area_width", correctWidth).apply()
+    }
+
+    private fun printerAddress(): String {
+        return preferences.getString("printer_address", "") ?: ""
+    }
+
+    fun readyToPrint(): Boolean {
+        return printerAddress().isNotEmpty() && permissionGranted.value == true
     }
 }

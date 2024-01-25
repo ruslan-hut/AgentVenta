@@ -447,5 +447,14 @@
     <string name="action_share">Share</string>
     <string name="title_printer_settings">Printer settings</string>
     <string name="pref_summary_printer_settings">Connect to a printer and setup document printing</string>
+    <string name="to_use_printer_you_should_grant_permission_to_use_bluetooth_devices">To use printer, you should grant permission to use Bluetooth devices</string>
+    <string name="request_permission">Request permission</string>
+    <string name="add_printer_to_pared_devices_in_system_settings_and_select_it_here">Add printer to pared devices in system settings and select it here</string>
+    <string name="printer_name">Printer name</string>
+    <string name="print_test_page">Print test page</string>
+    <string name="print_area_width_in_characters">Print area width in characters</string>
+    <string name="number_of_characters_in_line" translatable="false">32</string>
+    <string name="use_in_fiscal_service">Use in fiscal service</string>
+    <string name="auto_print_saved_orders">Auto print saved orders</string>
 
 </resources>

@@ -20,6 +20,7 @@ import androidx.fragment.app.activityViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.PrinterSettingsFragmentBinding
+import ua.com.programmer.agentventa.extensions.asNumber
 
 @AndroidEntryPoint
 class PrinterSettingsFragment: Fragment() {
@@ -43,6 +44,22 @@ class PrinterSettingsFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        binding?.let {
+            it.useInFiscalService.isChecked = viewModel.useInFiscalService()
+            it.useInFiscalService.setOnClickListener { view ->
+                viewModel.saveUseInFiscalService((view as androidx.appcompat.widget.AppCompatCheckBox).isChecked) }
+            it.autoPrintSavedOrders.isChecked = viewModel.autoPrint()
+            it.autoPrintSavedOrders.setOnClickListener { view ->
+                viewModel.saveAutoPrint((view as androidx.appcompat.widget.AppCompatCheckBox).isChecked) }
+            it.printAreaWidth.setText(viewModel.readPrintAreaWidth().toString())
+            it.printAreaWidth.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) {
+                    val width = it.printAreaWidth.text.toString().asNumber()
+                    viewModel.savePrintAreaWidth(width)
+                }
+            }
+        }
 
         viewModel.devices.observe(viewLifecycleOwner) {
             setupDeviceSpinner(it)

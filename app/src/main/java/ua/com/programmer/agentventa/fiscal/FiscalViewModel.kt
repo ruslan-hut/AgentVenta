@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.fiscal
 
+import android.content.SharedPreferences
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,6 +24,7 @@ import kotlin.reflect.KSuspendFunction2
 class FiscalViewModel @Inject constructor(
     private val userAccountRepository: UserAccountRepository,
     private val orderRepository: OrderRepository,
+    private val preferences: SharedPreferences,
     private val logger: Logger
 ): ViewModel() {
 
@@ -75,6 +77,8 @@ class FiscalViewModel @Inject constructor(
             provider = userOptions.fiscalProvider,
             deviceId = userOptions.fiscalDeviceId,
             fileDir = cache,
+            useTextPrinter = preferences.getBoolean("use_in_fiscal_service", false),
+            printAreaWidth = preferences.getInt("print_area_width", 32),
         )
         val id = fiscalService?.serviceId ?: ""
         if (id != userOptions.fiscalProvider) {

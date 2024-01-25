@@ -32,7 +32,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="?attr/colorError"
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                    android:text="To use printer, you should  grant permission to use Bluetooth devices"
+                    android:text="@string/to_use_printer_you_should_grant_permission_to_use_bluetooth_devices"
                     />
                 <TextView
                     android:layout_width="wrap_content"
@@ -43,7 +43,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="Request permission"
+                    android:text="@string/request_permission"
                     />
             </LinearLayout>
 
@@ -53,7 +53,7 @@
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                android:text="Add printer to pared devices in system settings and select it here"
+                android:text="@string/add_printer_to_pared_devices_in_system_settings_and_select_it_here"
                 />
 
             <LinearLayout
@@ -63,7 +63,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                    android:text="Printer name"
+                    android:text="@string/printer_name"
                     />
 
                 <ProgressBar
@@ -86,7 +86,7 @@
                 android:id="@+id/test_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Print test page"
+                android:text="@string/print_test_page"
                 android:layout_marginStart="32dp"
                 android:layout_marginEnd="32dp"/>
 
@@ -98,6 +98,40 @@
                 android:textColor="?attr/colorError"
                 android:textAppearance="@style/TextAppearance.AppCompat.Medium"
                 android:text="@{viewModel.status}"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="32dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:text="@string/print_area_width_in_characters"
+                    />
+                <EditText
+                    android:id="@+id/print_area_width"
+                    android:layout_width="40dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:hint="@string/number_of_characters_in_line"
+                    android:autofillHints="30" />
+            </LinearLayout>
+            <CheckBox
+                android:id="@+id/use_in_fiscal_service"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/use_in_fiscal_service"/>
+            <CheckBox
+                android:id="@+id/auto_print_saved_orders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/auto_print_saved_orders" />
 
         </LinearLayout>
 

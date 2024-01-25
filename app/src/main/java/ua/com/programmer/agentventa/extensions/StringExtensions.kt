@@ -31,3 +31,19 @@ fun String.toInt100(): Int {
         0
     }
 }
+
+fun String.asNumber(): Int {
+    return try {
+        toInt()
+    } catch (e: Exception) {
+        0
+    }
+}
+
+fun String.fileExtension(): String {
+    return try {
+        substring(lastIndexOf(".") + 1)
+    } catch (e: Exception) {
+        ""
+    }
+}

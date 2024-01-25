@@ -5,6 +5,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 import retrofit2.http.Streaming
 
 interface CheckboxApi {
@@ -45,7 +46,7 @@ interface CheckboxApi {
 
     @Streaming
     @GET("api/v1/receipts/{id}/text")
-    suspend fun getReceiptTxt(@Path("id") id: String): ResponseBody
+    suspend fun getReceiptTxt(@Path("id") id: String, @Query("width") width: Int): ResponseBody
 
     @POST("api/v1/reports")
     suspend fun createXReport(): Map<String,Any>?
@@ -53,4 +54,8 @@ interface CheckboxApi {
     @Streaming
     @GET("api/v1/reports/{id}/png")
     suspend fun getReportPng(@Path("id") id: String): ResponseBody
+
+    @Streaming
+    @GET("api/v1/reports/{id}/text")
+    suspend fun getReportText(@Path("id") id: String, @Query("width") width: Int): ResponseBody
 }

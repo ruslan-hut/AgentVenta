@@ -10,4 +10,6 @@ data class FiscalOptions(
     val orderGuid: String = "",
     val fileDir: File? = null,
     val value: Int = 0,
+    val useTextPrinter: Boolean = false,
+    val printAreaWidth: Int = 0,
 )

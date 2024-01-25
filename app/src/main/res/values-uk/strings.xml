@@ -416,4 +416,12 @@
     <string name="action_share">Share</string>
     <string name="title_printer_settings">Налаштування принтера</string>
     <string name="pref_summary_printer_settings">Підключення до принтера і налаштування друку документів</string>
+    <string name="to_use_printer_you_should_grant_permission_to_use_bluetooth_devices">Для використання принтера потрібно надати застосунку доступ до служб Bluetooth</string>
+    <string name="request_permission">Запит на дозвіл</string>
+    <string name="add_printer_to_pared_devices_in_system_settings_and_select_it_here">Додайте принтер до списку пристроїв і потім оберіть його тут</string>
+    <string name="printer_name">Ім\'я принтера</string>
+    <string name="print_test_page">Тест друку</string>
+    <string name="print_area_width_in_characters">Ширина друку в символах</string>
+    <string name="use_in_fiscal_service">Використовувати для фіскальних чеків</string>
+    <string name="auto_print_saved_orders">Автоматично друкувати замовлення</string>
 </resources>
