@@ -147,6 +147,7 @@ class PrinterViewModel @Inject constructor(
     fun printTextFile(filePath: String) {
         if (!readyToPrint()) return
         val address = printerAddress()
+        val charset = Charset.forName("cp866")
 
         viewModelScope.launch(Dispatchers.IO) {
 
@@ -158,19 +159,23 @@ class PrinterViewModel @Inject constructor(
 
                 val outputStream = socket.outputStream
                 outputStream.write(byteArrayOf(27, 116, 17)) // ESC t n (switch to cp866)
+                outputStream.write("\n".toByteArray())
 
                 val file = File(filePath)
-                val fileInputStream = file.inputStream()
-                val buffer = ByteArray(1024)
-                var bytes: Int
+                file.inputStream().use { fileInputStream ->
+                    val buffer = ByteArray(1024)
+                    var bytesRead: Int
 
-                while (fileInputStream.read(buffer).also { bytes = it } != -1) {
-                    outputStream?.write(buffer, 0, bytes)
+                    while (fileInputStream.read(buffer).also { bytesRead = it } != -1) {
+                        val string = String(buffer, 0, bytesRead)
+                        val cp866Bytes = string.toByteArray(charset)
+                        outputStream.write(cp866Bytes, 0, cp866Bytes.size)
+                    }
                 }
 
-                outputStream?.flush()
-                fileInputStream.close()
-                socket?.close()
+                outputStream.write("\n".toByteArray())
+                outputStream.flush()
+                socket.close()
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     setStatus(e.message ?: "Unknown error")
