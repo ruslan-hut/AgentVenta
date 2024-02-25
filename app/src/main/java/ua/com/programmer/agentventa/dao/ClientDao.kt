@@ -38,10 +38,10 @@ interface ClientDao {
             "clients.group_guid AS groupGuid," +
             "clients.is_active AS isActive," +
             "clients.is_group AS isGroup," +
-            "debts.sum AS debt," +
-            "location.latitude AS latitude," +
-            "location.longitude AS longitude," +
-            "groups.description AS groupName " +
+            "IFNULL(debts.sum, 0.0) AS debt," +
+            "IFNULL(location.latitude, 0.0) AS latitude," +
+            "IFNULL(location.longitude, 0.0) AS longitude," +
+            "IFNULL(groups.description, '') AS groupName " +
             "FROM clients " +
             "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS groups " +
             "ON clients.group_guid=groups.guid AND clients.db_guid=groups.db_guid " +
@@ -75,10 +75,10 @@ interface ClientDao {
             "clients.group_guid AS groupGuid," +
             "clients.is_active AS isActive," +
             "clients.is_group AS isGroup," +
-            "location.latitude AS latitude," +
-            "location.longitude AS longitude," +
-            "debts.sum AS debt," +
-            "groups.description AS groupName " +
+            "IFNULL(location.latitude, 0.0) AS latitude," +
+            "IFNULL(location.longitude, 0.0) AS longitude," +
+            "IFNULL(debts.sum, 0.0) AS debt," +
+            "IFNULL(groups.description, '') AS groupName " +
             "FROM clients " +
             "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS groups " +
             "ON clients.group_guid=groups.guid AND clients.db_guid=groups.db_guid " +

@@ -157,8 +157,8 @@ interface DataExchangeDao {
             "content._id AS id," +
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
-            "product.description AS description," +
-            "product.code2 AS code," +
+            "IFNULL(product.description, '<?>') AS description," +
+            "IFNULL(product.code2, '<?>') AS code," +
             "'' AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +

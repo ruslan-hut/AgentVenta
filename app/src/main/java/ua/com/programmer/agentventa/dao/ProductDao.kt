@@ -36,13 +36,13 @@ interface ProductDao {
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
             "groups.description AS groupName," +
             ":type AS priceType, " +
-            "doc_order.sum AS sum, " +
-            "doc_order.price AS orderPrice, " +
-            "doc_order.is_packed AS isPacked, " +
-            "doc_order.is_demand AS isDemand, " +
-            "doc_order.quantity AS quantity," +
-            "images.url AS imageUrl, " +
-            "images.guid AS imageGuid " +
+            "IFNULL(doc_order.sum, 0.0) AS sum, " +
+            "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
+            "IFNULL(doc_order.is_packed, 0) AS isPacked, " +
+            "IFNULL(doc_order.is_demand, 0) AS isDemand, " +
+            "IFNULL(doc_order.quantity, 0.0) AS quantity," +
+            "IFNULL(images.url, '') AS imageUrl, " +
+            "IFNULL(images.guid, '') AS imageGuid " +
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +
@@ -81,13 +81,13 @@ interface ProductDao {
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
             "groups.description AS groupName," +
             ":type AS priceType, " +
-            "doc_order.sum AS sum, " +
-            "doc_order.price AS orderPrice, " +
-            "doc_order.is_packed AS isPacked, " +
-            "doc_order.is_demand AS isDemand, " +
-            "doc_order.quantity AS quantity, " +
-            "images.url AS imageUrl, " +
-            "images.guid AS imageGuid " +
+            "IFNULL(doc_order.sum, 0.0) AS sum, " +
+            "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
+            "IFNULL(doc_order.is_packed, 0) AS isPacked, " +
+            "IFNULL(doc_order.is_demand, 0) AS isDemand, " +
+            "IFNULL(doc_order.quantity, 0.0) AS quantity," +
+            "IFNULL(images.url, '') AS imageUrl, " +
+            "IFNULL(images.guid, '') AS imageGuid " +
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +
@@ -103,8 +103,8 @@ interface ProductDao {
     @Query("SELECT " +
             "prices.price_type AS priceType," +
             "prices.price AS price," +
-            "product.base_price AS basePrice," +
-            "types.description AS description," +
+            "IFNULL(product.base_price, 0.0) AS basePrice," +
+            "IFNULL(types.description, '') AS description," +
             "CASE WHEN prices.price_type=:currentPriceType THEN 1 ELSE 0 END AS isCurrent " +
             "FROM product_prices AS prices " +
             "LEFT OUTER JOIN (SELECT description, price_type, db_guid FROM price_types) AS types " +
@@ -134,13 +134,13 @@ interface ProductDao {
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
             "groups.description AS groupName," +
             ":type AS priceType, " +
-            "doc_order.sum AS sum, " +
-            "doc_order.price AS orderPrice, " +
-            "doc_order.is_packed AS isPacked, " +
-            "doc_order.is_demand AS isDemand, " +
-            "doc_order.quantity AS quantity, " +
-            "images.url AS imageUrl, " +
-            "images.guid AS imageGuid " +
+            "IFNULL(doc_order.sum, 0.0) AS sum, " +
+            "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
+            "IFNULL(doc_order.is_packed, 0) AS isPacked, " +
+            "IFNULL(doc_order.is_demand, 0) AS isDemand, " +
+            "IFNULL(doc_order.quantity, 0.0) AS quantity," +
+            "IFNULL(images.url, '') AS imageUrl, " +
+            "IFNULL(images.guid, '') AS imageGuid " +
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +

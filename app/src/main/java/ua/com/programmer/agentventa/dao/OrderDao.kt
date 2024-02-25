@@ -21,9 +21,9 @@ interface OrderDao {
 
     @Query("SELECT " +
             "orders.*," +
-            "client.description AS client_description," +
-            "client.code2 AS client_code2," +
-            "payment.description AS payment " +
+            "IFNULL(client.description, '<?>') AS client_description," +
+            "IFNULL(client.code2, '<?>') AS client_code2," +
+            "IFNULL(payment.description, '<?>') AS payment " +
             "FROM orders " +
             "LEFT OUTER JOIN (SELECT guid, db_guid, description, code2 FROM clients) AS client " +
             "ON client.guid=orders.client_guid AND client.db_guid=orders.db_guid " +
@@ -143,9 +143,9 @@ interface OrderDao {
             "content._id AS id," +
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
-            "product.description AS description," +
-            "product.code2 AS code," +
-            "product.groupName AS groupName," +
+            "IFNULL(product.description, '<?>') AS description," +
+            "IFNULL(product.code2, '<?>') AS code," +
+            "IFNULL(product.groupName, '') AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +
             "content.weight," +
@@ -161,7 +161,7 @@ interface OrderDao {
                 "products.description, " +
                 "products.code2, " +
                 "products.group_guid," +
-                "groups.description AS groupName " +
+                "IFNULL(groups.description, '') AS groupName " +
                 "FROM products " +
                 "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS groups " +
                     "ON products.group_guid=groups.guid AND products.db_guid=groups.db_guid " +
@@ -174,9 +174,9 @@ interface OrderDao {
             "content._id AS id," +
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
-            "product.description AS description," +
-            "product.code2 AS code," +
-            "product.groupName AS groupName," +
+            "IFNULL(product.description, '<?>') AS description," +
+            "IFNULL(product.code2, '<?>') AS code," +
+            "IFNULL(product.groupName, '') AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +
             "content.weight," +
@@ -192,7 +192,7 @@ interface OrderDao {
             "products.description, " +
             "products.code2, " +
             "products.group_guid," +
-            "groups.description AS groupName " +
+            "IFNULL(groups.description, '') AS groupName " +
             "FROM products " +
             "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS groups " +
             "ON products.group_guid=groups.guid AND products.db_guid=groups.db_guid " +
