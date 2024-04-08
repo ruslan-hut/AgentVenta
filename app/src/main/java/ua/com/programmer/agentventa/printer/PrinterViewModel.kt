@@ -3,7 +3,9 @@ package ua.com.programmer.agentventa.printer
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -143,6 +145,19 @@ class PrinterViewModel @Inject constructor(
         }
     }
 
+    private fun maxPacketSize(socket: BluetoothSocket): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val packet = socket.maxTransmitPacketSize
+            if (packet > 0) {
+                packet
+            } else {
+                1024
+            }
+        } else {
+            1024
+        }
+    }
+
     @SuppressLint("MissingPermission")
     fun printTextFile(filePath: String) {
         if (!readyToPrint()) return
@@ -156,6 +171,7 @@ class PrinterViewModel @Inject constructor(
                 val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch
                 val socket = device.createRfcommSocketToServiceRecord(serialPortId)
                 socket.connect()
+                val packetSize = maxPacketSize(socket)
 
                 val outputStream = socket.outputStream
                 outputStream.write(byteArrayOf(27, 116, 17)) // ESC t n (switch to cp866)
@@ -163,7 +179,7 @@ class PrinterViewModel @Inject constructor(
 
                 val file = File(filePath)
                 file.inputStream().use { fileInputStream ->
-                    val buffer = ByteArray(1024)
+                    val buffer = ByteArray(packetSize)
                     var bytesRead: Int
 
                     while (fileInputStream.read(buffer).also { bytesRead = it } != -1) {
@@ -171,9 +187,18 @@ class PrinterViewModel @Inject constructor(
                         val cp866Bytes = string.toByteArray(charset)
                         outputStream.write(cp866Bytes, 0, cp866Bytes.size)
                     }
+
+                    Thread.sleep(500)
                 }
 
                 outputStream.write("\n".toByteArray())
+
+                // Feed and Cut
+                outputStream.write(byteArrayOf(0x0A))  // Print and line feed
+                outputStream.write(byteArrayOf(0x1D, 0x56, 0x01)) // Partial cut
+
+                // sleep for 2 seconds before closing the socket
+                Thread.sleep(2000)
                 outputStream.flush()
                 socket.close()
             } catch (e: Exception) {
