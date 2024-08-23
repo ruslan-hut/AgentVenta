@@ -253,8 +253,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
-        event?.let {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        event.let {
             if (it.action == KeyEvent.ACTION_DOWN) {
                 val currentTime = System.currentTimeMillis()
 
