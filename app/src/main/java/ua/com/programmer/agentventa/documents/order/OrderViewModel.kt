@@ -211,6 +211,33 @@ class OrderViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Prepares the document to be saved by updating its totals and then
+     * executing the provided continuation function if document is fiscal.
+     * Non-fiscal documents are saved immediately.
+     *
+     * @param continueFiscal A function to be executed after the document is prepared.
+     */
+    fun prepareToSave(continueFiscal: (orderGuid: String) -> Unit) {
+        viewModelScope.launch {
+            val orderGuid = currentDocument.guid
+            val totals = orderRepository.getDocumentTotals(orderGuid)
+            updateDocument(currentDocument.copy(
+                price = totals.sum.round(2),
+                quantity = totals.quantity.round(3),
+                weight = totals.weight.round(3),
+                discountValue = totals.discount.round(2),
+            ))
+            if (isFiscal()) {
+                withContext(Dispatchers.Main) {
+                    continueFiscal(orderGuid)
+                }
+            }else {
+                saveDocument()
+            }
+        }
+    }
+
     fun deleteDocument() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {

@@ -91,11 +91,7 @@ class OrderFragment: Fragment(), MenuProvider {
             }.attach()
         }
         binding?.menuSave?.setOnClickListener {
-            if (viewModel.isFiscal()) {
-                registerFiscalReceipt()
-            } else {
-                saveAndProcess()
-            }
+            saveDocument()
         }
 
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
@@ -167,6 +163,19 @@ class OrderFragment: Fragment(), MenuProvider {
             viewModel.setSharedParameters(it.ignoreBarcodeReads)
         }
 
+    }
+
+    private fun saveDocument() {
+        // check if document is ready to process
+        if (notReadyToProcess()) return
+        // check if fiscal service is ready if document is fiscal
+        if (viewModel.isFiscal() && fiscalServiceNotReady()) return
+        // update ui elements and show progress bar
+        saveInProgress(true)
+        // prepare document to save - and process
+        viewModel.prepareToSave {
+            fiscalModel.createReceipt(it)
+        }
     }
 
     private fun openProductList() {
@@ -307,11 +316,6 @@ class OrderFragment: Fragment(), MenuProvider {
         return false
     }
 
-    private fun saveAndProcess() {
-        if (notReadyToProcess()) return
-        viewModel.saveDocument()
-    }
-
     private fun saveInProgress(progress: Boolean) {
         binding?.apply {
             menuSelectClient.isEnabled = !progress
@@ -320,14 +324,6 @@ class OrderFragment: Fragment(), MenuProvider {
             menuSave.visibility = if (progress) View.GONE else View.VISIBLE
             menuProgress.visibility = if (progress) View.VISIBLE else View.GONE
         }
-    }
-
-    private fun registerFiscalReceipt() {
-        if (notReadyToProcess()) return
-        if (fiscalServiceNotReady()) return
-
-        saveInProgress(true)
-        fiscalModel.createReceipt(viewModel.getGuid())
     }
 
     private fun receiptPreview() {
