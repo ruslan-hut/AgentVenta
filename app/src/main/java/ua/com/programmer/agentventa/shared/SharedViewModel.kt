@@ -183,6 +183,9 @@ class SharedViewModel @Inject constructor(
         preference.getBoolean("show_rests_only", false).let {
             _sharedParams.value = state.copy(restsOnly = it)
         }
+        preference.getBoolean("ignore_sequential_barcodes", false).let {
+            _sharedParams.value = state.copy(ignoreBarcodeReads = it)
+        }
 
     }
 

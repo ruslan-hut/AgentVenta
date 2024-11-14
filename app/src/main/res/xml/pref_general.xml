@@ -65,6 +65,12 @@
             android:summary="@string/pref_desc_returns"
             android:title="@string/pref_title_returns" />
 
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ignore_sequential_barcodes"
+            android:summary="@string/ignore_sequential_barcodes_desc"
+            android:title="@string/ignore_sequential_barcodes" />
+
 
     </PreferenceCategory>
 

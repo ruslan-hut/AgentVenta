@@ -6,6 +6,7 @@ data class SharedParameters(
     val orderGuid: String = "",
     val sortByName: Boolean = false,
     val restsOnly: Boolean = false,
+    val ignoreBarcodeReads: Boolean = false,
     val clientProducts: Boolean = false,
     val priceType: String = "",
     val currentAccount: String = ""

@@ -424,4 +424,6 @@
     <string name="print_area_width_in_characters">Ширина друку в символах</string>
     <string name="use_in_fiscal_service">Використовувати для фіскальних чеків</string>
     <string name="auto_print_saved_orders">Автоматично друкувати замовлення</string>
+    <string name="ignore_sequential_barcodes">Ігнорувати повторне зчитування однакових штрихкодів</string>
+    <string name="ignore_sequential_barcodes_desc">Якщо товар вже є в замовлені, считування його штрихкоду буде проігнороване</string>
 </resources>

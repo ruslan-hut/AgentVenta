@@ -163,6 +163,9 @@ class OrderFragment: Fragment(), MenuProvider {
             }
             sharedModel.clearBarcode()
         }
+        sharedModel.sharedParams.observe(this.viewLifecycleOwner) {
+            viewModel.setSharedParameters(it.ignoreBarcodeReads)
+        }
 
     }
 

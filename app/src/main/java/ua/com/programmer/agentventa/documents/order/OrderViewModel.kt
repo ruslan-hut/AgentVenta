@@ -41,6 +41,8 @@ class OrderViewModel @Inject constructor(
     val selectedPriceType get() = _selectedPriceType
     private var selectedPriceCode = ""
 
+    private var ignoreBarcodes = false
+
     val navigateToPage = MutableLiveData<Int>()
     val saveResult = MutableLiveData<Boolean?>()
 
@@ -50,6 +52,10 @@ class OrderViewModel @Inject constructor(
 
     val currentContent = _documentGuid.switchMap {
         orderRepository.getDocumentContent(it).asLiveData()
+    }
+
+    fun setSharedParameters(ignoreBarcodeReads: Boolean) {
+        ignoreBarcodes = ignoreBarcodeReads
     }
 
     private fun updateDocument(updated: Order) {
@@ -276,10 +282,14 @@ class OrderViewModel @Inject constructor(
         viewModelScope.launch {
             val product = productRepository.getProductByBarcode(barcode, currentDocument.guid, currentDocument.priceType)
             if (product != null) {
-                val updated = product.copy(
-                    quantity = product.quantity + 1,
-                )
-                onProductClick(updated) {}
+                if (product.quantity > 0 && ignoreBarcodes) {
+                    onProductClick(product) {}
+                } else {
+                    val updated = product.copy(
+                        quantity = product.quantity + 1,
+                    )
+                    onProductClick(updated) {}
+                }
             } else {
                 logger.w("OrderVM", "product not found; barcode=$barcode")
                 withContext(Dispatchers.Main) {

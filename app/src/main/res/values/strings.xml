@@ -173,7 +173,7 @@
     <string name="pref_desc_use_discounts">Show in documents and calculate client\'s discount</string>
     <string name="pref_title_payment_type_switch">Payment type switch</string>
     <string name="pref_desc_payment_type_switch">Use payment type switch in documents to mark cash payments</string>
-    <string name="pref_title_returns">Is a return switch</string>
+    <string name="pref_title_returns">Use return switch</string>
     <string name="pref_desc_returns">Use switch to mark purchase returns</string>
     <string name="pref_title_package_mark">Package mark</string>
     <string name="pref_desc_package_mark">Enable packaged goods mark</string>
@@ -456,5 +456,7 @@
     <string name="number_of_characters_in_line" translatable="false">32</string>
     <string name="use_in_fiscal_service">Use in fiscal service</string>
     <string name="auto_print_saved_orders">Auto print saved orders</string>
+    <string name="ignore_sequential_barcodes">Ignore sequential barcode reads</string>
+    <string name="ignore_sequential_barcodes_desc">When product is already added to list, ignore other barcode reads of this product</string>
 
 </resources>
