@@ -2,6 +2,7 @@ package ua.com.programmer.agentventa.extensions
 
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.Locale
 
 /**
  * Formats a Double to a specified number of decimal places and appends an optional string.
@@ -63,6 +64,6 @@ fun Double.roundToInt(multi: Int): Int {
 
 fun Double.formatAsInt(digits: Int, ifNull: String = "", append: String = ""): String {
     if (this == 0.0) return ifNull
-    return if (this % 1 == 0.0) String.format("%.0f", this).plus(" $append")
+    return if (this % 1 == 0.0) String.format(Locale.getDefault(),"%.0f", this).plus(" $append")
     else this.format(digits, ifNull, append)
 }

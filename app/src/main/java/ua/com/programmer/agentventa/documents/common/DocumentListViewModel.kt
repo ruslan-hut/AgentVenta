@@ -14,8 +14,9 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.repository.DocumentRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 import java.util.Date
+import java.util.Locale
 
-open class DocumentListViewModel<T> constructor(
+open class DocumentListViewModel<T>(
     private val repository: DocumentRepository<T>,
     private val userAccountRepository: UserAccountRepository
 ): ViewModel() {
@@ -73,10 +74,10 @@ open class DocumentListViewModel<T> constructor(
         } else {
             noDataTextVisibility.value = View.VISIBLE
         }
-        documentsCount.value = String.format("%d", totals.documents)
-        returnsCount.value = String.format("%d", totals.returns)
-        totalWeight.value = String.format("%.3f", totals.weight)
-        totalSum.value = String.format("%.2f", totals.sum)
+        documentsCount.value = String.format(Locale.getDefault(),"%d", totals.documents)
+        returnsCount.value = String.format(Locale.getDefault(),"%d", totals.returns)
+        totalWeight.value = String.format(Locale.getDefault(),"%.3f", totals.weight)
+        totalSum.value = String.format(Locale.getDefault(),"%.2f", totals.sum)
     }
 
     init {

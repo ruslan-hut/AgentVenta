@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.dao.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Locale
 
 @Entity(tableName = "cash")
 data class Cash(
@@ -22,4 +23,4 @@ data class Cash(
     @ColumnInfo(name = "is_sent") val isSent: Int = 0
 )
 
-fun Cash.getSumFormatted(): String = String.format("%.2f", sum)
+fun Cash.getSumFormatted(): String = String.format(Locale.getDefault(),"%.2f", sum)

@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.dao.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Locale
 
 @Entity(tableName = "order_content")
 data class OrderContent(
@@ -38,18 +39,18 @@ data class LOrderContent(
 
 fun LOrderContent.getQuantityFormatted() : String {
     if (quantity == 0.0) return ""
-    return if (quantity % 1 == 0.0) String.format("%.0f", quantity)
-    else String.format("%.3f", quantity)
+    return if (quantity % 1 == 0.0) String.format(Locale.getDefault(),"%.0f", quantity)
+    else String.format(Locale.getDefault(),"%.3f", quantity)
 }
 
 fun LOrderContent.getPriceFormatted() : String {
     return if (price == 0.0) "0.00"
-    else String.format("%.2f", price)
+    else String.format(Locale.getDefault(),"%.2f", price)
 }
 
 fun LOrderContent.getSumFormatted() : String {
     return if (sum == 0.0) "0.00"
-    else String.format("%.2f", sum)
+    else String.format(Locale.getDefault(),"%.2f", sum)
 }
 
 fun LOrderContent.toMap(): Map<String,Any> {

@@ -5,6 +5,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.Locale
 
 @Entity(tableName = "orders", indices = [Index(value = ["guid"], unique = true)])
 data class Order(
@@ -94,9 +95,9 @@ fun Order.getDistanceText(): String {
         return "!"
     }
     return if (this.distance > 1000) {
-        String.format("%.1f", this.distance / 1000) + " km"
+        String.format(Locale.getDefault(),"%.1f", this.distance / 1000) + " km"
     } else {
-        String.format("%.0f", this.distance) + " m"
+        String.format(Locale.getDefault(),"%.0f", this.distance) + " m"
     }
 }
 

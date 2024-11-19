@@ -11,6 +11,7 @@ import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
+import java.util.Locale
 
 class OrderListAdapter(
     private val onDocumentClicked: (Order) -> Unit,
@@ -21,7 +22,7 @@ class OrderListAdapter(
         fun bind(document: Order) {
             binding.apply {
                 listItemClient.text = document.clientDescription
-                listItemNumber.text = document.number.toString()
+                listItemNumber.text = String.format(Locale.getDefault(), "%d", document.number)
                 listItemPrice.text = document.price.format(2, "--")
                 listItemQuantity.text = document.quantity.formatAsInt(3, "--")
                 listItemNote.text = document.notes
