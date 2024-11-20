@@ -52,6 +52,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun dataExchangeDao(): DataExchangeDao
     abstract fun taskDao(): TaskDao
     abstract fun cashDao(): CashDao
+    abstract fun commonDao(): CommonDao
 
     companion object {
 

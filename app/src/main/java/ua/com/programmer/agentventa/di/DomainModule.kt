@@ -9,6 +9,7 @@ import dagger.hilt.android.components.ViewModelComponent
 import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.dao.CashDao
 import ua.com.programmer.agentventa.dao.ClientDao
+import ua.com.programmer.agentventa.dao.CommonDao
 import ua.com.programmer.agentventa.dao.DataExchangeDao
 import ua.com.programmer.agentventa.dao.LocationDao
 import ua.com.programmer.agentventa.dao.LogDao
@@ -18,6 +19,7 @@ import ua.com.programmer.agentventa.dao.TaskDao
 import ua.com.programmer.agentventa.dao.UserAccountDao
 import ua.com.programmer.agentventa.dao.impl.CashRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.ClientRepositoryImpl
+import ua.com.programmer.agentventa.dao.impl.CommonRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.DataExchangeRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.FilesRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.LogRepositoryImpl
@@ -29,6 +31,7 @@ import ua.com.programmer.agentventa.geo.LocationRepositoryImpl
 import ua.com.programmer.agentventa.http.NetworkRepositoryImpl
 import ua.com.programmer.agentventa.repository.CashRepository
 import ua.com.programmer.agentventa.repository.ClientRepository
+import ua.com.programmer.agentventa.repository.CommonRepository
 import ua.com.programmer.agentventa.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
 import ua.com.programmer.agentventa.repository.LocationRepository
@@ -78,6 +81,10 @@ class DomainModule {
     fun provideTaskDao(database: AppDatabase): TaskDao {
         return database.taskDao()
     }
+    @Provides
+    fun provideCommonDao(database: AppDatabase): CommonDao {
+        return database.commonDao()
+    }
 }
 
 @Module
@@ -107,6 +114,9 @@ abstract class RepositoryBindModule {
 
     @Binds
     abstract fun bindCashRepository(repositoryImpl: CashRepositoryImpl): CashRepository
+
+    @Binds
+    abstract fun bindCommonRepository(repositoryImpl: CommonRepositoryImpl): CommonRepository
 
     @Binds
     abstract fun bindTaskRepository(repositoryImpl: TaskRepositoryImpl): TaskRepository

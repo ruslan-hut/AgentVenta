@@ -34,6 +34,7 @@ import ua.com.programmer.agentventa.dao.entity.hasImageData
 import ua.com.programmer.agentventa.dao.entity.isDemo
 import ua.com.programmer.agentventa.http.Result
 import ua.com.programmer.agentventa.logger.Logger
+import ua.com.programmer.agentventa.repository.CommonRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
 import ua.com.programmer.agentventa.repository.NetworkRepository
 import ua.com.programmer.agentventa.repository.OrderRepository
@@ -41,6 +42,7 @@ import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import java.io.File
+import java.util.GregorianCalendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,6 +53,7 @@ class SharedViewModel @Inject constructor(
     private val logger: Logger,
     private val imager: RequestManager,
     private val orderRepository: OrderRepository,
+    private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
 ): ViewModel() {
 
@@ -154,6 +157,7 @@ class SharedViewModel @Inject constructor(
     }
 
     init {
+        deleteOldData()
         logger.cleanUp()
         viewModelScope.launch {
             if (!userAccountRepository.hasAccounts()) {
@@ -403,6 +407,22 @@ class SharedViewModel @Inject constructor(
 
     fun clearBarcode() {
         barcode.value = ""
+    }
+
+    /**
+     * Deletes old data from the repository.
+     *
+     * This method calculates a timestamp for 60 days prior to the current date
+     * and triggers the cleanup process in the `CommonRepository` to delete
+     * data older than this timestamp.
+     */
+    private fun deleteOldData() {
+        val currentTime = GregorianCalendar.getInstance().timeInMillis / 1000
+        // take 60 days from the current date
+        val from = currentTime - 60 * 24 * 60 * 60
+        viewModelScope.launch {
+            commonRepository.cleanup(from)
+        }
     }
 
 }
