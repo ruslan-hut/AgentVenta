@@ -53,7 +53,7 @@ interface CashDao {
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
             "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Cash>>
 
     @Query("SELECT * FROM cash " +
@@ -61,7 +61,7 @@ interface CashDao {
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
             "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String): Flow<List<Cash>>
 
     @Query("SELECT " +

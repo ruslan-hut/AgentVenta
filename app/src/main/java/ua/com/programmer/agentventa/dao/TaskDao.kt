@@ -23,6 +23,7 @@ interface TaskDao {
             "ON client.guid=tasks.client_guid AND client.db_guid=tasks.db_guid " +
             "WHERE tasks.guid=:guid")
     fun getDocument(guid: String): Flow<Task>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(document: Task): Long
 
@@ -47,7 +48,7 @@ interface TaskDao {
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
             "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
             "OR description LIKE :filter END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Task>>
 
     @Query("SELECT * FROM tasks " +
@@ -56,7 +57,7 @@ interface TaskDao {
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
             "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
             "OR description LIKE :filter END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String): Flow<List<Task>>
 
     @Query("SELECT " +

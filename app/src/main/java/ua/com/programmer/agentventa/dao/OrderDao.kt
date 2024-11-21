@@ -58,20 +58,20 @@ interface OrderDao {
     @Delete
     suspend fun delete(document: Order): Int
 
-    @Query("SELECT * FROM orders WHERE db_guid=:id ORDER BY time DESC")
+    @Query("SELECT * FROM orders WHERE db_guid=:id ORDER BY time DESC LIMIT 200")
     fun getAllDocuments(id: String): Flow<List<Order>>
 
     @Query("SELECT * FROM orders " +
             "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Order>>
 
     @Query("SELECT * FROM orders " +
             "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END " +
-            "ORDER BY time DESC")
+            "ORDER BY time DESC LIMIT 200")
     fun getDocumentsWithFilter(filter: String): Flow<List<Order>>
 
     @Query("SELECT " +
