@@ -34,7 +34,7 @@ interface ProductDao {
             "product.is_group AS isGroup," +
             "product.is_active AS isActive," +
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
-            "groups.description AS groupName," +
+            "product_groups.description AS groupName," +
             ":type AS priceType, " +
             "IFNULL(doc_order.sum, 0.0) AS sum, " +
             "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
@@ -46,8 +46,8 @@ interface ProductDao {
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS groups " +
-            "ON product.group_guid=groups.guid AND product.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS product_groups " +
+            "ON product.group_guid=product_groups.guid AND product.db_guid=product_groups.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, price_type, price, db_guid FROM product_prices WHERE price_type=:type) AS prices " +
             "ON product.guid=prices.product_guid AND product.db_guid=prices.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, url, guid, db_guid FROM product_images WHERE isDefault=1) AS images " +
@@ -79,7 +79,7 @@ interface ProductDao {
             "product.is_group AS isGroup," +
             "product.is_active AS isActive," +
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
-            "groups.description AS groupName," +
+            "product_groups.description AS groupName," +
             ":type AS priceType, " +
             "IFNULL(doc_order.sum, 0.0) AS sum, " +
             "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
@@ -91,8 +91,8 @@ interface ProductDao {
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS groups " +
-            "ON product.group_guid=groups.guid AND product.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS product_groups " +
+            "ON product.group_guid=product_groups.guid AND product.db_guid=product_groups.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, price_type, price, db_guid FROM product_prices WHERE price_type=:type) AS prices " +
             "ON product.guid=prices.product_guid AND product.db_guid=prices.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, url, guid, db_guid FROM product_images WHERE isDefault=1) AS images " +
@@ -132,7 +132,7 @@ interface ProductDao {
             "product.is_group AS isGroup," +
             "product.is_active AS isActive," +
             "CASE :order WHEN '' THEN 0 ELSE 1 END AS modeSelect," +
-            "groups.description AS groupName," +
+            "product_groups.description AS groupName," +
             ":type AS priceType, " +
             "IFNULL(doc_order.sum, 0.0) AS sum, " +
             "IFNULL(doc_order.price, 0.0) AS orderPrice, " +
@@ -144,8 +144,8 @@ interface ProductDao {
             "FROM products AS product " +
             "LEFT OUTER JOIN (SELECT product_guid, quantity, price, sum, is_packed, is_demand FROM order_content WHERE order_guid=:order) AS doc_order " +
             "ON product.guid=doc_order.product_guid " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS groups " +
-            "ON product.group_guid=groups.guid AND product.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS product_groups " +
+            "ON product.group_guid=product_groups.guid AND product.db_guid=product_groups.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, price_type, price, db_guid FROM product_prices WHERE price_type=:type) AS prices " +
             "ON product.guid=prices.product_guid AND product.db_guid=prices.db_guid " +
             "LEFT OUTER JOIN (SELECT product_guid, url, guid, db_guid FROM product_images WHERE isDefault=1) AS images " +

@@ -161,10 +161,10 @@ interface OrderDao {
                 "products.description, " +
                 "products.code2, " +
                 "products.group_guid," +
-                "IFNULL(groups.description, '') AS groupName " +
+                "IFNULL(product_groups.description, '') AS groupName " +
                 "FROM products " +
-                "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS groups " +
-                    "ON products.group_guid=groups.guid AND products.db_guid=groups.db_guid " +
+                "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS product_groups " +
+                    "ON products.group_guid=product_groups.guid AND products.db_guid=product_groups.db_guid " +
                 "WHERE products.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)) AS product " +
                 "ON product.guid=content.product_guid " +
             "WHERE content.order_guid=:orderGuid")
@@ -192,10 +192,10 @@ interface OrderDao {
             "products.description, " +
             "products.code2, " +
             "products.group_guid," +
-            "IFNULL(groups.description, '') AS groupName " +
+            "IFNULL(product_groups.description, '') AS groupName " +
             "FROM products " +
-            "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS groups " +
-            "ON products.group_guid=groups.guid AND products.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS product_groups " +
+            "ON products.group_guid=product_groups.guid AND products.db_guid=product_groups.db_guid " +
             "WHERE products.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)) AS product " +
             "ON product.guid=content.product_guid " +
             "WHERE content.order_guid=:orderGuid")

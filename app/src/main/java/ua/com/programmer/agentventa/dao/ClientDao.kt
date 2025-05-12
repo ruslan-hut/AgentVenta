@@ -41,10 +41,10 @@ interface ClientDao {
             "IFNULL(debts.sum, 0.0) AS debt," +
             "IFNULL(location.latitude, 0.0) AS latitude," +
             "IFNULL(location.longitude, 0.0) AS longitude," +
-            "IFNULL(groups.description, '') AS groupName " +
+            "IFNULL(client_groups.description, '') AS groupName " +
             "FROM clients " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS groups " +
-            "ON clients.group_guid=groups.guid AND clients.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups " +
+            "ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid " +
             "LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts " +
             "ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid " +
             "LEFT OUTER JOIN (SELECT * FROM client_locations) AS location " +
@@ -78,10 +78,10 @@ interface ClientDao {
             "IFNULL(location.latitude, 0.0) AS latitude," +
             "IFNULL(location.longitude, 0.0) AS longitude," +
             "IFNULL(debts.sum, 0.0) AS debt," +
-            "IFNULL(groups.description, '') AS groupName " +
+            "IFNULL(client_groups.description, '') AS groupName " +
             "FROM clients " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS groups " +
-            "ON clients.group_guid=groups.guid AND clients.db_guid=groups.db_guid " +
+            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups " +
+            "ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid " +
             "LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts " +
             "ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid " +
             "LEFT OUTER JOIN (SELECT * FROM client_locations) AS location " +
