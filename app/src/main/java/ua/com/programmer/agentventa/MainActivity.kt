@@ -32,6 +32,7 @@ import ua.com.programmer.agentventa.databinding.ActivityMainBinding
 import ua.com.programmer.agentventa.geo.LocationUpdatesService
 import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.shared.SharedViewModel
+import androidx.core.view.isGone
 
 private lateinit var drawerLayout: DrawerLayout
 
@@ -179,7 +180,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showProgress(message: String) {
         binding.let{
-            if (it.progressView.visibility == View.GONE) {
+            if (it.progressView.isGone) {
                 it.progressView.visibility = View.VISIBLE
                 it.progressView.setOnClickListener { hideProgress() }
             }
