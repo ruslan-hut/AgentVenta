@@ -16,6 +16,8 @@ data class Order(
     @ColumnInfo(name = "time_saved") var timeSaved: Long = 0,
     val number: Int = 0,
     val guid: String,
+    @ColumnInfo(name = "company_guid") val companyGuid: String = "",
+    @ColumnInfo(name = "store_guid") val storeGuid: String = "",
     @ColumnInfo(name = "delivery_date") var deliveryDate: String = "",
     var notes: String = "",
     @ColumnInfo(name = "client_guid") var clientGuid: String? = "",

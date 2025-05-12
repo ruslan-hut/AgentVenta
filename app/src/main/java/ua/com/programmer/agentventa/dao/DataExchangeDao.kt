@@ -10,6 +10,7 @@ import androidx.room.Update
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
@@ -18,9 +19,13 @@ import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.Product
 import ua.com.programmer.agentventa.dao.entity.ProductImage
 import ua.com.programmer.agentventa.dao.entity.ProductPrice
+import ua.com.programmer.agentventa.dao.entity.Rest
+import ua.com.programmer.agentventa.dao.entity.Store
 
 @Dao
 interface DataExchangeDao {
+
+    //----------------------------------------------------- PRODUCTS
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProductList(products: List<Product>): List<Long>
@@ -36,6 +41,8 @@ interface DataExchangeDao {
         }
     }
 
+    //----------------------------------------------------- PRICE LIST
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPriceList(price: List<ProductPrice>): List<Long>
 
@@ -49,6 +56,24 @@ interface DataExchangeDao {
             insertPriceList(price)
         }
     }
+
+    //----------------------------------------------------- PRICE LIST
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertRests(rest: List<Rest>): List<Long>
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun updateRests(rest: List<Rest>): Int
+
+    @Transaction
+    suspend fun upsertRests(rest: List<Rest>) {
+        val updateCount = updateRests(rest)
+        if (updateCount != rest.size) {
+            insertRests(rest)
+        }
+    }
+
+    //----------------------------------------------------- PRICE TYPE
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPriceType(priceType: PriceType): Long
@@ -79,6 +104,8 @@ interface DataExchangeDao {
     @Query("DELETE FROM products WHERE db_guid=:id AND timestamp<:time")
     suspend fun deleteProducts(id: String, time: Long): Int
 
+    //----------------------------------------------------- CLIENT
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertClientList(clients: List<Client>): List<Long>
 
@@ -93,6 +120,8 @@ interface DataExchangeDao {
         }
     }
 
+    //----------------------------------------------------- DEBTS
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertDebtList(debt: List<Debt>): List<Long>
 
@@ -106,6 +135,40 @@ interface DataExchangeDao {
             insertDebtList(debt)
         }
     }
+
+    //----------------------------------------------------- COMPANY
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertCompany(company: List<Company>): List<Long>
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun updateCompany(company: List<Company>): Int
+
+    @Transaction
+    suspend fun upsertCompany(company: List<Company>) {
+        val updateCount = updateCompany(company)
+        if (updateCount != company.size) {
+            insertCompany(company)
+        }
+    }
+
+    //----------------------------------------------------- STORE
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertStore(store: List<Store>): List<Long>
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun updateStore(store: List<Store>): Int
+
+    @Transaction
+    suspend fun upsertStore(store: List<Store>) {
+        val updateCount = updateStore(store)
+        if (updateCount != store.size) {
+            insertStore(store)
+        }
+    }
+
+    //----------------------------------------------------- CLIENT LOCATION
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertClientLocation(loc: List<ClientLocation>): List<Long>
@@ -123,6 +186,8 @@ interface DataExchangeDao {
             insertClientLocation(loc)
         }
     }
+
+    //----------------------------------------------------- PAYMENT TYPE
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertPaymentTypes(list: List<PaymentType>): List<Long>

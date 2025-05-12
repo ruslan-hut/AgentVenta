@@ -13,6 +13,7 @@ data class Cash(
     val time: Long = 0,
     val number: Int = 0,
     val guid: String = "",
+    @ColumnInfo(name = "company_guid") val companyGuid: String = "",
     @ColumnInfo(name = "client_guid") val clientGuid: String = "",
     @ColumnInfo(name = "reference_guid") val referenceGuid: String = "",
     val sum: Double = 0.0,

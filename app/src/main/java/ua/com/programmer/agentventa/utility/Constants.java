@@ -62,6 +62,9 @@ public final class Constants {
      */
     public static final String DATA_OPTIONS = "options";
     public static final String DATA_CLIENT = "client";
+    public static final String DATA_COMPANY = "company";
+    public static final String DATA_STORE = "store";
+    public static final String DATA_REST = "rest";
     public static final String DATA_GOODS_ITEM = "item";
     public static final String DATA_PRICE = "price";
     public static final String DATA_COMPETITOR_PRICE = "competitor_price";

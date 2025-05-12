@@ -10,6 +10,7 @@ import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LocationHistory
 import ua.com.programmer.agentventa.dao.entity.LogEvent
@@ -20,6 +21,8 @@ import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.Product
 import ua.com.programmer.agentventa.dao.entity.ProductImage
 import ua.com.programmer.agentventa.dao.entity.ProductPrice
+import ua.com.programmer.agentventa.dao.entity.Rest
+import ua.com.programmer.agentventa.dao.entity.Store
 import ua.com.programmer.agentventa.dao.entity.Task
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 
@@ -39,8 +42,11 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
     LocationHistory::class,
     Task::class,
     Cash::class,
-    LogEvent::class
-                     ], version = 17)
+    LogEvent::class,
+    Rest::class,
+    Company::class,
+    Store::class,
+                     ], version = 18)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -53,6 +59,9 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun cashDao(): CashDao
     abstract fun commonDao(): CommonDao
+    abstract fun companyDao(): CompanyDao
+    abstract fun storeDao(): StoreDao
+    abstract fun restDao(): RestDao
 
     companion object {
 
@@ -98,6 +107,55 @@ abstract class AppDatabase: RoomDatabase() {
                 db.execSQL("ALTER TABLE orders ADD COLUMN is_fiscal INTEGER NOT NULL DEFAULT 0")
             }
         }
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE companies (" +
+                        "db_guid TEXT NOT NULL DEFAULT ''," +
+                        "guid TEXT NOT NULL DEFAULT ''," +
+                        "description TEXT NOT NULL DEFAULT ''," +
+                        "timestamp INTEGER NOT NULL DEFAULT 0," +
+                        "PRIMARY KEY(db_guid,guid))")
+
+                db.execSQL("CREATE TABLE stores (" +
+                        "db_guid TEXT NOT NULL DEFAULT ''," +
+                        "guid TEXT NOT NULL DEFAULT ''," +
+                        "description TEXT NOT NULL DEFAULT ''," +
+                        "timestamp INTEGER NOT NULL DEFAULT 0," +
+                        "PRIMARY KEY(db_guid,guid))")
+
+                db.execSQL("CREATE TABLE rests (" +
+                        "db_guid TEXT NOT NULL DEFAULT ''," +
+                        "company_guid TEXT NOT NULL DEFAULT ''," +
+                        "store_guid TEXT NOT NULL DEFAULT ''," +
+                        "product_guid TEXT NOT NULL DEFAULT ''," +
+                        "quantity REAL NOT NULL DEFAULT 0.0," +
+                        "timestamp INTEGER NOT NULL DEFAULT 0," +
+                        "PRIMARY KEY(db_guid,company_guid,store_guid,product_guid))")
+
+                db.execSQL("ALTER TABLE orders ADD COLUMN company_guid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE orders ADD COLUMN store_guid TEXT NOT NULL DEFAULT ''")
+
+                db.execSQL("ALTER TABLE cash ADD COLUMN company_guid TEXT NOT NULL DEFAULT ''")
+
+                db.execSQL("DROP TABLE debts")
+                db.execSQL("CREATE TABLE debts ("+
+                    "db_guid TEXT NOT NULL DEFAULT '',"+
+                    "company_guid TEXT NOT NULL DEFAULT '',"+
+                    "client_guid TEXT NOT NULL DEFAULT '',"+
+                    "doc_guid TEXT NOT NULL DEFAULT '',"+
+                    "doc_id TEXT NOT NULL DEFAULT '',"+
+                    "doc_type TEXT NOT NULL DEFAULT '',"+
+                    "has_content INTEGER NOT NULL DEFAULT 0,"+
+                    "content TEXT NOT NULL DEFAULT '',"+
+                    "sum REAL NOT NULL DEFAULT 0.0,"+
+                    "sum_in REAL NOT NULL DEFAULT 0.0,"+
+                    "sum_out REAL NOT NULL DEFAULT 0.0,"+
+                    "is_total INTEGER NOT NULL DEFAULT 0,"+
+                    "sorting INTEGER NOT NULL DEFAULT 0,"+
+                    "timestamp INTEGER NOT NULL DEFAULT 0,"+
+                    "PRIMARY KEY(db_guid, company_guid, client_guid, doc_id))")
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -109,7 +167,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_13_14,
                         MIGRATION_14_15,
                         MIGRATION_15_16,
-                        MIGRATION_16_17
+                        MIGRATION_16_17,
+                        MIGRATION_17_18,
                     )
                     .build()
                 INSTANCE = instance

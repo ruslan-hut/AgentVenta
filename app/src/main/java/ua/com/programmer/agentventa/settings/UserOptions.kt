@@ -27,6 +27,8 @@ data class UserOptions(
     val clientsProducts: Boolean = false,
     val defaultClient: String = "",
     val useDemands: Boolean = false,
+    val useCompanies: Boolean = false,
+    val useStores: Boolean = false,
     val usePackageMark: Boolean = false,
     val fiscalNumber: String = "",
     val fiscalCashier: String = "",

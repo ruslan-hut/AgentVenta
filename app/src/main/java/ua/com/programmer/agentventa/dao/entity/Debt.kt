@@ -4,9 +4,10 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import ua.com.programmer.agentventa.utility.XMap
 
-@Entity(tableName = "debts", primaryKeys = ["db_guid","client_guid","doc_id"])
+@Entity(tableName = "debts", primaryKeys = ["db_guid","company_guid","client_guid","doc_id"])
 data class Debt(
     @ColumnInfo(name = "db_guid") val databaseId: String = "",
+    @ColumnInfo(name = "company_guid") val companyGuid: String = "",
     @ColumnInfo(name = "client_guid") val clientGuid: String = "",
     @ColumnInfo(name = "doc_guid") val docGuid: String = "",
     @ColumnInfo(name = "doc_id") val docId: String = "",
@@ -25,6 +26,7 @@ data class Debt(
             val docId = data.getString("doc_id")
             return Debt(
                 databaseId = data.getDatabaseId(),
+                companyGuid = data.getString("company_guid"),
                 clientGuid = data.getString("client_guid"),
                 docGuid = data.getString("doc_guid"),
                 docId = docId,

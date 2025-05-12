@@ -4,6 +4,7 @@ import ua.com.programmer.agentventa.dao.DataExchangeDao
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
@@ -12,6 +13,8 @@ import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.Product
 import ua.com.programmer.agentventa.dao.entity.ProductImage
 import ua.com.programmer.agentventa.dao.entity.ProductPrice
+import ua.com.programmer.agentventa.dao.entity.Rest
+import ua.com.programmer.agentventa.dao.entity.Store
 import ua.com.programmer.agentventa.dao.entity.isValid
 import ua.com.programmer.agentventa.http.SendResult
 import ua.com.programmer.agentventa.logger.Logger
@@ -50,6 +53,9 @@ class DataExchangeRepositoryImpl @Inject constructor(
             Constants.DATA_CLIENT -> loadClients(data)
             Constants.DATA_CLIENT_LOCATION -> loadClientLocations(data)
             Constants.DATA_DEBT -> loadDebts(data)
+            Constants.DATA_COMPANY -> loadCompanies(data)
+            Constants.DATA_STORE -> loadStores(data)
+            Constants.DATA_REST -> loadRests(data)
             Constants.DATA_PAYMENT_TYPE -> loadPaymentTypes(data)
             else -> logger.e(logTag, "missed loader for ${data.first().getValueId()}")
         }
@@ -126,6 +132,36 @@ class DataExchangeRepositoryImpl @Inject constructor(
             for (item in invalid) logger.w(logTag, "invalid debt: ${item.docId}")
         }
         dataExchangeDao.upsertDebtList(valid)
+    }
+
+    private suspend fun loadCompanies(data: List<XMap>) {
+        val prepared = data.map { Company.build(it) }
+        val valid = prepared.filter { it.isValid() }
+        if (valid.size < data.size) {
+            val invalid = prepared.filter { !it.isValid() }
+            for (item in invalid) logger.w(logTag, "invalid company: ${item.description}")
+        }
+        dataExchangeDao.upsertCompany(valid)
+    }
+
+    private suspend fun loadStores(data: List<XMap>) {
+        val prepared = data.map { Store.build(it) }
+        val valid = prepared.filter { it.isValid() }
+        if (valid.size < data.size) {
+            val invalid = prepared.filter { !it.isValid() }
+            for (item in invalid) logger.w(logTag, "invalid store: ${item.description}")
+        }
+        dataExchangeDao.upsertStore(valid)
+    }
+
+    private suspend fun loadRests(data: List<XMap>) {
+        val prepared = data.map { Rest.build(it) }
+        val valid = prepared.filter { it.isValid() }
+        if (valid.size < data.size) {
+            val invalid = prepared.filter { !it.isValid() }
+            for (item in invalid) logger.w(logTag, "invalid rest: ${item.productGuid}")
+        }
+        dataExchangeDao.upsertRests(valid)
     }
 
     private suspend fun loadPaymentTypes(data: List<XMap>) {

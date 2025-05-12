@@ -1,0 +1,28 @@
+package ua.com.programmer.agentventa.dao.entity
+
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import ua.com.programmer.agentventa.utility.XMap
+
+@Entity(tableName = "stores", primaryKeys = ["db_guid","guid"])
+data class Store(
+    @ColumnInfo(name = "db_guid") val databaseId: String = "",
+    @ColumnInfo(name = "guid") val guid: String = "",
+    @ColumnInfo(name = "description") val description: String = "",
+    val timestamp: Long = 0,
+){
+    companion object Builder {
+        fun build(data: XMap): Store {
+            return Store(
+                databaseId = data.getDatabaseId(),
+                guid = data.getString("guid"),
+                description = data.getString("description"),
+                timestamp = data.getTimestamp(),
+            )
+        }
+    }
+}
+
+fun Store.isValid(): Boolean {
+    return databaseId.isNotEmpty() && guid.isNotEmpty()
+}

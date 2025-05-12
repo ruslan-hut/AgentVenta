@@ -10,11 +10,14 @@ import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.dao.CashDao
 import ua.com.programmer.agentventa.dao.ClientDao
 import ua.com.programmer.agentventa.dao.CommonDao
+import ua.com.programmer.agentventa.dao.CompanyDao
 import ua.com.programmer.agentventa.dao.DataExchangeDao
 import ua.com.programmer.agentventa.dao.LocationDao
 import ua.com.programmer.agentventa.dao.LogDao
 import ua.com.programmer.agentventa.dao.OrderDao
 import ua.com.programmer.agentventa.dao.ProductDao
+import ua.com.programmer.agentventa.dao.RestDao
+import ua.com.programmer.agentventa.dao.StoreDao
 import ua.com.programmer.agentventa.dao.TaskDao
 import ua.com.programmer.agentventa.dao.UserAccountDao
 import ua.com.programmer.agentventa.dao.impl.CashRepositoryImpl
@@ -84,6 +87,18 @@ class DomainModule {
     @Provides
     fun provideCommonDao(database: AppDatabase): CommonDao {
         return database.commonDao()
+    }
+    @Provides
+    fun provideCompanyDao(database: AppDatabase): CompanyDao {
+        return database.companyDao()
+    }
+    @Provides
+    fun provideStoreDao(database: AppDatabase): StoreDao {
+        return database.storeDao()
+    }
+    @Provides
+    fun provideRestDao(database: AppDatabase): RestDao {
+        return database.restDao()
     }
 }
 
