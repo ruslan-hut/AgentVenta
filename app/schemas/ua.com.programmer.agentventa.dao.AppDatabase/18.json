@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 18,
-    "identityHash": "987626d7e708fca8e2bdaf007115b14b",
+    "identityHash": "be0fe7243d5640f8bddcd2a1fbd7821d",
     "entities": [
       {
         "tableName": "user_accounts",
@@ -1367,7 +1367,7 @@
       },
       {
         "tableName": "rests",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `company_guid` TEXT NOT NULL, `store_guid` TEXT NOT NULL, `product_guid` TEXT NOT NULL, `quantity` REAL NOT NULL, PRIMARY KEY(`db_guid`, `company_guid`, `store_guid`, `product_guid`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `company_guid` TEXT NOT NULL, `store_guid` TEXT NOT NULL, `product_guid` TEXT NOT NULL, `quantity` REAL NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`db_guid`, `company_guid`, `store_guid`, `product_guid`))",
         "fields": [
           {
             "fieldPath": "databaseId",
@@ -1398,6 +1398,12 @@
             "columnName": "quantity",
             "affinity": "REAL",
             "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1412,7 +1418,7 @@
       },
       {
         "tableName": "companies",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `guid` TEXT NOT NULL, `description` TEXT NOT NULL, PRIMARY KEY(`db_guid`, `guid`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `guid` TEXT NOT NULL, `description` TEXT NOT NULL, `is_default` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`db_guid`, `guid`))",
         "fields": [
           {
             "fieldPath": "databaseId",
@@ -1430,6 +1436,18 @@
             "fieldPath": "description",
             "columnName": "description",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDefault",
+            "columnName": "is_default",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -1443,7 +1461,7 @@
       },
       {
         "tableName": "stores",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `guid` TEXT NOT NULL, `description` TEXT NOT NULL, PRIMARY KEY(`db_guid`, `guid`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`db_guid` TEXT NOT NULL, `guid` TEXT NOT NULL, `description` TEXT NOT NULL, `is_default` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY(`db_guid`, `guid`))",
         "fields": [
           {
             "fieldPath": "databaseId",
@@ -1461,6 +1479,18 @@
             "fieldPath": "description",
             "columnName": "description",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDefault",
+            "columnName": "is_default",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -1475,7 +1505,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '987626d7e708fca8e2bdaf007115b14b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'be0fe7243d5640f8bddcd2a1fbd7821d')"
     ]
   }
 }

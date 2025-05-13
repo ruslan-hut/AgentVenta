@@ -113,6 +113,7 @@ abstract class AppDatabase: RoomDatabase() {
                         "db_guid TEXT NOT NULL DEFAULT ''," +
                         "guid TEXT NOT NULL DEFAULT ''," +
                         "description TEXT NOT NULL DEFAULT ''," +
+                        "is_default INTEGER NOT NULL DEFAULT 0," +
                         "timestamp INTEGER NOT NULL DEFAULT 0," +
                         "PRIMARY KEY(db_guid,guid))")
 
@@ -120,6 +121,7 @@ abstract class AppDatabase: RoomDatabase() {
                         "db_guid TEXT NOT NULL DEFAULT ''," +
                         "guid TEXT NOT NULL DEFAULT ''," +
                         "description TEXT NOT NULL DEFAULT ''," +
+                        "is_default INTEGER NOT NULL DEFAULT 0," +
                         "timestamp INTEGER NOT NULL DEFAULT 0," +
                         "PRIMARY KEY(db_guid,guid))")
 
