@@ -105,6 +105,46 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/titleCompany"
+                style="@style/DocumentElement"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/doc_company_title"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/company" />
+
+                <TextView
+                    android:id="@+id/doc_company"
+                    style="@style/DocumentValue" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/titleStore"
+                style="@style/DocumentElement"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    style="@style/DocumentName"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/doc_store_title"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/store" />
+
+                <TextView
+                    android:id="@+id/doc_store"
+                    style="@style/DocumentValue" />
+
+            </LinearLayout>
+
+            <LinearLayout
                 style="@style/DocumentElement"
                 android:layout_height="wrap_content"
                 android:paddingBottom="8dp">

@@ -6,6 +6,7 @@ import ua.com.programmer.agentventa.dao.LocationDao
 import ua.com.programmer.agentventa.dao.OrderDao
 import ua.com.programmer.agentventa.dao.UserAccountDao
 import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.LocationHistory
@@ -13,12 +14,15 @@ import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.dao.entity.OrderContent
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
+import ua.com.programmer.agentventa.dao.entity.Store
+import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.dao.entity.interval
 import ua.com.programmer.agentventa.dao.entity.updateDistance
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import ua.com.programmer.agentventa.utility.Utils
 import java.util.Date
@@ -30,7 +34,25 @@ class OrderRepositoryImpl @Inject constructor(
     private val locationDao: LocationDao
 ): OrderRepository {
 
+    private var userAccount = UserAccount.buildEmpty()
+    private lateinit var options: UserOptions
+    private var companies = emptyList<Company>()
+    private var stores = emptyList<Store>()
+    private var priceTypes = emptyList<PriceType>()
+    private var paymentTypes = emptyList<PaymentType>()
     private val utils = Utils()
+
+    private suspend fun initDefaults() {
+        val currentAccount = userAccountDao.getCurrent() ?: UserAccount.buildEmpty()
+        if (userAccount != currentAccount) {
+            options = UserOptionsBuilder.build(currentAccount)
+            companies = getCompanies()
+            stores = getStores()
+            priceTypes = getPriceTypes()
+            paymentTypes = getPaymentTypes()
+            userAccount = currentAccount
+        }
+    }
 
     override fun getDocument(guid: String): Flow<Order> {
         return orderDao.getDocument(guid).map { order ->
@@ -47,13 +69,14 @@ class OrderRepositoryImpl @Inject constructor(
 
     override suspend fun newDocument(): Order? {
 
-        val userAccount = userAccountDao.getCurrent() ?: return null
-        val options = UserOptionsBuilder.build(userAccount)
+        initDefaults()
+
         val newNumber = (orderDao.getLastDocumentNumber() ?: 0) + 1
         val time = utils.currentTime()
         val dbGuid = userAccount.guid
-        val priceTypes = getPriceTypes()
-        val paymentTypes = getPaymentTypes()
+
+        val company = companies.find { it.isDefault == 1 } ?: Company()
+        val store = stores.find { it.isDefault == 1 } ?: Store()
 
         val defaultPriceType = if (priceTypes.isEmpty()) {
             ""
@@ -79,6 +102,10 @@ class OrderRepositoryImpl @Inject constructor(
             guid = java.util.UUID.randomUUID().toString(),
             time = time,
             date = utils.dateLocal(time),
+            companyGuid = company.guid,
+            company = company.description,
+            storeGuid = store.guid,
+            store = store.description,
             priceType = defaultPriceType,
             paymentType = defaultPaymentType.paymentType,
             isFiscal = defaultPaymentType.isFiscal,
@@ -176,6 +203,16 @@ class OrderRepositoryImpl @Inject constructor(
             PaymentType(paymentType = "BANK", description = "Банк"),
             PaymentType(paymentType = "CREDIT", description = "Кредит", isDefault = 1),
         )
+    }
+
+    override suspend fun getCompanies(): List<Company> {
+        if (companies.isNotEmpty()) return companies
+        return orderDao.getCompanies() ?: listOf()
+    }
+
+    override suspend fun getStores(): List<Store> {
+        if (stores.isNotEmpty()) return stores
+        return orderDao.getStores() ?: listOf()
     }
 
     override suspend fun updateLocation(document: Order): Boolean {

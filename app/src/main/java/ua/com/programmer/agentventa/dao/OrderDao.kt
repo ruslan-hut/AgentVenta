@@ -9,12 +9,14 @@ import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.dao.entity.OrderContent
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
+import ua.com.programmer.agentventa.dao.entity.Store
 
 @Dao
 interface OrderDao {
@@ -221,6 +223,12 @@ interface OrderDao {
 
     @Query("SELECT * FROM price_types WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
     suspend fun getPriceTypes(): List<PriceType>?
+
+    @Query("SELECT * FROM companies WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    suspend fun getCompanies(): List<Company>?
+
+    @Query("SELECT * FROM stores WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    suspend fun getStores(): List<Store>?
 
     @Query("SELECT * FROM payment_types WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
     suspend fun getPaymentTypes(): List<PaymentType>?

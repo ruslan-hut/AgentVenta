@@ -458,5 +458,7 @@
     <string name="auto_print_saved_orders">Auto print saved orders</string>
     <string name="ignore_sequential_barcodes">Ignore sequential barcode reads</string>
     <string name="ignore_sequential_barcodes_desc">When product is already added to list, ignore other barcode reads of this product</string>
+    <string name="company">Company</string>
+    <string name="store">Store</string>
 
 </resources>

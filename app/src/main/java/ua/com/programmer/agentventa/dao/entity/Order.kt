@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.dao.entity
 
+import android.content.ClipDescription
 import android.location.Location
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -17,7 +18,9 @@ data class Order(
     val number: Int = 0,
     val guid: String,
     @ColumnInfo(name = "company_guid") val companyGuid: String = "",
+    @ColumnInfo(name = "company") val company: String = "",
     @ColumnInfo(name = "store_guid") val storeGuid: String = "",
+    @ColumnInfo(name = "store") val store: String = "",
     @ColumnInfo(name = "delivery_date") var deliveryDate: String = "",
     var notes: String = "",
     @ColumnInfo(name = "client_guid") var clientGuid: String? = "",

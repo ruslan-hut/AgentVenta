@@ -2,12 +2,14 @@ package ua.com.programmer.agentventa.repository
 
 import kotlinx.coroutines.flow.Flow
 import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.dao.entity.OrderContent
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
+import ua.com.programmer.agentventa.dao.entity.Store
 import java.util.Date
 
 interface OrderRepository: DocumentRepository<Order> {
@@ -28,5 +30,7 @@ interface OrderRepository: DocumentRepository<Order> {
     suspend fun copyPreviousContent(guid: String, clientGuid: String): Boolean
     suspend fun getPriceTypes(): List<PriceType>
     suspend fun getPaymentTypes(): List<PaymentType>
+    suspend fun getCompanies(): List<Company>
+    suspend fun getStores(): List<Store>
     suspend fun updateLocation(document: Order): Boolean
 }

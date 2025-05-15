@@ -36,6 +36,9 @@
         <action
             android:id="@+id/action_orderFragment_to_fiscalFragment"
             app:destination="@id/fiscalFragment" />
+        <action
+            android:id="@+id/action_orderFragment_to_companyListFragment"
+            app:destination="@id/companyListFragment" />
     </fragment>
     <fragment
         android:id="@+id/userAccountListFragment"
@@ -289,4 +292,8 @@
         android:id="@+id/applicationSettingsFragment"
         android:name="ua.com.programmer.agentventa.settings.ApplicationSettingsFragment"
         android:label="@string/pref_header_general" />
+    <fragment
+        android:id="@+id/companyListFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.company.CompanyListFragment"
+        android:label="@string/company" />
 </navigation>

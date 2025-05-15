@@ -50,6 +50,10 @@ class OrderPageTitle: Fragment() {
             }
             datePicker.show(parentFragmentManager, "DATE_PICKER_TAG")
         }
+        binding.docCompany.setOnClickListener {
+            val action = OrderFragmentDirections.actionOrderFragmentToCompanyListFragment()
+            view?.findNavController()?.navigate(action)
+        }
         binding.docClient.setOnClickListener {
             val action = OrderFragmentDirections.actionOrderFragmentToClientListFragment(
                 modeSelect = true,
@@ -76,6 +80,8 @@ class OrderPageTitle: Fragment() {
                 docDate.text = order.date
                 distance.text = order.distance.toString()
                 docDeliveryDate.text = order.deliveryDate
+                docCompany.text = order.company
+                docStore.text = order.store
                 docClient.text = order.clientDescription
                 docDiscount.text = order.discount.toString()
                 docIsReturn.isChecked = order.isReturn == 1
@@ -84,6 +90,8 @@ class OrderPageTitle: Fragment() {
                 docNextPayment.text = order.nextPayment.format(2)
                 docNotes.text = order.notes
 
+                docCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
+                docStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
                 docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
                 elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
 

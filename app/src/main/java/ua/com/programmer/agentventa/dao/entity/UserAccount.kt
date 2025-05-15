@@ -32,6 +32,13 @@ data class UserAccount(
                 dbPassword = "112233",
             )
         }
+        fun buildEmpty(): UserAccount {
+            return UserAccount(
+                guid = "",
+                description = "<?>",
+                dataFormat = Constants.SYNC_FORMAT_HTTP,
+            )
+        }
     }
 }
 

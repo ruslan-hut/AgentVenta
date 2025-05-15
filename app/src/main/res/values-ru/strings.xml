@@ -427,4 +427,6 @@
     <string name="auto_print_saved_orders">Автоматически распечатывать заказ</string>
     <string name="ignore_sequential_barcodes">Игнорировать повторное чтение одинаковых штрихкодов</string>
     <string name="ignore_sequential_barcodes_desc">Если товар уже добавлен в заказ, повторные считываения его штрихкода будут проигнорированы</string>
+    <string name="company">Фирма</string>
+    <string name="store">Склад</string>
 </resources>

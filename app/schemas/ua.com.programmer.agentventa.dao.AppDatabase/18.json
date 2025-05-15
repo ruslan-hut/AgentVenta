@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 18,
-    "identityHash": "be0fe7243d5640f8bddcd2a1fbd7821d",
+    "identityHash": "5b8d0bf13e39b99af2b37570d55c78b6",
     "entities": [
       {
         "tableName": "user_accounts",
@@ -90,7 +90,7 @@
       },
       {
         "tableName": "orders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `db_guid` TEXT NOT NULL, `date` TEXT NOT NULL, `time` INTEGER NOT NULL, `time_saved` INTEGER NOT NULL, `number` INTEGER NOT NULL, `guid` TEXT NOT NULL, `company_guid` TEXT NOT NULL, `store_guid` TEXT NOT NULL, `delivery_date` TEXT NOT NULL, `notes` TEXT NOT NULL, `client_guid` TEXT, `client_code2` TEXT, `client_description` TEXT, `discount` REAL NOT NULL, `price_type` TEXT NOT NULL, `payment_type` TEXT NOT NULL, `is_fiscal` INTEGER NOT NULL, `status` TEXT NOT NULL, `price` REAL NOT NULL, `quantity` REAL NOT NULL, `weight` REAL NOT NULL, `discount_value` REAL NOT NULL, `next_payment` REAL NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `distance` REAL NOT NULL, `location_time` INTEGER NOT NULL, `rest_type` TEXT NOT NULL, `is_return` INTEGER NOT NULL, `is_processed` INTEGER NOT NULL, `is_sent` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `db_guid` TEXT NOT NULL, `date` TEXT NOT NULL, `time` INTEGER NOT NULL, `time_saved` INTEGER NOT NULL, `number` INTEGER NOT NULL, `guid` TEXT NOT NULL, `company_guid` TEXT NOT NULL, `company` TEXT NOT NULL, `store_guid` TEXT NOT NULL, `store` TEXT NOT NULL, `delivery_date` TEXT NOT NULL, `notes` TEXT NOT NULL, `client_guid` TEXT, `client_code2` TEXT, `client_description` TEXT, `discount` REAL NOT NULL, `price_type` TEXT NOT NULL, `payment_type` TEXT NOT NULL, `is_fiscal` INTEGER NOT NULL, `status` TEXT NOT NULL, `price` REAL NOT NULL, `quantity` REAL NOT NULL, `weight` REAL NOT NULL, `discount_value` REAL NOT NULL, `next_payment` REAL NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `distance` REAL NOT NULL, `location_time` INTEGER NOT NULL, `rest_type` TEXT NOT NULL, `is_return` INTEGER NOT NULL, `is_processed` INTEGER NOT NULL, `is_sent` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -141,8 +141,20 @@
             "notNull": true
           },
           {
+            "fieldPath": "company",
+            "columnName": "company",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
             "fieldPath": "storeGuid",
             "columnName": "store_guid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "store",
+            "columnName": "store",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -1505,7 +1517,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'be0fe7243d5640f8bddcd2a1fbd7821d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5b8d0bf13e39b99af2b37570d55c78b6')"
     ]
   }
 }

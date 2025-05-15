@@ -135,7 +135,9 @@ abstract class AppDatabase: RoomDatabase() {
                         "PRIMARY KEY(db_guid,company_guid,store_guid,product_guid))")
 
                 db.execSQL("ALTER TABLE orders ADD COLUMN company_guid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE orders ADD COLUMN company TEXT NOT NULL DEFAULT ''")
                 db.execSQL("ALTER TABLE orders ADD COLUMN store_guid TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE orders ADD COLUMN store TEXT NOT NULL DEFAULT ''")
 
                 db.execSQL("ALTER TABLE cash ADD COLUMN company_guid TEXT NOT NULL DEFAULT ''")
 

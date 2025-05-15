@@ -426,4 +426,6 @@
     <string name="auto_print_saved_orders">Автоматично друкувати замовлення</string>
     <string name="ignore_sequential_barcodes">Ігнорувати повторне зчитування однакових штрихкодів</string>
     <string name="ignore_sequential_barcodes_desc">Якщо товар вже є в замовлені, считування його штрихкоду буде проігнороване</string>
+    <string name="company">Фірма</string>
+    <string name="store">Склад</string>
 </resources>
