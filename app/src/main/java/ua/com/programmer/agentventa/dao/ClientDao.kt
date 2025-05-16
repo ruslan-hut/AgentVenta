@@ -106,38 +106,42 @@ interface ClientDao {
     """)
     fun getClientDebts(guid: String, companyGuid: String): Flow<List<Debt>>
 
-    @Query("SELECT * FROM debts " +
-            "WHERE client_guid=:guid AND doc_id=:docId " +
-            "AND is_total=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "ORDER BY sorting")
+    @Query("""
+        SELECT * FROM debts
+            WHERE client_guid=:guid AND doc_id=:docId
+            AND is_total=0
+            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            ORDER BY sorting
+    """)
     fun getClientDebt(guid: String, docId: String): Flow<Debt?>
 
-    @Query("SELECT " +
-            "client_locations.db_guid AS databaseId," +
-            "client_locations.client_guid AS clientGuid," +
-            "client_locations.latitude," +
-            "client_locations.longitude," +
-            "IFNULL(client.description, '') AS description," +
-            "CASE TRIM(IFNULL(client.address, '')) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
-            "FROM client_locations " +
-            "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients WHERE guid=:guid) AS client " +
-            "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
-            "WHERE client_locations.client_guid=:guid " +
-            "AND client_locations.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        SELECT
+            cl.db_guid AS databaseId,
+            cl.client_guid AS clientGuid,
+            cl.latitude,
+            cl.longitude,
+            IFNULL(c.description, '') AS description,
+            CASE TRIM(IFNULL(c.address, '')) WHEN '' THEN cl.address ELSE c.address END AS address
+        FROM client_locations cl
+        LEFT OUTER JOIN clients c ON cl.client_guid = c.guid AND cl.db_guid = c.db_guid
+        WHERE cl.client_guid = :guid
+        AND cl.db_guid IN (SELECT guid FROM user_accounts WHERE is_current = 1)
+    """)
     fun getClientLocation(guid: String): Flow<LClientLocation?>
 
-    @Query("SELECT " +
-            "client_locations.db_guid AS databaseId," +
-            "client_locations.client_guid AS clientGuid," +
-            "client_locations.latitude," +
-            "client_locations.longitude," +
-            "IFNULL(client.description, '') AS description," +
-            "CASE TRIM(IFNULL(client.address, '')) WHEN '' THEN client_locations.address ELSE client.address END AS address " +
-            "FROM client_locations " +
-            "LEFT OUTER JOIN (SELECT guid, db_guid, address, description  FROM clients) AS client " +
-            "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
-            "AND client_locations.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        SELECT
+            cl.db_guid AS databaseId,
+            cl.client_guid AS clientGuid,
+            cl.latitude,
+            cl.longitude,
+            IFNULL(c.description, '') AS description,
+            CASE TRIM(IFNULL(c.address, '')) WHEN '' THEN cl.address ELSE c.address END AS address
+        FROM client_locations cl
+        LEFT OUTER JOIN clients c ON cl.client_guid = c.guid AND cl.db_guid = c.db_guid
+        WHERE cl.db_guid IN (SELECT guid FROM user_accounts WHERE is_current = 1)
+    """)
     fun getClientLocations(): Flow<List<LClientLocation>?>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -154,63 +158,77 @@ interface ClientDao {
         }
     }
 
-    @Query("SELECT * FROM client_images " +
-        "WHERE client_guid=:guid " +
-        "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-    "UNION ALL " +
-    "SELECT " +
-        "db_guid," +
-        "product_guid," +
-        "guid," +
-        "url," +
-        "description," +
-        "timestamp," +
-        "0," +
-        "0," +
-        "isDefault " +
-        "FROM product_images " +
-        "WHERE product_guid=:guid AND type='client' " +
-            "AND guid NOT IN " +
-            "(SELECT guid FROM client_images " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))" +
-        "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-    "ORDER BY is_default DESC, timestamp DESC ")
+    @Query("""
+        SELECT * FROM client_images
+        WHERE client_guid=:guid
+        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    UNION ALL
+    SELECT
+        db_guid,
+        product_guid,
+        guid,
+        url,
+        description,
+        timestamp,
+        0,
+        0,
+        isDefault
+        FROM product_images
+        WHERE product_guid=:guid AND type='client'
+            AND guid NOT IN
+            (SELECT guid FROM client_images
+            WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))
+        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    ORDER BY is_default DESC, timestamp DESC
+    """)
     fun getClientImages(guid: String): Flow<List<ClientImage>>
 
-    @Query("SELECT * FROM client_images " +
-            "WHERE guid=:imageGuid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "UNION ALL " +
-            "SELECT " +
-            "db_guid," +
-            "product_guid," +
-            "guid," +
-            "url," +
-            "description," +
-            "timestamp," +
-            "0," +
-            "0," +
-            "isDefault " +
-            "FROM product_images " +
-            "WHERE guid=:imageGuid AND type='client' " +
-            "AND guid NOT IN " +
-            "(SELECT guid FROM client_images " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))" +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        SELECT * FROM client_images
+        WHERE guid=:imageGuid
+        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    UNION ALL
+    SELECT
+        db_guid,
+        product_guid,
+        guid,
+        url,
+        description,
+        timestamp,
+        0,
+        0,
+        isDefault
+        FROM product_images
+        WHERE guid=:imageGuid AND type='client'
+            AND guid NOT IN
+            (SELECT guid FROM client_images
+            WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))
+        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    """)
     fun getClientImage(imageGuid: String): Flow<ClientImage>
 
-    @Query("DELETE FROM client_images " +
-            "WHERE guid=:imageGuid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""DELETE FROM client_images
+            WHERE guid=:imageGuid
+            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)""")
     suspend fun deleteClientImage(imageGuid: String)
 
-    @Query("UPDATE client_images SET is_default=1 " +
-            "WHERE guid=:imageGuid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        UPDATE client_images SET is_default=1
+            WHERE guid=:imageGuid
+            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    """)
     suspend fun setAsDefault(imageGuid: String)
 
-    @Query("UPDATE client_images SET is_default=0 " +
-            "WHERE client_guid=:clientGuid " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        UPDATE client_images SET is_default=0
+            WHERE client_guid=:clientGuid
+            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    """)
     suspend fun resetDefault(clientGuid: String)
+
+    @Transaction
+    suspend fun makeImageDefault(clientGuid: String, imageGuid: String) {
+        resetDefault(clientGuid)
+        setAsDefault(imageGuid)
+    }
 }
