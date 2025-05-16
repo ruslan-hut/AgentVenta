@@ -13,20 +13,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.LClient
-import ua.com.programmer.agentventa.dao.entity.LProduct
-import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.repository.ClientRepository
-import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.shared.SharedParameters
 import javax.inject.Inject
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
     private val repository: ClientRepository,
-    userAccountRepository: UserAccountRepository
 ) : ViewModel() {
 
-    private val currentAccount = MutableLiveData<UserAccount>()
     private val currentGroupGuid = MutableLiveData("")
     private val currentCompany = MutableLiveData("")
     private var selectMode = false
@@ -105,11 +100,6 @@ class ClientListViewModel @Inject constructor(
     }
 
     init {
-//        viewModelScope.launch {
-//            userAccountRepository.currentAccount.collect {
-//                currentAccount.value = it
-//            }
-//        }
         _clients.addSource(searchText) { loadData() }
         _clients.addSource(listParams) { loadData() }
     }
