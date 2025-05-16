@@ -23,8 +23,8 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getClients(group: String, filter: String): Flow<List<LClient>> {
-        return dao.getClients(group, filter.asFilter())
+    override fun getClients(group: String, filter: String, companyGuid: String): Flow<List<LClient>> {
+        return dao.getClients(group, filter.asFilter(), companyGuid)
     }
 
     override fun getDebts(guid: String): Flow<List<Debt>> {

@@ -16,78 +16,84 @@ import ua.com.programmer.agentventa.dao.entity.LClientLocation
 @Dao
 interface ClientDao {
 
-    @Query("SELECT * FROM clients " +
-            "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "AND guid=:guid")
+    @Query("""
+        SELECT * FROM clients
+            WHERE
+            db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            AND guid=:guid
+    """)
     fun getClient(guid: String): Flow<Client?>
 
-    @Query("SELECT " +
-            "clients.guid AS guid," +
-            "clients.timestamp AS timestamp," +
-            "clients.code1 AS code," +
-            "clients.description AS description," +
-            "clients.notes AS notes," +
-            "clients.phone AS phone," +
-            "clients.address AS address," +
-            "clients.discount AS discount," +
-            "clients.bonus AS bonus," +
-            "clients.price_type AS priceType," +
-            "clients.is_banned AS isBanned," +
-            "clients.ban_message AS banMessage," +
-            "clients.group_guid AS groupGuid," +
-            "clients.is_active AS isActive," +
-            "clients.is_group AS isGroup," +
-            "IFNULL(debts.sum, 0.0) AS debt," +
-            "IFNULL(location.latitude, 0.0) AS latitude," +
-            "IFNULL(location.longitude, 0.0) AS longitude," +
-            "IFNULL(client_groups.description, '') AS groupName " +
-            "FROM clients " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups " +
-            "ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid " +
-            "LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts " +
-            "ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid " +
-            "LEFT OUTER JOIN (SELECT * FROM client_locations) AS location " +
-            "ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid " +
-            "WHERE " +
-            "CASE :filter WHEN '' THEN clients.group_guid=:group " +
-            "ELSE CASE :group WHEN '' THEN is_group=0 " +
-            "AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) " +
-            "ELSE clients.group_guid=:group " +
-            "AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END " +
-            "AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "ORDER BY clients.is_group DESC, clients.description")
-    fun getClients(group: String, filter: String): Flow<List<LClient>>
+    @Query("""
+        SELECT
+            clients.guid AS guid,
+            clients.timestamp AS timestamp,
+            clients.code1 AS code,
+            clients.description AS description,
+            clients.notes AS notes,
+            clients.phone AS phone,
+            clients.address AS address,
+            clients.discount AS discount,
+            clients.bonus AS bonus,
+            clients.price_type AS priceType,
+            clients.is_banned AS isBanned,
+            clients.ban_message AS banMessage,
+            clients.group_guid AS groupGuid,
+            clients.is_active AS isActive,
+            clients.is_group AS isGroup,
+            IFNULL(debts.sum, 0.0) AS debt,
+            IFNULL(location.latitude, 0.0) AS latitude,
+            IFNULL(location.longitude, 0.0) AS longitude,
+            IFNULL(client_groups.description, '') AS groupName
+        FROM clients
+        LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups
+        ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid
+        LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1 AND company_guid=:company) AS debts
+        ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid
+        LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
+        ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
+        WHERE
+        CASE :filter WHEN '' THEN clients.group_guid=:group
+        ELSE CASE :group WHEN '' THEN is_group=0
+        AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter)
+        ELSE clients.group_guid=:group
+        AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END
+        AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        ORDER BY clients.is_group DESC, clients.description
+    """)
+    fun getClients(group: String, filter: String, company: String): Flow<List<LClient>>
 
-    @Query("SELECT " +
-            "clients.guid AS guid," +
-            "clients.timestamp AS timestamp," +
-            "clients.code1 AS code," +
-            "clients.description AS description," +
-            "clients.notes AS notes," +
-            "clients.phone AS phone," +
-            "clients.address AS address," +
-            "clients.discount AS discount," +
-            "clients.bonus AS bonus," +
-            "clients.price_type AS priceType," +
-            "clients.is_banned AS isBanned," +
-            "clients.ban_message AS banMessage," +
-            "clients.group_guid AS groupGuid," +
-            "clients.is_active AS isActive," +
-            "clients.is_group AS isGroup," +
-            "IFNULL(location.latitude, 0.0) AS latitude," +
-            "IFNULL(location.longitude, 0.0) AS longitude," +
-            "IFNULL(debts.sum, 0.0) AS debt," +
-            "IFNULL(client_groups.description, '') AS groupName " +
-            "FROM clients " +
-            "LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups " +
-            "ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid " +
-            "LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts " +
-            "ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid " +
-            "LEFT OUTER JOIN (SELECT * FROM client_locations) AS location " +
-            "ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid " +
-            "WHERE " +
-            "clients.guid=:guid AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
+    @Query("""
+        SELECT
+            clients.guid AS guid,
+            clients.timestamp AS timestamp,
+            clients.code1 AS code,
+            clients.description AS description,
+            clients.notes AS notes,
+            clients.phone AS phone,
+            clients.address AS address,
+            clients.discount AS discount,
+            clients.bonus AS bonus,
+            clients.price_type AS priceType,
+            clients.is_banned AS isBanned,
+            clients.ban_message AS banMessage,
+            clients.group_guid AS groupGuid,
+            clients.is_active AS isActive,
+            clients.is_group AS isGroup,
+            IFNULL(location.latitude, 0.0) AS latitude,
+            IFNULL(location.longitude, 0.0) AS longitude,
+            IFNULL(debts.sum, 0.0) AS debt,
+            IFNULL(client_groups.description, '') AS groupName
+        FROM clients
+        LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups
+        ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid
+        LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts
+        ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid
+        LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
+        ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
+        WHERE
+        clients.guid=:guid AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+    """)
     fun getClientInfo(guid: String): Flow<LClient?>
 
     @Query("SELECT * FROM debts " +

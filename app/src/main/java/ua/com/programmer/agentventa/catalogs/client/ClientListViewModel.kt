@@ -24,6 +24,7 @@ class ClientListViewModel @Inject constructor(
 
     private val currentAccount = MutableLiveData<UserAccount>()
     private val currentGroupGuid = MutableLiveData("")
+    private val currentCompany = MutableLiveData("")
     private var selectMode = false
     val searchText = MutableLiveData("")
 
@@ -31,10 +32,11 @@ class ClientListViewModel @Inject constructor(
         addSource(searchText) { value = value?.copy(filter = it) ?: ListParams(filter = it) }
         addSource(currentGroupGuid) { value = value?.copy(group = it) ?: ListParams(group = it) }
         addSource(currentAccount) { value = value?.copy(currentAccount = it) ?: ListParams(currentAccount = it) }
+        addSource(currentCompany) { value = value?.copy(companyGuid = it) ?: ListParams(companyGuid = it) }
     }
 
     val clients : LiveData<List<LClient>> = mediator.switchMap { params ->
-        repository.getClients(params.group, params.filter).asLiveData()
+        repository.getClients(params.group, params.filter, params.companyGuid).asLiveData()
     }
 
     val noDataTextVisibility get() = clients.switchMap {
@@ -74,6 +76,10 @@ class ClientListViewModel @Inject constructor(
         selectMode = mode
     }
 
+    fun setCompany(companyGuid: String?) {
+        currentCompany.value = companyGuid ?: ""
+    }
+
     init {
         viewModelScope.launch {
             userAccountRepository.currentAccount.collect {
@@ -87,5 +93,6 @@ class ClientListViewModel @Inject constructor(
 data class ListParams(
     val filter: String = "",
     val group: String = "",
-    val currentAccount: UserAccount? = null
+    val currentAccount: UserAccount? = null,
+    val companyGuid: String = "",
 )

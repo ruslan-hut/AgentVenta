@@ -33,6 +33,7 @@ interface ProductDao {
                 ELSE product.price
             END AS price,
             product.weight,
+            product.quantity AS rest,
             product.base_price AS basePrice,
             product.min_price AS minPrice,
             product.is_group AS isGroup,

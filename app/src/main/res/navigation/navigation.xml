@@ -104,6 +104,11 @@
         <action
             android:id="@+id/action_clientListFragment_to_clientMenuFragment"
             app:destination="@id/clientMenuFragment" />
+        <argument
+            android:name="companyGuid"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue='' />
     </fragment>
     <fragment
         android:id="@+id/pickerFragment"

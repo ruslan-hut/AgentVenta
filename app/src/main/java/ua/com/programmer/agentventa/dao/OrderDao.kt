@@ -46,7 +46,7 @@ interface OrderDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(document: Order): Long
 
-    @Update(onConflict = OnConflictStrategy.IGNORE)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun update(document: Order): Int
 
     @Transaction
@@ -242,4 +242,7 @@ interface OrderDao {
 
     @Query("UPDATE orders SET store_guid=:storeGuid, store=:storeDescription WHERE guid=:guid")
     suspend fun setStore(guid: String, storeGuid: String, storeDescription: String)
+
+    @Query("UPDATE orders SET client_guid=:clientGuid, client_description=:clientDescription WHERE guid=:guid")
+    suspend fun setClient(guid: String, clientGuid: String, clientDescription: String)
 }

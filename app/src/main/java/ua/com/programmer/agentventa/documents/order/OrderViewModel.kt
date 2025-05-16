@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.Order
@@ -109,17 +110,25 @@ class OrderViewModel @Inject constructor(
     fun onClientClick(client: LClient, popUp: () -> Unit) {
         val orderGuid = currentDocument.guid
         viewModelScope.launch {
-            orderRepository.getOrder(orderGuid)?.let {order ->
-                order.setClient(client)
-                if (order.priceType.isEmpty()) {
-                    order.priceType = client.priceType
-                }
-                if (orderRepository.updateDocument(order)) {
-                    withContext(Dispatchers.Main) {
-                        popUp()
-                    }
-                }
+            val clientData = Client(
+                guid = client.guid,
+                description = client.description,
+            )
+            orderRepository.setClient(orderGuid, clientData)
+            withContext(Dispatchers.Main) {
+                popUp()
             }
+//            orderRepository.getOrder(orderGuid)?.let {order ->
+//                order.setClient(client)
+//                if (order.priceType.isEmpty()) {
+//                    order.priceType = client.priceType
+//                }
+//                if (orderRepository.updateDocument(order)) {
+//                    withContext(Dispatchers.Main) {
+//                        popUp()
+//                    }
+//                }
+//            }
         }
     }
 
@@ -255,6 +264,8 @@ class OrderViewModel @Inject constructor(
     fun isFiscal() = currentDocument.isFiscal == 1
 
     fun getGuid() = currentDocument.guid
+
+    fun getCompanyGuid() = currentDocument.companyGuid
 
     fun canPrint() = currentDocument.isSent > 0 && currentDocument.guid.isNotEmpty()
 

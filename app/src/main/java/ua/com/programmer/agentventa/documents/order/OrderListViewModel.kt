@@ -24,6 +24,10 @@ class OrderListViewModel @Inject constructor(
         viewModelScope.launch {
             val newDocument = orderRepository.newDocument() ?: return@launch onResult("")
             val copy = newDocument.copy(
+                companyGuid = document.companyGuid,
+                company = document.company,
+                storeGuid = document.storeGuid,
+                store = document.store,
                 clientGuid = document.clientGuid,
                 clientCode2 = document.clientCode2,
                 clientDescription = document.clientDescription,

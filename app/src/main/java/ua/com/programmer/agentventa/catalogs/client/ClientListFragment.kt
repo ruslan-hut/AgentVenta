@@ -36,6 +36,7 @@ class ClientListFragment: Fragment(), MenuProvider {
         super.onCreate(savedInstanceState)
         viewModel.setCurrentGroup(navigationArgs.groupGuid)
         viewModel.setSelectMode(navigationArgs.modeSelect)
+        viewModel.setCompany(navigationArgs.companyGuid)
     }
 
     override fun onCreateView(
@@ -80,7 +81,8 @@ class ClientListFragment: Fragment(), MenuProvider {
         if (client.isGroup) {
             val action = ClientListFragmentDirections.actionClientListFragmentSelf(
                 groupGuid = client.guid,
-                modeSelect = navigationArgs.modeSelect
+                modeSelect = navigationArgs.modeSelect,
+                companyGuid = navigationArgs.companyGuid,
             )
             view?.findNavController()?.navigate(action)
         } else if (navigationArgs.modeSelect) {

@@ -179,7 +179,7 @@ class OrderFragment: Fragment(), MenuProvider {
     }
 
     private fun openProductList() {
-        val orderGuid = viewModel.document.value?.guid ?: ""
+        val orderGuid = viewModel.getGuid()
         if (orderGuid.isEmpty()) return
         val action = OrderFragmentDirections.actionOrderFragmentToProductListFragment(
             groupGuid = "",
@@ -191,6 +191,7 @@ class OrderFragment: Fragment(), MenuProvider {
     private fun openClientList() {
         val action = OrderFragmentDirections.actionOrderFragmentToClientListFragment(
             modeSelect = true,
+            companyGuid = viewModel.getCompanyGuid(),
         )
         view?.findNavController()?.navigate(action)
     }
