@@ -98,13 +98,15 @@ class OrderFragment: Fragment(), MenuProvider {
             var title = getString(R.string.order)
             var guid = ""
             var isProcessed = false
-            order?.let {
-                title += " ${order.number}"
-                guid = order.guid
-                isProcessed = order.isProcessed > 0
-            }
+
+            title += " ${order.number}"
+            guid = order.guid
+            isProcessed = order.isProcessed > 0
+
             (activity as AppCompatActivity).supportActionBar?.title = title
+
             sharedModel.setDocumentGuid(guid, order.companyGuid, order.storeGuid)
+
             if (isProcessed) {
                 binding?.orderBottomBar?.visibility = View.GONE
             } else {

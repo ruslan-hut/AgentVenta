@@ -9,11 +9,15 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.LClient
+import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.repository.ClientRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
+import ua.com.programmer.agentventa.shared.SharedParameters
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,16 +32,10 @@ class ClientListViewModel @Inject constructor(
     private var selectMode = false
     val searchText = MutableLiveData("")
 
-    private val mediator = MediatorLiveData<ListParams>().apply {
-        addSource(searchText) { value = value?.copy(filter = it) ?: ListParams(filter = it) }
-        addSource(currentGroupGuid) { value = value?.copy(group = it) ?: ListParams(group = it) }
-        addSource(currentAccount) { value = value?.copy(currentAccount = it) ?: ListParams(currentAccount = it) }
-        addSource(currentCompany) { value = value?.copy(companyGuid = it) ?: ListParams(companyGuid = it) }
-    }
+    private val listParams = MutableLiveData<SharedParameters>()
 
-    val clients : LiveData<List<LClient>> = mediator.switchMap { params ->
-        repository.getClients(params.group, params.filter, params.companyGuid).asLiveData()
-    }
+    private val _clients = MediatorLiveData<List<LClient>>()
+    val clients get() = _clients
 
     val noDataTextVisibility get() = clients.switchMap {
         MutableLiveData(if (it.isEmpty()) View.VISIBLE else View.GONE)
@@ -57,6 +55,32 @@ class ClientListViewModel @Inject constructor(
             searchText.value = ""
         } else {
             _searchVisibility.value = View.VISIBLE
+        }
+    }
+
+    fun setListParameters(sharedParameters: SharedParameters) {
+        listParams.value = sharedParameters
+    }
+
+    private fun loadData() {
+        val sharedParams = listParams.value ?: return
+        //_noDataTextVisibility.value = View.GONE
+
+        val params = sharedParams.copy(
+            filter = searchText.value ?: "",
+            groupGuid = currentGroupGuid.value ?: "",
+        )
+
+        viewModelScope.launch {
+            launch (Dispatchers.IO) {
+                repository.getClients(params.groupGuid, params.filter, params.companyGuid).collect {
+                    withContext(Dispatchers.Main) {
+                        //_noDataTextVisibility.value = if (it.isEmpty()) View.VISIBLE else View.GONE
+                        _clients.value = it
+                    }
+                }
+
+            }
         }
     }
 
@@ -81,18 +105,13 @@ class ClientListViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
-            userAccountRepository.currentAccount.collect {
-                currentAccount.value = it
-            }
-        }
+//        viewModelScope.launch {
+//            userAccountRepository.currentAccount.collect {
+//                currentAccount.value = it
+//            }
+//        }
+        _clients.addSource(searchText) { loadData() }
+        _clients.addSource(listParams) { loadData() }
     }
 
 }
-
-data class ListParams(
-    val filter: String = "",
-    val group: String = "",
-    val currentAccount: UserAccount? = null,
-    val companyGuid: String = "",
-)

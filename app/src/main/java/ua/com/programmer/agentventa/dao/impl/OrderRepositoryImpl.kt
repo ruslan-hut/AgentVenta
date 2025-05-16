@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.dao.impl
 
-import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.LocationDao
@@ -143,12 +142,10 @@ class OrderRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateDocument(document: Order): Boolean {
-        Log.d("OrderRepository", "order: ${document.id} ${document.clientDescription}")
         return orderDao.update(document) > 0
     }
 
     override suspend fun setClient(guid: String, client: Client) {
-        Log.d("OrderRepository", "setClient: $guid ${client.description}")
         return orderDao.setClient(guid, client.guid, client.description)
     }
 

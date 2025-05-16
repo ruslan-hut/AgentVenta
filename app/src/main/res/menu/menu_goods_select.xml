@@ -41,6 +41,20 @@
         </menu>
     </item>
     <item
+        android:id="@+id/select_company"
+        android:visible="false"
+        android:orderInCategory="100"
+        android:title="@string/company"
+        app:showAsAction="never">
+    </item>
+    <item
+        android:id="@+id/select_store"
+        android:visible="false"
+        android:orderInCategory="100"
+        android:title="@string/store"
+        app:showAsAction="never">
+    </item>
+    <item
         android:id="@+id/sub_menu_category"
         android:visible="false"
         android:orderInCategory="100"

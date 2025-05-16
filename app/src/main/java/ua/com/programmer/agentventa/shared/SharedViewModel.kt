@@ -45,6 +45,8 @@ import java.io.File
 import java.util.GregorianCalendar
 import javax.inject.Inject
 import androidx.core.content.edit
+import ua.com.programmer.agentventa.dao.entity.Company
+import ua.com.programmer.agentventa.dao.entity.Store
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
@@ -73,7 +75,7 @@ class SharedViewModel @Inject constructor(
 
     private val _sharedParams = MutableLiveData<SharedParameters>()
     val sharedParams get() = _sharedParams
-    val state get() = _sharedParams.value ?: SharedParameters()
+    private val state get() = _sharedParams.value ?: SharedParameters()
 
     private val _updateState = MutableLiveData<Result>()
     val updateState get() = _updateState
@@ -84,6 +86,9 @@ class SharedViewModel @Inject constructor(
 
     private var _baseUrl = ""
     private var _headers: LazyHeaders? = null
+
+    private var _companies: List<Company> = emptyList()
+    private var _stores: List<Store> = emptyList()
 
     var cacheDir: File? = null
         private set
@@ -119,10 +124,44 @@ class SharedViewModel @Inject constructor(
     }
 
     fun setDocumentGuid(guid: String, companyGuid: String = "", storeGuid: String = "") {
+        if (guid.isBlank()) {
+            _sharedParams.value = state.copy(
+                orderGuid = guid,
+            )
+        }else{
+            _sharedParams.value = state.copy(
+                orderGuid = guid,
+                companyGuid = companyGuid,
+                company = _companies.find { it.guid == companyGuid }?.description ?: "",
+                storeGuid = storeGuid,
+                store = _stores.find { it.guid == storeGuid }?.description ?: "",
+            )
+        }
+    }
+
+    fun setCompany(guid: String) {
         _sharedParams.value = state.copy(
-            orderGuid = guid,
-            companyGuid = companyGuid,
-            storeGuid = storeGuid,
+            companyGuid = guid,
+            company = _companies.find { it.guid == guid }?.description ?: "",
+        )
+    }
+
+    fun setStore(guid: String) {
+        _sharedParams.value = state.copy(
+            storeGuid = guid,
+            store = _stores.find { it.guid == guid }?.description ?: "",
+        )
+    }
+
+    private fun setDefaults() {
+        val company = _companies.find { it.isDefault == 1 } ?: Company()
+        val store = _stores.find { it.isDefault == 1 } ?: Store()
+
+        _sharedParams.value = state.copy(
+            company = company.description,
+            companyGuid = company.guid,
+            store = store.description,
+            storeGuid = store.guid,
         )
     }
 
@@ -182,6 +221,11 @@ class SharedViewModel @Inject constructor(
 
                 _priceTypes = orderRepository.getPriceTypes()
                 _paymentTypes = orderRepository.getPaymentTypes()
+
+                _companies = orderRepository.getCompanies()
+                _stores = orderRepository.getStores()
+
+                setDefaults()
 
                 if (account.guid.isNotEmpty() && !account.isDemo()) {
                     FirebaseCrashlytics.getInstance().setUserId(account.guid)
@@ -430,4 +474,15 @@ class SharedViewModel @Inject constructor(
         }
     }
 
+    fun getCompanies(loadList: (List<Company>) -> Unit) {
+        viewModelScope.launch {
+          loadList(orderRepository.getCompanies())
+        }
+    }
+
+    fun getStores(loadList: (List<Store>) -> Unit) {
+        viewModelScope.launch {
+            loadList(orderRepository.getStores())
+        }
+    }
 }

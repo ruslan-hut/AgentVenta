@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.catalogs.client
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -8,6 +9,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -36,7 +38,7 @@ class ClientListFragment: Fragment(), MenuProvider {
         super.onCreate(savedInstanceState)
         viewModel.setCurrentGroup(navigationArgs.groupGuid)
         viewModel.setSelectMode(navigationArgs.modeSelect)
-        viewModel.setCompany(navigationArgs.companyGuid)
+        //viewModel.setCompany(navigationArgs.companyGuid)
     }
 
     override fun onCreateView(
@@ -75,6 +77,20 @@ class ClientListFragment: Fragment(), MenuProvider {
             val title = desc.ifBlank { getString(R.string.header_clients_list) }
             (requireActivity() as AppCompatActivity).supportActionBar?.title = title
         }
+
+        sharedModel.sharedParams.observe(this.viewLifecycleOwner) { params ->
+
+            viewModel.setListParameters(params)
+            Log.d("ClientList", "params: $params")
+
+            if (params.companyGuid.isNotBlank()) {
+                binding.tableCompanyTop.visibility = View.VISIBLE
+                binding.filterCompany.text = params.company
+                binding.filterStore.text = params.store
+            } else {
+                binding.tableCompanyTop.visibility = View.GONE
+            }
+        }
     }
 
     private fun onItemClick(client: LClient) {
@@ -106,10 +122,30 @@ class ClientListFragment: Fragment(), MenuProvider {
             R.id.action_search -> {
                 viewModel.toggleSearchVisibility()
             }
+            R.id.action_company -> {
+                showPopupMenu(requireActivity().findViewById(R.id.action_company))
+                true
+            }
 
             else -> return false
         }
         return true
+    }
+
+    private fun showPopupMenu(anchor: View) {
+        val popupMenu = PopupMenu(requireContext(), anchor)
+        sharedModel.getCompanies { list ->
+            list.forEachIndexed { index, item ->
+                popupMenu.menu.add(0, index, index, item.description) // item.name — наименование
+            }
+            popupMenu.setOnMenuItemClickListener { menuItem ->
+                val selectedItem = list[menuItem.itemId]
+                sharedModel.setCompany(selectedItem.guid) // Передаем код выбранного элемента
+                true
+            }
+
+            popupMenu.show()
+        }
     }
 
     override fun onDestroyView() {

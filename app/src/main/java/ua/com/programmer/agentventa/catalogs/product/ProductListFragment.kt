@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.catalogs.product
 
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -9,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -20,7 +22,9 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.LProduct
+import ua.com.programmer.agentventa.dao.entity.Store
 import ua.com.programmer.agentventa.dao.entity.hasImageData
 import ua.com.programmer.agentventa.databinding.ActivityGoodsSelectBinding
 import ua.com.programmer.agentventa.databinding.GoodsSelectTotalsDialogBinding
@@ -36,6 +40,10 @@ class ProductListFragment: Fragment(), MenuProvider {
     private val navigationArgs: ProductListFragmentArgs by navArgs()
     private var _binding: ActivityGoodsSelectBinding? = null
     private val binding get() = _binding!!
+
+    // menu buttons
+    private var companies: List<Company> = emptyList()
+    private var stores: List<Store> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,20 +92,31 @@ class ProductListFragment: Fragment(), MenuProvider {
         viewModel.products.observe(this.viewLifecycleOwner) {
             adapter.submitList(it)
         }
+
         viewModel.currentGroup.observe(this.viewLifecycleOwner) {
             val desc = it?.description ?: ""
             val title = desc.ifBlank { getString(R.string.header_goods_list) }
             (requireActivity() as AppCompatActivity).supportActionBar?.title = title
         }
-        sharedModel.sharedParams.observe(this.viewLifecycleOwner) {
-            viewModel.setListParams(it)
-            if (it.restsOnly || it.sortByName || it.priceType.isNotBlank()) {
+
+        sharedModel.sharedParams.observe(this.viewLifecycleOwner) { params ->
+
+            viewModel.setListParams(params)
+
+            if (params.restsOnly || params.sortByName || params.priceType.isNotBlank()) {
                 binding.tableTop.visibility = View.VISIBLE
-                binding.priceType.text = sharedModel.getPriceDescription(it.priceType)
-                binding.filterRestsOnly.visibility = if (it.restsOnly) View.VISIBLE else View.GONE
-                binding.sortByName.visibility = if (it.sortByName) View.VISIBLE else View.GONE
+                binding.priceType.text = sharedModel.getPriceDescription(params.priceType)
+                binding.filterRestsOnly.visibility = if (params.restsOnly) View.VISIBLE else View.GONE
+                binding.sortByName.visibility = if (params.sortByName) View.VISIBLE else View.GONE
             } else {
                 binding.tableTop.visibility = View.GONE
+            }
+            if (params.companyGuid.isNotBlank() || params.storeGuid.isNotBlank()) {
+                binding.tableCompanyTop.visibility = View.VISIBLE
+                binding.filterCompany.text = params.company
+                binding.filterStore.text = params.store
+            } else {
+                binding.tableCompanyTop.visibility = View.GONE
             }
         }
     }
@@ -143,6 +162,45 @@ class ProductListFragment: Fragment(), MenuProvider {
             }
         }
 
+        sharedModel.getCompanies { list ->
+            if (list.isNotEmpty()) {
+                menu.findItem(R.id.select_company).isVisible = true
+                companies = list
+            }
+        }
+        sharedModel.getStores { list ->
+            if (list.isNotEmpty()) {
+                menu.findItem(R.id.select_store).isVisible = true
+                stores = list
+            }
+        }
+
+    }
+
+    fun selectCompany(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor, Gravity.END)
+        companies.forEachIndexed { index, item ->
+            popup.menu.add(0, index, index, item.description)
+        }
+        popup.setOnMenuItemClickListener { item ->
+            val selected = companies[item.itemId]
+            sharedModel.setCompany(selected.guid)
+            true
+        }
+        popup.show()
+    }
+
+    fun selectStore(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor, Gravity.END)
+        stores.forEachIndexed { index, item ->
+            popup.menu.add(0, index, index, item.description)
+        }
+        popup.setOnMenuItemClickListener { item ->
+            val selected = stores[item.itemId]
+            sharedModel.setStore(selected.guid)
+            true
+        }
+        popup.show()
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -166,6 +224,12 @@ class ProductListFragment: Fragment(), MenuProvider {
             }
             R.id.client_goods -> {
                 sharedModel.toggleClientProducts()
+            }
+            R.id.select_company -> {
+                selectCompany(requireActivity().findViewById(R.id.toolbar)) // toolbar in main activity
+            }
+            R.id.select_store -> {
+                selectStore(requireActivity().findViewById(R.id.toolbar)) // toolbar in main activity
             }
             else -> return false
         }

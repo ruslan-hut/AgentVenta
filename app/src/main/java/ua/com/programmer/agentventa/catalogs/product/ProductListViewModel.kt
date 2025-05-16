@@ -80,17 +80,9 @@ class ProductListViewModel @Inject constructor(
         val sharedParams = listParams.value ?: return
         _noDataTextVisibility.value = View.GONE
 
-        val params = SharedParameters(
+        val params = sharedParams.copy(
             filter = _searchText.value ?: "",
             groupGuid = currentGroupGuid.value ?: "",
-            orderGuid = sharedParams.orderGuid,
-            companyGuid = sharedParams.companyGuid,
-            storeGuid = sharedParams.storeGuid,
-            sortByName = sharedParams.sortByName,
-            restsOnly = sharedParams.restsOnly,
-            clientProducts = sharedParams.clientProducts,
-            priceType = sharedParams.priceType,
-            currentAccount = sharedParams.currentAccount
         )
 
         viewModelScope.launch {

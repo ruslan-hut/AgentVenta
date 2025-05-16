@@ -90,11 +90,43 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/table_company_top"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/table_top">
+
+            <TextView
+                android:id="@+id/filter_company"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:layout_marginLeft="8dp"
+                android:textColor="?attr/colorTertiary"
+                android:text="@string/company" />
+
+            <TextView
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/filter_store"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="@string/store"
+                android:textColor="?attr/colorTertiary"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp" />
+
+        </LinearLayout>
+
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/goods_swipe"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/table_top"
+            android:layout_below="@id/table_company_top"
             android:layout_above="@id/goods_bottomBar">
 
             <androidx.recyclerview.widget.RecyclerView
