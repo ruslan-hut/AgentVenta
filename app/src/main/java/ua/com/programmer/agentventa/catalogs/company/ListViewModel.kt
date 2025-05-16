@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.catalogs.company
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -17,6 +18,7 @@ class ListViewModel @Inject constructor(
 
     private val _listItems = MutableLiveData<List<Company>>()
     val listItems get() = _listItems
+    private var orderGuid = ""
 
     init {
         viewModelScope.launch {
@@ -24,9 +26,15 @@ class ListViewModel @Inject constructor(
         }
     }
 
+    fun setOrderGuid(guid: String) {
+        orderGuid = guid
+    }
+
     fun setCompany(company: Company, onResult: () -> Unit) {
         viewModelScope.launch {
-
+            if (orderGuid.isNotBlank()) {
+                orderRepository.setCompany(orderGuid, company)
+            }
             onResult()
         }
     }

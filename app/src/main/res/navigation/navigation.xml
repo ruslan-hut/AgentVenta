@@ -38,7 +38,8 @@
             app:destination="@id/fiscalFragment" />
         <action
             android:id="@+id/action_orderFragment_to_companyListFragment"
-            app:destination="@id/companyListFragment" />
+            app:destination="@id/companyListFragment"
+            app:enterAnim="@animator/nav_default_enter_anim" />
     </fragment>
     <fragment
         android:id="@+id/userAccountListFragment"
@@ -295,5 +296,10 @@
     <fragment
         android:id="@+id/companyListFragment"
         android:name="ua.com.programmer.agentventa.catalogs.company.CompanyListFragment"
-        android:label="@string/company" />
+        android:label="@string/company" >
+        <argument
+            android:name="orderGuid"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
 </navigation>

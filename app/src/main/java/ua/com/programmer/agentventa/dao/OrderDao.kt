@@ -236,4 +236,7 @@ interface OrderDao {
     // get client by guid
     @Query("SELECT * FROM clients WHERE guid=:guid AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
     suspend fun getClient(guid: String): Client?
+
+    @Query("UPDATE orders SET company_guid=:companyGuid, company=:companyDescription WHERE guid=:guid")
+    suspend fun setCompany(guid: String, companyGuid: String, companyDescription: String)
 }

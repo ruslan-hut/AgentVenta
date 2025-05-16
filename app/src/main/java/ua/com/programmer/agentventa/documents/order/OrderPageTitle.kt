@@ -51,7 +51,9 @@ class OrderPageTitle: Fragment() {
             datePicker.show(parentFragmentManager, "DATE_PICKER_TAG")
         }
         binding.docCompany.setOnClickListener {
-            val action = OrderFragmentDirections.actionOrderFragmentToCompanyListFragment()
+            val action = OrderFragmentDirections.actionOrderFragmentToCompanyListFragment(
+                orderGuid = viewModel.getGuid()
+            )
             view?.findNavController()?.navigate(action)
         }
         binding.docClient.setOnClickListener {

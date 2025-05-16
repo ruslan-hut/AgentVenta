@@ -7,15 +7,23 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.databinding.SimpleRecyclerBinding
+import kotlin.getValue
 
 @AndroidEntryPoint
 class CompanyListFragment: Fragment() {
     private val viewModel: ListViewModel by viewModels()
     private var _binding: SimpleRecyclerBinding? = null
+    private val navigationArgs: CompanyListFragmentArgs by navArgs()
     private val binding get() = _binding!!
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel.setOrderGuid(navigationArgs.orderGuid ?: "")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
