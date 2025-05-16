@@ -87,21 +87,24 @@ interface ClientDao {
         FROM clients
         LEFT OUTER JOIN (SELECT guid, description, db_guid FROM clients WHERE is_group=1) AS client_groups
         ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid
-        LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1) AS debts
+        LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1 AND company_guid=:companyGuid) AS debts
         ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid
         LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
         ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
         WHERE
         clients.guid=:guid AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
     """)
-    fun getClientInfo(guid: String): Flow<LClient?>
+    fun getClientInfo(guid: String, companyGuid: String): Flow<LClient?>
 
-    @Query("SELECT * FROM debts " +
-            "WHERE client_guid=:guid " +
-            "AND is_total=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
-            "ORDER BY sorting")
-    fun getClientDebts(guid: String): Flow<List<Debt>>
+    @Query(""" 
+            SELECT * FROM debts
+            WHERE client_guid=:guid
+            AND is_total=0
+            AND company_guid=:companyGuid
+            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            ORDER BY sorting
+    """)
+    fun getClientDebts(guid: String, companyGuid: String): Flow<List<Debt>>
 
     @Query("SELECT * FROM debts " +
             "WHERE client_guid=:guid AND doc_id=:docId " +

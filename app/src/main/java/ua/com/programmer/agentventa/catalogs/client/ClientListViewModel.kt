@@ -37,7 +37,7 @@ class ClientListViewModel @Inject constructor(
     }
 
     val currentGroup get() = currentGroupGuid.switchMap {
-        repository.getClient(it).asLiveData()
+        repository.getClient(it, currentCompany.value ?: "").asLiveData()
     }
 
     private val _searchVisibility = MutableLiveData(View.GONE)

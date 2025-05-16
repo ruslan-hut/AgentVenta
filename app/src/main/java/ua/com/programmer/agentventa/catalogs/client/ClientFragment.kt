@@ -20,11 +20,13 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.ClientMenuFragmentBinding
+import ua.com.programmer.agentventa.shared.SharedViewModel
 
 @AndroidEntryPoint
 class ClientFragment: Fragment(), MenuProvider {
 
     private val viewModel: ClientViewModel by activityViewModels()
+    private val sharedModel: SharedViewModel by activityViewModels()
     private val navigationArgs: ClientFragmentArgs by navArgs()
     private var _binding: ClientMenuFragmentBinding? = null
     private val binding get() = _binding!!
@@ -52,6 +54,10 @@ class ClientFragment: Fragment(), MenuProvider {
                 else -> tab.text = getString(R.string.title_data)
             }
         }.attach()
+
+        sharedModel.sharedParams.observe(viewLifecycleOwner) {
+            viewModel.setParameters(it)
+        }
 
         viewModel.client.observe(viewLifecycleOwner) { client ->
             var title = getString(R.string.doc_client)

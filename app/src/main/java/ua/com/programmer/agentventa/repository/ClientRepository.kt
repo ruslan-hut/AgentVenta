@@ -7,9 +7,9 @@ import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LClientLocation
 
 interface ClientRepository {
-    fun getClient(guid: String): Flow<LClient>
+    fun getClient(guid: String, companyGuid: String): Flow<LClient>
     fun getClients(group: String, filter: String, companyGuid: String): Flow<List<LClient>>
-    fun getDebts(guid: String): Flow<List<Debt>>
+    fun getDebts(guid: String, companyGuid: String): Flow<List<Debt>>
     fun getDebt(guid: String, docId: String): Flow<Debt>
     fun getLocation(guid: String): Flow<LClientLocation>
     fun getLocations(): Flow<List<LClientLocation>>

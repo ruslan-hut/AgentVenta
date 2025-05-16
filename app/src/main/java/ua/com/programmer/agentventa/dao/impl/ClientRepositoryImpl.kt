@@ -17,8 +17,8 @@ class ClientRepositoryImpl @Inject constructor(
     private val updateDao: DataExchangeDao
 ): ClientRepository {
 
-    override fun getClient(guid: String): Flow<LClient> {
-        return dao.getClientInfo(guid).map {
+    override fun getClient(guid: String, companyGuid: String): Flow<LClient> {
+        return dao.getClientInfo(guid, companyGuid).map {
             it ?: LClient()
         }
     }
@@ -27,8 +27,8 @@ class ClientRepositoryImpl @Inject constructor(
         return dao.getClients(group, filter.asFilter(), companyGuid)
     }
 
-    override fun getDebts(guid: String): Flow<List<Debt>> {
-        return dao.getClientDebts(guid)
+    override fun getDebts(guid: String, companyGuid: String): Flow<List<Debt>> {
+        return dao.getClientDebts(guid, companyGuid)
     }
 
     override fun getDebt(guid: String, docId: String): Flow<Debt> {
