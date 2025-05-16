@@ -31,15 +31,29 @@ class ProductRepositoryImpl @Inject constructor(
     }
 
     override fun getProducts(parameters: SharedParameters): Flow<List<LProduct>> {
-        return productDao.getProducts(
-            filter = parameters.filter.asFilter(),
-            group = parameters.groupGuid,
-            order = parameters.orderGuid,
-            restOnly = parameters.restsOnly.asInt(),
-            sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
-            type = parameters.priceType,
-            dbGuid = parameters.currentAccount
-        )
+        return if (parameters.storeGuid.isNotBlank()) {
+            productDao.getProductsWithRests(
+                filter = parameters.filter.asFilter(),
+                group = parameters.groupGuid,
+                order = parameters.orderGuid,
+                restOnly = parameters.restsOnly.asInt(),
+                sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
+                type = parameters.priceType,
+                dbGuid = parameters.currentAccount,
+                company = parameters.companyGuid,
+                store = parameters.storeGuid,
+            )
+        }else{
+            productDao.getProducts(
+                filter = parameters.filter.asFilter(),
+                group = parameters.groupGuid,
+                order = parameters.orderGuid,
+                restOnly = parameters.restsOnly.asInt(),
+                sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
+                type = parameters.priceType,
+                dbGuid = parameters.currentAccount,
+            )
+        }
     }
 
     override fun fetchProductPrices(guid: String, currentPriceType: String): Flow<List<LPrice>> {

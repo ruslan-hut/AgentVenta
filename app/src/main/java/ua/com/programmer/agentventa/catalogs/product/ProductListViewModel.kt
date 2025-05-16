@@ -84,6 +84,8 @@ class ProductListViewModel @Inject constructor(
             filter = _searchText.value ?: "",
             groupGuid = currentGroupGuid.value ?: "",
             orderGuid = sharedParams.orderGuid,
+            companyGuid = sharedParams.companyGuid,
+            storeGuid = sharedParams.storeGuid,
             sortByName = sharedParams.sortByName,
             restsOnly = sharedParams.restsOnly,
             clientProducts = sharedParams.clientProducts,

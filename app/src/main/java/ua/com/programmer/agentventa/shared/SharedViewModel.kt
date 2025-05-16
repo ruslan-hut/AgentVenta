@@ -44,6 +44,7 @@ import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import java.io.File
 import java.util.GregorianCalendar
 import javax.inject.Inject
+import androidx.core.content.edit
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
@@ -101,7 +102,7 @@ class SharedViewModel @Inject constructor(
     // method is used in the product list screen menu
     fun toggleRestsOnly() {
         _sharedParams.value = state.copy(restsOnly = !state.restsOnly)
-        preference.edit().putBoolean("show_rests_only", state.restsOnly).apply()
+        preference.edit { putBoolean("show_rests_only", state.restsOnly) }
     }
 
     // method is used in a preference screen and should not change the value of the preference
@@ -117,8 +118,12 @@ class SharedViewModel @Inject constructor(
         _sharedParams.value = state.copy(priceType = getPriceTypeCode(description))
     }
 
-    fun setDocumentGuid(guid: String) {
-        _sharedParams.value = state.copy(orderGuid = guid)
+    fun setDocumentGuid(guid: String, companyGuid: String = "", storeGuid: String = "") {
+        _sharedParams.value = state.copy(
+            orderGuid = guid,
+            companyGuid = companyGuid,
+            storeGuid = storeGuid,
+        )
     }
 
     fun getPriceTypeCode(description: String): String {

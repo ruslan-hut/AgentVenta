@@ -104,7 +104,7 @@ class OrderFragment: Fragment(), MenuProvider {
                 isProcessed = order.isProcessed > 0
             }
             (activity as AppCompatActivity).supportActionBar?.title = title
-            sharedModel.setDocumentGuid(guid)
+            sharedModel.setDocumentGuid(guid, order.companyGuid, order.storeGuid)
             if (isProcessed) {
                 binding?.orderBottomBar?.visibility = View.GONE
             } else {
