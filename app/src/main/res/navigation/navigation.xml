@@ -40,6 +40,9 @@
             android:id="@+id/action_orderFragment_to_companyListFragment"
             app:destination="@id/companyListFragment"
             app:enterAnim="@animator/nav_default_enter_anim" />
+        <action
+            android:id="@+id/action_orderFragment_to_storeListFragment"
+            app:destination="@id/storeListFragment" />
     </fragment>
     <fragment
         android:id="@+id/userAccountListFragment"
@@ -297,6 +300,15 @@
         android:id="@+id/companyListFragment"
         android:name="ua.com.programmer.agentventa.catalogs.company.CompanyListFragment"
         android:label="@string/company" >
+        <argument
+            android:name="orderGuid"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/storeListFragment"
+        android:name="ua.com.programmer.agentventa.catalogs.store.StoreListFragment"
+        android:label="@string/store" >
         <argument
             android:name="orderGuid"
             app:argType="string"

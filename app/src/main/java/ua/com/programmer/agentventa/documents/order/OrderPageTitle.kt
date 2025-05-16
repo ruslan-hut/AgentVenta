@@ -56,6 +56,12 @@ class OrderPageTitle: Fragment() {
             )
             view?.findNavController()?.navigate(action)
         }
+        binding.docStore.setOnClickListener {
+            val action = OrderFragmentDirections.actionOrderFragmentToStoreListFragment(
+                orderGuid = viewModel.getGuid()
+            )
+            view?.findNavController()?.navigate(action)
+        }
         binding.docClient.setOnClickListener {
             val action = OrderFragmentDirections.actionOrderFragmentToClientListFragment(
                 modeSelect = true,

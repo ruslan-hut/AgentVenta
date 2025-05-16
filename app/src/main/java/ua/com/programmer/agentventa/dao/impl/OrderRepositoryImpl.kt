@@ -237,6 +237,13 @@ class OrderRepositoryImpl @Inject constructor(
         orderDao.setCompany(guid, company.guid, company.description)
     }
 
+    override suspend fun setStore(
+        guid: String,
+        store: Store,
+    ) {
+        orderDao.setStore(guid, store.guid, store.description)
+    }
+
     override suspend fun deleteDocument(document: Order): Boolean {
         return orderDao.delete(document) > 0
     }

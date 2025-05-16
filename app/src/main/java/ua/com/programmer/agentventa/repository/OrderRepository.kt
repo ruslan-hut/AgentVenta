@@ -34,4 +34,5 @@ interface OrderRepository: DocumentRepository<Order> {
     suspend fun getStores(): List<Store>
     suspend fun updateLocation(document: Order): Boolean
     suspend fun setCompany(guid: String, company: Company)
+    suspend fun setStore(guid: String, store: Store)
 }

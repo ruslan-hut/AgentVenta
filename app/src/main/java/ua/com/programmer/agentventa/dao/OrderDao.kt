@@ -239,4 +239,7 @@ interface OrderDao {
 
     @Query("UPDATE orders SET company_guid=:companyGuid, company=:companyDescription WHERE guid=:guid")
     suspend fun setCompany(guid: String, companyGuid: String, companyDescription: String)
+
+    @Query("UPDATE orders SET store_guid=:storeGuid, store=:storeDescription WHERE guid=:guid")
+    suspend fun setStore(guid: String, storeGuid: String, storeDescription: String)
 }
