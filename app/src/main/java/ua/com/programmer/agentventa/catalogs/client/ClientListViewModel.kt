@@ -95,10 +95,6 @@ class ClientListViewModel @Inject constructor(
         selectMode = mode
     }
 
-    fun setCompany(companyGuid: String?) {
-        currentCompany.value = companyGuid ?: ""
-    }
-
     init {
         _clients.addSource(searchText) { loadData() }
         _clients.addSource(listParams) { loadData() }
