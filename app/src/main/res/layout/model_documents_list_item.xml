@@ -80,6 +80,20 @@
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text" />
 
+                    <TextView
+                        android:id="@+id/list_item_company"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/holder_text" />
+
+                    <TextView
+                        android:id="@+id/list_item_store"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/holder_text" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

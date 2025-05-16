@@ -28,6 +28,18 @@ class OrderListAdapter(
                 listItemNote.text = document.notes
                 listItemStatus.text = document.status
                 listItemDate.text = document.date
+                listItemCompany.text = document.company
+                listItemStore.text = document.store
+                listItemCompany.visibility = if (document.company.isNotBlank()) {
+                    View.VISIBLE
+                } else {
+                    View.INVISIBLE
+                }
+                listItemStore.visibility = if (document.store.isNotBlank()) {
+                    View.VISIBLE
+                } else {
+                    View.INVISIBLE
+                }
                 iconFiscal.visibility = if (document.isFiscal == 1) {
                     View.VISIBLE
                 } else {
