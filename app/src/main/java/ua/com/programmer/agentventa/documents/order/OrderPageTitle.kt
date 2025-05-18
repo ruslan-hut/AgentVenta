@@ -99,8 +99,8 @@ class OrderPageTitle: Fragment() {
                 docNextPayment.text = order.nextPayment.format(2)
                 docNotes.text = order.notes
 
-                docCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
-                docStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
+                titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
+                titleStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
                 docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
                 elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
 

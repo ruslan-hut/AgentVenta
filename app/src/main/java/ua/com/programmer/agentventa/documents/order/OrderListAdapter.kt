@@ -30,15 +30,15 @@ class OrderListAdapter(
                 listItemDate.text = document.date
                 listItemCompany.text = document.company
                 listItemStore.text = document.store
-                listItemCompany.visibility = if (document.company.isNotBlank()) {
+                listItemCompany.visibility = if (document.company.isNotEmpty()) {
                     View.VISIBLE
                 } else {
-                    View.INVISIBLE
+                    View.GONE
                 }
-                listItemStore.visibility = if (document.store.isNotBlank()) {
+                listItemStore.visibility = if (document.store.isNotEmpty()) {
                     View.VISIBLE
                 } else {
-                    View.INVISIBLE
+                    View.GONE
                 }
                 iconFiscal.visibility = if (document.isFiscal == 1) {
                     View.VISIBLE

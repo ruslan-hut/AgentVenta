@@ -115,6 +115,9 @@ class ClientListFragment: Fragment(), MenuProvider {
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_clients, menu)
+        if (!sharedModel.options.useCompanies) {
+            menu.findItem(R.id.action_company).isVisible = false
+        }
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
