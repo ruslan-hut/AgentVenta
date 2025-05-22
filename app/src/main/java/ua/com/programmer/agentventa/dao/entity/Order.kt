@@ -117,6 +117,10 @@ fun Order.toMap(account: String, content: List<Map<String,Any>>): Map<String,Any
     map["guid"] = guid
     map["delivery_date"] = deliveryDate
     map["notes"] = notes
+    map["company_guid"] = companyGuid
+    map["company"] = company
+    map["store_guid"] = storeGuid
+    map["store"] = store
     map["client_guid"] = clientGuid ?: ""
     map["client_id"] = clientCode2 ?: ""
     map["client_description"] = clientDescription ?: ""
