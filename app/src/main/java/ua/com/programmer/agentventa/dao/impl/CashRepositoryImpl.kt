@@ -26,13 +26,13 @@ class CashRepositoryImpl @Inject constructor(
     }
 
     override suspend fun newDocument(): Cash? {
-        val lastNumber = dao.getNewDocumentNumber()?: 0
+        val number = (dao.getMaxDocumentNumber() ?: 0) + 1
         val time = utils.currentTime()
         val dbGuid = userAccountDao.getCurrent()?.guid ?: return null
 
         val document = Cash(
             databaseId = dbGuid,
-            number = lastNumber,
+            number = number,
             guid = UUID.randomUUID().toString(),
             time = time,
             date = utils.dateLocal(time),

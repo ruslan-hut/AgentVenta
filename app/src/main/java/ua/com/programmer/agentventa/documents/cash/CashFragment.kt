@@ -87,6 +87,16 @@ class CashFragment: Fragment(), MenuProvider {
         }
     }
 
+    fun openClients() {
+        val action = CashFragmentDirections.actionCashFragmentToClientListFragment()
+        view?.findNavController()?.navigate(action)
+    }
+
+    fun openCompanies() {
+        val action = CashFragmentDirections.actionCashFragmentToCompanyListFragment()
+        view?.findNavController()?.navigate(action)
+    }
+
     override fun onDestroy() {
         sharedModel.clearActions()
         viewModel.onDestroy()

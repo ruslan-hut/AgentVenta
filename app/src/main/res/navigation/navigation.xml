@@ -185,6 +185,9 @@
             android:name="clientGuid"
             app:argType="string"
             app:nullable="true" />
+        <action
+            android:id="@+id/action_cashFragment_to_companyListFragment"
+            app:destination="@id/companyListFragment" />
     </fragment>
     <fragment
         android:id="@+id/taskListFragment"

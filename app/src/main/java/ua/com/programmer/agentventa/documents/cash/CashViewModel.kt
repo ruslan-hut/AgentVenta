@@ -81,6 +81,8 @@ class CashViewModel@Inject constructor(
         }
     }
 
+    fun documentGuid() = _documentGuid.value ?: ""
+
     fun enableEdit() {
         updateDocument(currentDocument.copy(isProcessed = 0))
     }
