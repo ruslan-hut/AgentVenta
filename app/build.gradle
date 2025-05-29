@@ -95,7 +95,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.0"
 
     //firebase
-    implementation platform('com.google.firebase:firebase-bom:33.13.0')
+    implementation platform('com.google.firebase:firebase-bom:33.14.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-auth'
