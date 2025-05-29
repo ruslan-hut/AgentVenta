@@ -37,6 +37,7 @@ import ua.com.programmer.agentventa.fiscal.FiscalViewModel
 import ua.com.programmer.agentventa.fiscal.OperationResult
 import ua.com.programmer.agentventa.printer.PrinterViewModel
 import ua.com.programmer.agentventa.shared.SharedViewModel
+import ua.com.programmer.agentventa.utility.Constants
 
 @AndroidEntryPoint
 class OrderFragment: Fragment(), MenuProvider {
@@ -105,7 +106,7 @@ class OrderFragment: Fragment(), MenuProvider {
 
             (activity as AppCompatActivity).supportActionBar?.title = title
 
-            sharedModel.setDocumentGuid(guid, order.companyGuid, order.storeGuid)
+            sharedModel.setDocumentGuid(Constants.DOCUMENT_ORDER, guid, order.companyGuid, order.storeGuid)
 
             if (isProcessed) {
                 binding?.orderBottomBar?.visibility = View.GONE
@@ -193,7 +194,6 @@ class OrderFragment: Fragment(), MenuProvider {
     private fun openClientList() {
         val action = OrderFragmentDirections.actionOrderFragmentToClientListFragment(
             modeSelect = true,
-            companyGuid = viewModel.getCompanyGuid(),
         )
         view?.findNavController()?.navigate(action)
     }

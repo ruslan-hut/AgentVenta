@@ -35,7 +35,7 @@ class ProductRepositoryImpl @Inject constructor(
             productDao.getProductsWithRests(
                 filter = parameters.filter.asFilter(),
                 group = parameters.groupGuid,
-                order = parameters.orderGuid,
+                order = parameters.docGuid,
                 restOnly = parameters.restsOnly.asInt(),
                 sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
                 type = parameters.priceType,
@@ -47,7 +47,7 @@ class ProductRepositoryImpl @Inject constructor(
             productDao.getProducts(
                 filter = parameters.filter.asFilter(),
                 group = parameters.groupGuid,
-                order = parameters.orderGuid,
+                order = parameters.docGuid,
                 restOnly = parameters.restsOnly.asInt(),
                 sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
                 type = parameters.priceType,

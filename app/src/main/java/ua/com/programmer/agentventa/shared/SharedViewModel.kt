@@ -94,7 +94,7 @@ class SharedViewModel @Inject constructor(
         private set
 
     val documentTotals get() = _sharedParams.switchMap {
-        orderRepository.watchDocumentTotals(it.orderGuid).asLiveData()
+        orderRepository.watchDocumentTotals(it.docGuid).asLiveData()
     }
 
     var selectClientAction: (LClient, () -> Unit) -> Unit = { _, _ -> }
@@ -123,14 +123,16 @@ class SharedViewModel @Inject constructor(
         _sharedParams.value = state.copy(priceType = getPriceTypeCode(description))
     }
 
-    fun setDocumentGuid(guid: String, companyGuid: String = "", storeGuid: String = "") {
+    fun setDocumentGuid(type: String = "", guid: String = "", companyGuid: String = "", storeGuid: String = "") {
         if (guid.isBlank()) {
             _sharedParams.value = state.copy(
-                orderGuid = guid,
+                docType = type,
+                docGuid = guid,
             )
         }else{
             _sharedParams.value = state.copy(
-                orderGuid = guid,
+                docType = type,
+                docGuid = guid,
                 companyGuid = companyGuid,
                 company = _companies.find { it.guid == companyGuid }?.description ?: "",
                 storeGuid = storeGuid,
@@ -178,7 +180,7 @@ class SharedViewModel @Inject constructor(
     }
 
     fun clearActions() {
-        setDocumentGuid("")
+        setDocumentGuid()
         selectClientAction = { _, _ -> }
         selectProductAction = { _, _ -> }
     }

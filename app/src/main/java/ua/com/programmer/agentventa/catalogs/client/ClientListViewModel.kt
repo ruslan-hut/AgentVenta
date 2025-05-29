@@ -57,6 +57,10 @@ class ClientListViewModel @Inject constructor(
         listParams.value = sharedParameters
     }
 
+    fun docType(): String {
+        return listParams.value?.docType ?: ""
+    }
+
     private fun loadData() {
         val sharedParams = listParams.value ?: return
         //_noDataTextVisibility.value = View.GONE

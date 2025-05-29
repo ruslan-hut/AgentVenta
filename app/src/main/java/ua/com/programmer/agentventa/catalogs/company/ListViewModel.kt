@@ -6,17 +6,22 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.dao.entity.Company
+import ua.com.programmer.agentventa.repository.CashRepository
 import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.shared.SharedParameters
+import ua.com.programmer.agentventa.utility.Constants
 import javax.inject.Inject
 
 @HiltViewModel
 class ListViewModel @Inject constructor(
-    private val orderRepository: OrderRepository
+    private val orderRepository: OrderRepository,
+    private val cashRepository: CashRepository,
 ): ViewModel() {
 
     private val _listItems = MutableLiveData<List<Company>>()
     val listItems get() = _listItems
-    private var orderGuid = ""
+    private var docGuid = ""
+    private var docType = ""
 
     init {
         viewModelScope.launch {
@@ -24,14 +29,20 @@ class ListViewModel @Inject constructor(
         }
     }
 
-    fun setOrderGuid(guid: String) {
-        orderGuid = guid
+    fun setListParameters(params: SharedParameters) {
+        docType = params.docType
+        docGuid = params.docGuid
     }
 
     fun setCompany(company: Company, onResult: () -> Unit) {
         viewModelScope.launch {
-            if (orderGuid.isNotBlank()) {
-                orderRepository.setCompany(orderGuid, company)
+            if (docType.isBlank() || docGuid.isBlank()) {
+                onResult
+                return@launch
+            }
+            when (docType) {
+                Constants.DOCUMENT_ORDER -> orderRepository.setCompany(docGuid, company)
+                Constants.DOCUMENT_CASH -> cashRepository.setCompany(docGuid, company)
             }
             onResult()
         }

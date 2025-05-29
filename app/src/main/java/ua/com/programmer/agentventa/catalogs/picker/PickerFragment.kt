@@ -53,7 +53,7 @@ class PickerFragment: Fragment(), MenuProvider {
         super.onCreate(savedInstanceState)
         sharedModel.sharedParams.observe(this) {
             currentPriceType = it.priceType
-            viewModel.setProductParameters(navigationArgs.productGuid, it.orderGuid, currentPriceType)
+            viewModel.setProductParameters(navigationArgs.productGuid, it.docGuid, currentPriceType)
         }
     }
 

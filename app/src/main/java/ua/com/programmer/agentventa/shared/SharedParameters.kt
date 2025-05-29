@@ -3,7 +3,8 @@ package ua.com.programmer.agentventa.shared
 data class SharedParameters(
     val filter: String = "",
     val groupGuid: String = "",
-    val orderGuid: String = "",
+    val docGuid: String = "",
+    val docType: String = "",
     val companyGuid: String = "",
     val company: String = "",
     val storeGuid: String = "",

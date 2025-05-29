@@ -94,10 +94,6 @@
             android:name="groupGuid"
             app:argType="string"
             android:defaultValue=""/>
-        <argument
-            android:name="modeSelect"
-            app:argType="boolean"
-            android:defaultValue="false" />
         <action
             android:id="@+id/action_clientListFragment_self"
             app:destination="@id/clientListFragment" />
@@ -105,10 +101,9 @@
             android:id="@+id/action_clientListFragment_to_clientMenuFragment"
             app:destination="@id/clientMenuFragment" />
         <argument
-            android:name="companyGuid"
-            app:argType="string"
-            app:nullable="true"
-            android:defaultValue='' />
+            android:name="modeSelect"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
     <fragment
         android:id="@+id/pickerFragment"
@@ -307,12 +302,7 @@
     <fragment
         android:id="@+id/companyListFragment"
         android:name="ua.com.programmer.agentventa.catalogs.company.CompanyListFragment"
-        android:label="@string/company" >
-        <argument
-            android:name="orderGuid"
-            app:argType="string"
-            app:nullable="true" />
-    </fragment>
+        android:label="@string/company" />
     <fragment
         android:id="@+id/storeListFragment"
         android:name="ua.com.programmer.agentventa.catalogs.store.StoreListFragment"

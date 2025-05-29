@@ -118,17 +118,6 @@ class OrderViewModel @Inject constructor(
             withContext(Dispatchers.Main) {
                 popUp()
             }
-//            orderRepository.getOrder(orderGuid)?.let {order ->
-//                order.setClient(client)
-//                if (order.priceType.isEmpty()) {
-//                    order.priceType = client.priceType
-//                }
-//                if (orderRepository.updateDocument(order)) {
-//                    withContext(Dispatchers.Main) {
-//                        popUp()
-//                    }
-//                }
-//            }
         }
     }
 

@@ -24,6 +24,7 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.databinding.ClientListFragmentBinding
 import ua.com.programmer.agentventa.shared.SharedViewModel
+import ua.com.programmer.agentventa.utility.Constants
 
 @AndroidEntryPoint
 class ClientListFragment: Fragment(), MenuProvider {
@@ -38,7 +39,6 @@ class ClientListFragment: Fragment(), MenuProvider {
         super.onCreate(savedInstanceState)
         viewModel.setCurrentGroup(navigationArgs.groupGuid)
         viewModel.setSelectMode(navigationArgs.modeSelect)
-        //viewModel.setCompany(navigationArgs.companyGuid)
     }
 
     override fun onCreateView(
@@ -93,17 +93,20 @@ class ClientListFragment: Fragment(), MenuProvider {
         }
     }
 
+    private fun parentFragmentId(): Int {
+        return if (viewModel.docType() == Constants.DOCUMENT_ORDER) R.id.orderFragment else R.id.cashFragment
+    }
+
     private fun onItemClick(client: LClient) {
         if (client.isGroup) {
             val action = ClientListFragmentDirections.actionClientListFragmentSelf(
                 groupGuid = client.guid,
                 modeSelect = navigationArgs.modeSelect,
-                companyGuid = navigationArgs.companyGuid,
             )
             view?.findNavController()?.navigate(action)
         } else if (navigationArgs.modeSelect) {
             sharedModel.selectClientAction(client) {
-                view?.findNavController()?.popBackStack(R.id.orderFragment, false)
+                view?.findNavController()?.popBackStack(parentFragmentId(), false)
             }
         } else {
             val action = ClientListFragmentDirections.actionClientListFragmentToClientMenuFragment(

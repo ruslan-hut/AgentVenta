@@ -107,4 +107,9 @@ interface CashDao {
     """)
     fun getDocumentsTotals(filter: String): Flow<List<DocumentTotals>>
 
+    @Query("UPDATE cash SET company_guid=:companyGuid, company=:companyDescription WHERE guid=:guid")
+    suspend fun setCompany(guid: String, companyGuid: String, companyDescription: String)
+
+    @Query("UPDATE cash SET client_guid=:clientGuid, client=:clientDescription WHERE guid=:guid")
+    suspend fun setClient(guid: String, clientGuid: String, clientDescription: String)
 }

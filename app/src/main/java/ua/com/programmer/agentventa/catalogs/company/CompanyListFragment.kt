@@ -1,29 +1,26 @@
 package ua.com.programmer.agentventa.catalogs.company
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.databinding.SimpleRecyclerBinding
+import ua.com.programmer.agentventa.shared.SharedViewModel
 import kotlin.getValue
 
 @AndroidEntryPoint
 class CompanyListFragment: Fragment() {
     private val viewModel: ListViewModel by viewModels()
+    private val sharedModel: SharedViewModel by activityViewModels()
     private var _binding: SimpleRecyclerBinding? = null
-    private val navigationArgs: CompanyListFragmentArgs by navArgs()
     private val binding get() = _binding!!
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        viewModel.setOrderGuid(navigationArgs.orderGuid ?: "")
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,6 +48,10 @@ class CompanyListFragment: Fragment() {
 
         viewModel.listItems.observe(viewLifecycleOwner) { listItems ->
             adapter.submitList(listItems)
+        }
+
+        sharedModel.sharedParams.observe(this.viewLifecycleOwner) { params ->
+            viewModel.setListParameters(params)
         }
     }
 

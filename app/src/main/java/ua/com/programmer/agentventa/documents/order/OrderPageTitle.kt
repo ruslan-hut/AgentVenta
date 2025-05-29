@@ -19,6 +19,7 @@ import ua.com.programmer.agentventa.databinding.ModelContentOrderBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
 import ua.com.programmer.agentventa.shared.SharedViewModel
+import ua.com.programmer.agentventa.utility.Constants
 import java.util.Date
 
 @AndroidEntryPoint
@@ -51,9 +52,7 @@ class OrderPageTitle: Fragment() {
             datePicker.show(parentFragmentManager, "DATE_PICKER_TAG")
         }
         binding.docCompany.setOnClickListener {
-            val action = OrderFragmentDirections.actionOrderFragmentToCompanyListFragment(
-                orderGuid = viewModel.getGuid()
-            )
+            val action = OrderFragmentDirections.actionOrderFragmentToCompanyListFragment()
             view?.findNavController()?.navigate(action)
         }
         binding.docStore.setOnClickListener {
@@ -65,7 +64,6 @@ class OrderPageTitle: Fragment() {
         binding.docClient.setOnClickListener {
             val action = OrderFragmentDirections.actionOrderFragmentToClientListFragment(
                 modeSelect = true,
-                companyGuid = viewModel.getCompanyGuid(),
             )
             view?.findNavController()?.navigate(action)
         }

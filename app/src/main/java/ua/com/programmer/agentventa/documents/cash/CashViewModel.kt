@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.documents.cash
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -10,6 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.Cash
+import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.CashRepository
 import javax.inject.Inject
@@ -73,6 +76,21 @@ class CashViewModel@Inject constructor(
         ))
     }
 
+    fun onClientClick(client: LClient, popUp: () -> Unit) {
+        val docGuid = currentDocument.guid
+        Log.d("CashViewModel", "onClientClick: $client")
+        viewModelScope.launch {
+            val clientData = Client(
+                guid = client.guid,
+                description = client.description,
+            )
+            cashRepository.setClient(docGuid, clientData)
+            withContext(Dispatchers.Main) {
+                popUp()
+            }
+        }
+    }
+
     fun deleteDocument() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -81,7 +99,9 @@ class CashViewModel@Inject constructor(
         }
     }
 
-    fun documentGuid() = _documentGuid.value ?: ""
+    fun documentGuid() = currentDocument.guid
+
+    fun companyGuid() = currentDocument.companyGuid
 
     fun enableEdit() {
         updateDocument(currentDocument.copy(isProcessed = 0))

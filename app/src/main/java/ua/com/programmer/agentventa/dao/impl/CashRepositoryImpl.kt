@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.CashDao
 import ua.com.programmer.agentventa.dao.UserAccountDao
 import ua.com.programmer.agentventa.dao.entity.Cash
+import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
@@ -50,6 +52,20 @@ class CashRepositoryImpl @Inject constructor(
 
     override suspend fun updateDocument(document: Cash): Boolean {
         return dao.update(document) > 0
+    }
+
+    override suspend fun setCompany(
+        guid: String,
+        company: Company
+    ) {
+        dao.setCompany(guid, company.guid, company.description)
+    }
+
+    override suspend fun setClient(
+        guid: String,
+        client: Client
+    ) {
+        dao.setClient(guid, client.guid, client.description)
     }
 
     override suspend fun deleteDocument(document: Cash): Boolean {

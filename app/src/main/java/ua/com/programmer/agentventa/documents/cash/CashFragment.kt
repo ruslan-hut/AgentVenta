@@ -23,6 +23,7 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.getSumFormatted
 import ua.com.programmer.agentventa.databinding.CashFragmentBinding
 import ua.com.programmer.agentventa.shared.SharedViewModel
+import ua.com.programmer.agentventa.utility.Constants
 
 @AndroidEntryPoint
 class CashFragment: Fragment(), MenuProvider {
@@ -60,12 +61,20 @@ class CashFragment: Fragment(), MenuProvider {
                 title += " ${it.number}"
             }
             (activity as AppCompatActivity).supportActionBar?.title = title
-            sharedModel.setDocumentGuid(it?.guid ?: "")
+            sharedModel.setDocumentGuid(
+                Constants.DOCUMENT_CASH,
+                it?.guid ?: "",
+                it?.companyGuid ?: "",
+                )
 //            if (it.isProcessed > 0) {
 //                binding.orderBottomBar.visibility = View.GONE
 //            } else {
 //                binding.orderBottomBar.visibility = View.VISIBLE
 //            }
+        }
+
+        sharedModel.selectClientAction = { client, popUp ->
+            viewModel.onClientClick(client, popUp)
         }
 
         return binding.root
@@ -74,21 +83,33 @@ class CashFragment: Fragment(), MenuProvider {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         viewModel.document.observe(this.viewLifecycleOwner) {
+            val options = sharedModel.options
             binding.apply {
                 docNumber.text = it.number.toString()
                 docDate.text = it.date
-                docClient.text = it.clientGuid
+                docCompany.text = it.company
+                docClient.text = it.client
                 docTotalPrice.text = it.getSumFormatted()
                 isFiscal.text = it.fiscalNumber.toString()
                 isFiscal.isChecked = it.isFiscal > 0
                 docParentDocument.text = it.referenceGuid
                 docNotes.text = it.notes
+
+                titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
             }
+        }
+        binding.docCompany.setOnClickListener {
+            openCompanies()
+        }
+        binding.docClient.setOnClickListener {
+            openClients()
         }
     }
 
     fun openClients() {
-        val action = CashFragmentDirections.actionCashFragmentToClientListFragment()
+        val action = CashFragmentDirections.actionCashFragmentToClientListFragment(
+            modeSelect = true
+        )
         view?.findNavController()?.navigate(action)
     }
 

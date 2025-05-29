@@ -31,7 +31,7 @@ class ProductFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sharedModel.sharedParams.observe(this) {
-            viewModel.setProductParameters(navigationArgs.productGuid, it.orderGuid, it.priceType)
+            viewModel.setProductParameters(navigationArgs.productGuid, it.docGuid, it.priceType)
         }
     }
 
