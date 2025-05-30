@@ -1,11 +1,11 @@
 package ua.com.programmer.agentventa.dao.entity
 
-import android.content.ClipDescription
 import android.location.Location
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import ua.com.programmer.agentventa.utility.Constants
 import java.util.Locale
 
 @Entity(tableName = "orders", indices = [Index(value = ["guid"], unique = true)])
@@ -108,7 +108,7 @@ fun Order.getDistanceText(): String {
 
 fun Order.toMap(account: String, content: List<Map<String,Any>>): Map<String,Any> {
     val map = mutableMapOf<String,Any>()
-    map["type"] = "order"
+    map["type"] = Constants.DOCUMENT_ORDER
     map["userID"] = account
     map["date"] = date
     map["time"] = time

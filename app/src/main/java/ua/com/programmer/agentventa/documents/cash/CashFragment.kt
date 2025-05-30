@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuHost
@@ -96,6 +97,21 @@ class CashFragment: Fragment(), MenuProvider {
                 }
 
                 titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
+
+                if (it.isSent == 1) {
+                    docCompany.isEnabled = false
+                    docClient.isEnabled = false
+                    docSum.isEnabled = false
+                    docNotes.isEnabled = false
+                    isFiscal.isEnabled = false
+                    docParentDocument.isEnabled = false
+                } else {
+                    docCompany.isEnabled = true
+                    docClient.isEnabled = true
+                    docSum.isEnabled = true
+                    docNotes.isEnabled = true
+                    isFiscal.isEnabled = true
+                }
             }
         }
         binding.docCompany.setOnClickListener {
@@ -148,8 +164,9 @@ class CashFragment: Fragment(), MenuProvider {
             R.id.save_document -> {
                 val enteredSum = binding.docSum.text.toString().replace(",",".")
                 viewModel.saveDocument(enteredSum)
+                Toast.makeText(requireContext(), getString(R.string.data_saved), Toast.LENGTH_SHORT).show()
             }
-            R.id.edit_order -> viewModel.enableEdit()
+            R.id.edit_document -> viewModel.enableEdit()
             R.id.delete_document -> {
                 AlertDialog.Builder(requireContext())
                     .setTitle(getString(R.string.delete_data))

@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.dao.impl
 
 import ua.com.programmer.agentventa.dao.DataExchangeDao
+import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
@@ -192,6 +193,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
     override suspend fun saveSendResult(result: SendResult) {
         when (result.type) {
             Constants.DOCUMENT_ORDER -> dataExchangeDao.updateOrder(result.account, result.guid, result.status)
+            Constants.DOCUMENT_CASH -> dataExchangeDao.updateCash(result.account, result.guid, result.status)
             Constants.DATA_CLIENT_IMAGE -> dataExchangeDao.updateClientImage(result.account, result.guid)
             Constants.DATA_CLIENT_LOCATION -> dataExchangeDao.updateClientLocation(result.account, result.guid)
         }
@@ -215,6 +217,10 @@ class DataExchangeRepositoryImpl @Inject constructor(
 
     override suspend fun getClientLocations(accountGuid: String): List<ClientLocation> {
         return dataExchangeDao.getClientLocations(accountGuid) ?: emptyList()
+    }
+
+    override suspend fun getCash(accountGuid: String): List<Cash> {
+        return dataExchangeDao.getCash(accountGuid) ?: emptyList()
     }
 
 }

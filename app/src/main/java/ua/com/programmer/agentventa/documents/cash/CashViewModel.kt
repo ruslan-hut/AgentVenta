@@ -67,11 +67,17 @@ class CashViewModel@Inject constructor(
     // is calling on EditText action only
     fun onEditSum(enteredSum: String) {
         val sum = enteredSum.toDoubleOrNull() ?: 0.0
-        updateDocument(currentDocument.copy(sum = sum))
+        updateDocument(currentDocument.copy(
+            sum = sum,
+            ))
     }
 
     fun onEditNotes(notes: String) {
-        updateDocument(currentDocument.copy(notes = notes))
+        updateDocument(currentDocument.copy(
+            notes = notes,
+            isSent = 0,
+            isProcessed = 0,
+            ))
     }
 
     fun saveDocument(enteredSum: String) {
@@ -105,14 +111,8 @@ class CashViewModel@Inject constructor(
         }
     }
 
-    fun documentSum() = currentDocument.sum
-
-    fun documentGuid() = currentDocument.guid
-
-    fun companyGuid() = currentDocument.companyGuid
-
     fun enableEdit() {
-        updateDocument(currentDocument.copy(isProcessed = 0))
+        updateDocument(currentDocument.copy(isProcessed = 0, isSent = 0))
     }
 
     fun onDestroy() {

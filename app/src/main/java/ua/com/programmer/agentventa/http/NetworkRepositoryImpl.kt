@@ -403,6 +403,18 @@ class NetworkRepositoryImpl @Inject constructor(
             emit(Result.Progress("$type: ${documents.size}"))
         }
 
+        val cashList = dataRepository.getCash(account)
+        val typeCash = Constants.DOCUMENT_CASH
+
+        if (cashList.isNotEmpty()) {
+            for (cash in cashList) {
+                val cashContent = cash.toMap(account)
+                val json = gson.toJsonTree(cashContent).asJsonObject
+                makePostRequest(json, account, cash.guid, typeCash)
+            }
+            emit(Result.Progress("$typeCash: ${cashList.size}"))
+        }
+
         val images = dataRepository.getClientImages(account)
         val typeImage = Constants.DATA_CLIENT_IMAGE
 

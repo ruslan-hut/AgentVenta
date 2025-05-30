@@ -46,7 +46,7 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
     Rest::class,
     Company::class,
     Store::class,
-                     ], version = 19)
+                     ], version = 20)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -166,6 +166,11 @@ abstract class AppDatabase: RoomDatabase() {
                 db.execSQL("ALTER TABLE cash ADD COLUMN client TEXT NOT NULL DEFAULT ''")
             }
         }
+        private val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE cash ADD COLUMN status TEXT NOT NULL DEFAULT ''")
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -180,6 +185,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_16_17,
                         MIGRATION_17_18,
                         MIGRATION_18_19,
+                        MIGRATION_19_20,
                     )
                     .build()
                 INSTANCE = instance

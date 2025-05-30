@@ -10,7 +10,6 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
 import ua.com.programmer.agentventa.extensions.format
-import ua.com.programmer.agentventa.extensions.formatAsInt
 import java.util.Locale
 
 class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
@@ -25,7 +24,7 @@ class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
                 listItemQuantityHeader.visibility = View.GONE
                 listItemQuantity.visibility = View.GONE
                 listItemNote.text = document.notes
-                listItemStatus.text = if (document.isFiscal == 1) "${document.fiscalNumber}" else ""
+                listItemStatus.text = document.status
                 listItemDate.text = document.date
                 listItemCompany.text = document.company
                 listItemCompany.visibility = if (document.company.isNotEmpty()) {

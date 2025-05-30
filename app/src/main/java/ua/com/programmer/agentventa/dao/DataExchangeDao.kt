@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.ClientLocation
@@ -218,6 +219,9 @@ interface DataExchangeDao {
     @Query("SELECT * FROM orders WHERE db_guid=:accountGuid AND is_processed=1")
     suspend fun getOrders(accountGuid: String): List<Order>?
 
+    @Query("SELECT * FROM cash WHERE db_guid=:accountGuid AND is_processed=1")
+    suspend fun getCash(accountGuid: String): List<Cash>?
+
     @Query("SELECT " +
             "content._id AS id," +
             "content.order_guid AS orderGuid," +
@@ -248,6 +252,11 @@ interface DataExchangeDao {
             "SET is_processed=2, is_sent=1, status=:status " +
             "WHERE db_guid=:accountGuid AND guid=:orderGuid")
     suspend fun updateOrder(accountGuid: String, orderGuid: String, status: String): Int
+
+    @Query("UPDATE cash " +
+            "SET is_processed=2, is_sent=1, status=:status " +
+            "WHERE db_guid=:accountGuid AND guid=:docGuid")
+    suspend fun updateCash(accountGuid: String, docGuid: String, status: String): Int
 
     @Query("UPDATE debts " +
             "SET content=:content " +
