@@ -30,7 +30,6 @@ class CashViewModel@Inject constructor(
     }
 
     private fun updateDocument(updated: Cash) {
-        //updated.- = - //todo: replace '-' with actual value
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 cashRepository.updateDocument(updated)
@@ -65,14 +64,21 @@ class CashViewModel@Inject constructor(
         updateDocument(currentDocument.copy(isFiscal = isFiscal))
     }
 
+    // is calling on EditText action only
+    fun onEditSum(enteredSum: String) {
+        val sum = enteredSum.toDoubleOrNull() ?: 0.0
+        updateDocument(currentDocument.copy(sum = sum))
+    }
+
     fun onEditNotes(notes: String) {
         updateDocument(currentDocument.copy(notes = notes))
     }
 
-    fun saveDocument() {
+    fun saveDocument(enteredSum: String) {
+        val sum = enteredSum.toDoubleOrNull() ?: 0.0
         updateDocument(currentDocument.copy(
             isProcessed = 1,
-            //todo: add other fields
+            sum = sum,
         ))
     }
 
@@ -98,6 +104,8 @@ class CashViewModel@Inject constructor(
             }
         }
     }
+
+    fun documentSum() = currentDocument.sum
 
     fun documentGuid() = currentDocument.guid
 

@@ -7,6 +7,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
@@ -15,6 +16,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
@@ -28,7 +30,7 @@ import ua.com.programmer.agentventa.utility.Constants
 @AndroidEntryPoint
 class CashFragment: Fragment(), MenuProvider {
 
-    private val viewModel: CashViewModel by activityViewModels()
+    private val viewModel: CashViewModel by viewModels()
     private val sharedModel: SharedViewModel by activityViewModels()
     private val navigationArgs: CashFragmentArgs by navArgs()
     private var _binding: CashFragmentBinding? = null
@@ -66,11 +68,6 @@ class CashFragment: Fragment(), MenuProvider {
                 it?.guid ?: "",
                 it?.companyGuid ?: "",
                 )
-//            if (it.isProcessed > 0) {
-//                binding.orderBottomBar.visibility = View.GONE
-//            } else {
-//                binding.orderBottomBar.visibility = View.VISIBLE
-//            }
         }
 
         sharedModel.selectClientAction = { client, popUp ->
@@ -89,11 +86,14 @@ class CashFragment: Fragment(), MenuProvider {
                 docDate.text = it.date
                 docCompany.text = it.company
                 docClient.text = it.client
-                docTotalPrice.text = it.getSumFormatted()
-                isFiscal.text = it.fiscalNumber.toString()
+                isFiscal.text = "" //it.fiscalNumber.toString()
                 isFiscal.isChecked = it.isFiscal > 0
                 docParentDocument.text = it.referenceGuid
                 docNotes.text = it.notes
+
+                if (it.sum > 0) {
+                    docSum.setText(it.getSumFormatted())
+                }
 
                 titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
             }
@@ -104,6 +104,19 @@ class CashFragment: Fragment(), MenuProvider {
         binding.docClient.setOnClickListener {
             openClients()
         }
+        binding.docNotes.setOnClickListener {
+            editNotes()
+        }
+        binding.docSum.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+    }
+
+    private fun onEditTextAction(actionId: Int): Boolean {
+        if (actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
+            val enteredSum = binding.docSum.text.toString().replace(",",".")
+            viewModel.onEditSum(enteredSum)
+            return true
+        }
+        return false
     }
 
     fun openClients() {
@@ -121,6 +134,7 @@ class CashFragment: Fragment(), MenuProvider {
     override fun onDestroy() {
         sharedModel.clearActions()
         viewModel.onDestroy()
+
         _binding = null
         super.onDestroy()
     }
@@ -131,6 +145,10 @@ class CashFragment: Fragment(), MenuProvider {
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
+            R.id.save_document -> {
+                val enteredSum = binding.docSum.text.toString().replace(",",".")
+                viewModel.saveDocument(enteredSum)
+            }
             R.id.edit_order -> viewModel.enableEdit()
             R.id.delete_document -> {
                 AlertDialog.Builder(requireContext())

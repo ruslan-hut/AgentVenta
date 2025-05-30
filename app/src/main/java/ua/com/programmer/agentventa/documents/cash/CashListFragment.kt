@@ -80,6 +80,9 @@ class CashListFragment: Fragment(), MenuProvider {
         viewModel.documents.observe(this.viewLifecycleOwner) {
             cashListAdapter.submitList(it)
         }
+        viewModel.totals.observe(this.viewLifecycleOwner) {
+            viewModel.updateCounters(it)
+        }
         viewModel.listDate.observe(this.viewLifecycleOwner) {
             var title = getString(R.string.header_cash_list)
             if (it != null) {

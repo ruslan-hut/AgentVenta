@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.documents.cash
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -8,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
+import ua.com.programmer.agentventa.extensions.format
+import ua.com.programmer.agentventa.extensions.formatAsInt
+import java.util.Locale
 
 class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
     : ListAdapter<Cash, CashListAdapter.DocumentViewHolder>(DiffCallback)  {
@@ -15,9 +19,28 @@ class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
     class DocumentViewHolder(private var binding: ModelDocumentsListItemBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(document: Cash) {
             binding.apply {
-                listItemNumber.text = document.number.toString()
+                listItemClient.text = document.client
+                listItemNumber.text = String.format(Locale.getDefault(), "%d", document.number)
+                listItemPrice.text = document.sum.format(2, "--")
+                listItemQuantityHeader.visibility = View.GONE
+                listItemQuantity.visibility = View.GONE
                 listItemNote.text = document.notes
+                listItemStatus.text = if (document.isFiscal == 1) "${document.fiscalNumber}" else ""
                 listItemDate.text = document.date
+                listItemCompany.text = document.company
+                listItemCompany.visibility = if (document.company.isNotEmpty()) {
+                    View.VISIBLE
+                } else {
+                    View.GONE
+                }
+                listItemStore.visibility = View.GONE
+                iconFiscal.visibility = if (document.isFiscal == 1) {
+                    View.VISIBLE
+                } else {
+                    View.INVISIBLE
+                }
+                iconReturn.visibility = View.INVISIBLE
+                iconCash.visibility = View.INVISIBLE
                 iconUpload.setImageResource(if (document.isSent == 1) {
                     R.drawable.baseline_cloud_done_24
                 } else if (document.isProcessed == 1) {
