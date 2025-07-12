@@ -465,7 +465,7 @@ class Checkbox(private val orderRepository: OrderRepository): FiscalService {
             } else {
                 mapOf("message" to e)
             }
-        } catch (e: SocketTimeoutException) {
+        } catch (_: SocketTimeoutException) {
             mapOf("message" to "Таймаут з'єднання з сервером фіскалізації")
         } catch (e: Exception) {
             mapOf("message" to e)

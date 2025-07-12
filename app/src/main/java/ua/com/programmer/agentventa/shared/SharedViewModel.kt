@@ -47,6 +47,7 @@ import javax.inject.Inject
 import androidx.core.content.edit
 import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.Store
+import ua.com.programmer.agentventa.license.LicenseManager
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
@@ -58,6 +59,7 @@ class SharedViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
+    private val lm: LicenseManager,
 ): ViewModel() {
 
     private val logTag = "Shared"
@@ -244,25 +246,26 @@ class SharedViewModel @Inject constructor(
 
     }
 
-    private fun sendUserInfo() {
-        val auth = FirebaseAuth.getInstance()
-        if (auth.currentUser == null) {
-            auth.signInWithEmailAndPassword(BuildConfig.FIREBASE_EMAIL, BuildConfig.FIREBASE_PASSWORD)
-                .addOnSuccessListener { sendUserInfoContinue() }
-                .addOnFailureListener { e -> logger.w("FA", e.message ?: "sign in failed") }
-        } else {
-            sendUserInfoContinue()
-        }
-    }
+//    private fun sendUserInfo() {
+//        val auth = FirebaseAuth.getInstance()
+//        if (auth.currentUser == null) {
+//            auth.signInWithEmailAndPassword(BuildConfig.FIREBASE_EMAIL, BuildConfig.FIREBASE_PASSWORD)
+//                .addOnSuccessListener { sendUserInfoContinue() }
+//                .addOnFailureListener { e -> logger.w("FA", e.message ?: "sign in failed") }
+//        } else {
+//            sendUserInfoContinue()
+//        }
+//    }
 
-    private fun sendUserInfoContinue() {
+    private fun sendUserInfo() {
         val account = CUserAccount.build(_currentAccount.value)
         if (account.guid.isBlank()) return
         viewModelScope.launch {
-            val firebase = FirebaseFirestore.getInstance()
-            firebase.collection("users_venta")
-                .document(account.guid)
-                .set(account)
+//            val firebase = FirebaseFirestore.getInstance()
+//            firebase.collection("users_venta")
+//                .document(account.guid)
+//                .set(account)
+            lm.getLicense(account)
         }
     }
 

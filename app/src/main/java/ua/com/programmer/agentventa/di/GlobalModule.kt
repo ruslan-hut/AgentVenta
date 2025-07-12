@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.geo.GeocodeHelperImpl
 import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.geo.GeocodeHelper
+import ua.com.programmer.agentventa.license.LicenseManager
 import ua.com.programmer.agentventa.utility.Utils
 import javax.inject.Singleton
 
@@ -37,6 +38,12 @@ class GlobalModule {
     @Singleton
     fun provideUtils(): Utils {
         return Utils()
+    }
+
+    @Provides
+    @Singleton
+    fun provideLicenseManager(): LicenseManager {
+        return LicenseManager()
     }
 
     @Provides
