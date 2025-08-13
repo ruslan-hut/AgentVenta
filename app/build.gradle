@@ -80,7 +80,7 @@ dependencies {
 
     //androidx
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
-    implementation 'androidx.browser:browser:1.8.0'
+    implementation 'androidx.browser:browser:1.9.0'
     implementation 'androidx.core:core-ktx:1.16.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.vectordrawable:vectordrawable:1.2.0'
@@ -91,11 +91,11 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
 
     // Lifecycle libraries
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.1"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.2"
 
     //firebase
-    implementation platform('com.google.firebase:firebase-bom:33.16.0')
+    implementation platform('com.google.firebase:firebase-bom:34.1.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-auth'
@@ -123,8 +123,8 @@ dependencies {
     implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
 
     // Navigation
-    implementation "androidx.navigation:navigation-fragment-ktx:2.9.1"
-    implementation "androidx.navigation:navigation-ui-ktx:2.9.1"
+    implementation "androidx.navigation:navigation-fragment-ktx:2.9.3"
+    implementation "androidx.navigation:navigation-ui-ktx:2.9.3"
 
     // Room
     def room_version = "2.7.2"
