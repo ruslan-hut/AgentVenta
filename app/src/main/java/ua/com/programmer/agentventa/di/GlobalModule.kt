@@ -15,7 +15,9 @@ import ua.com.programmer.agentventa.geo.GeocodeHelperImpl
 import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.geo.GeocodeHelper
 import ua.com.programmer.agentventa.license.LicenseManager
+import ua.com.programmer.agentventa.shared.BarcodeHandler
 import ua.com.programmer.agentventa.utility.Utils
+import ua.com.programmer.agentventa.utility.UtilsInterface
 import javax.inject.Singleton
 
 @Module
@@ -36,7 +38,7 @@ class GlobalModule {
 
     @Provides
     @Singleton
-    fun provideUtils(): Utils {
+    fun provideUtils(): UtilsInterface {
         return Utils()
     }
 
@@ -56,6 +58,12 @@ class GlobalModule {
     @Singleton
     fun provideGeocoder(@ApplicationContext context: Context): GeocodeHelper {
         return GeocodeHelperImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBarcodeHandler(): BarcodeHandler {
+        return BarcodeHandler()
     }
 }
 

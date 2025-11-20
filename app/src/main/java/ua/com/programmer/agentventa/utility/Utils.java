@@ -14,7 +14,7 @@ import java.util.Locale;
 
 import ua.com.programmer.agentventa.R;
 
-public class Utils {
+public class Utils implements UtilsInterface {
 
     private final String LOG_MARK = "XBUG";
 

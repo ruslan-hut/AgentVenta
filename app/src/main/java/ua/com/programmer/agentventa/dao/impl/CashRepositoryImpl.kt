@@ -12,17 +12,17 @@ import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.CashRepository
-import ua.com.programmer.agentventa.utility.Utils
+import ua.com.programmer.agentventa.utility.UtilsInterface
 import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
 class CashRepositoryImpl @Inject constructor(
     private val dao: CashDao,
-    private val userAccountDao: UserAccountDao
+    private val userAccountDao: UserAccountDao,
+    private val utils: UtilsInterface
 ): CashRepository {
 
-    private val utils = Utils()
     override fun getDocument(guid: String): Flow<Cash> {
         return dao.getDocument(guid).map { it ?: Cash() }
     }

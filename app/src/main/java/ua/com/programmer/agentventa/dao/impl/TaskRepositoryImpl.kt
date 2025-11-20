@@ -9,16 +9,16 @@ import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.TaskRepository
-import ua.com.programmer.agentventa.utility.Utils
+import ua.com.programmer.agentventa.utility.UtilsInterface
 import java.util.Date
 import javax.inject.Inject
 
 class TaskRepositoryImpl @Inject constructor(
     private val dao: TaskDao,
-    private val userAccountDao: UserAccountDao
+    private val userAccountDao: UserAccountDao,
+    private val utils: UtilsInterface
     ): TaskRepository {
 
-    private val utils = Utils()
     override fun getDocument(guid: String): Flow<Task> {
         return dao.getDocument(guid)
     }

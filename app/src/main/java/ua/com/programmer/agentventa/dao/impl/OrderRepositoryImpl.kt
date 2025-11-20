@@ -24,14 +24,15 @@ import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.settings.UserOptionsBuilder
-import ua.com.programmer.agentventa.utility.Utils
+import ua.com.programmer.agentventa.utility.UtilsInterface
 import java.util.Date
 import javax.inject.Inject
 
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val userAccountDao: UserAccountDao,
-    private val locationDao: LocationDao
+    private val locationDao: LocationDao,
+    private val utils: UtilsInterface
 ): OrderRepository {
 
     private var userAccount = UserAccount.buildEmpty()
@@ -40,7 +41,6 @@ class OrderRepositoryImpl @Inject constructor(
     private var stores = emptyList<Store>()
     private var priceTypes = emptyList<PriceType>()
     private var paymentTypes = emptyList<PaymentType>()
-    private val utils = Utils()
 
     private suspend fun initDefaults() {
         val currentAccount = userAccountDao.getCurrent() ?: UserAccount.buildEmpty()

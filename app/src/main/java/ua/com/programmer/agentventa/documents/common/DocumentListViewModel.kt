@@ -14,11 +14,11 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.repository.DocumentRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 import java.util.Date
-import java.util.Locale
 
 open class DocumentListViewModel<T>(
     private val repository: DocumentRepository<T>,
-    private val userAccountRepository: UserAccountRepository
+    private val userAccountRepository: UserAccountRepository,
+    private val counterFormatter: CounterFormatter = DefaultCounterFormatter()
 ): ViewModel() {
 
     val currentAccount = MutableLiveData<UserAccount>()
@@ -69,15 +69,13 @@ open class DocumentListViewModel<T>(
 
     fun updateCounters(list: List<DocumentTotals>) {
         val totals = if (list.isEmpty()) DocumentTotals() else list[0]
-        if (totals.documents > 0 || totals.returns > 0) {
-            noDataTextVisibility.value = View.GONE
-        } else {
-            noDataTextVisibility.value = View.VISIBLE
-        }
-        documentsCount.value = String.format(Locale.getDefault(),"%d", totals.documents)
-        returnsCount.value = String.format(Locale.getDefault(),"%d", totals.returns)
-        totalWeight.value = String.format(Locale.getDefault(),"%.3f", totals.weight)
-        totalSum.value = String.format(Locale.getDefault(),"%.2f", totals.sum)
+        val formatted = totals.format(counterFormatter)
+
+        noDataTextVisibility.value = if (formatted.hasData) View.GONE else View.VISIBLE
+        documentsCount.value = formatted.documentsCount
+        returnsCount.value = formatted.returnsCount
+        totalWeight.value = formatted.totalWeight
+        totalSum.value = formatted.totalSum
     }
 
     init {
