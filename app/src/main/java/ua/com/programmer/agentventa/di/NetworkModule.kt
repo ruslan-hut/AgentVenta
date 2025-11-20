@@ -9,7 +9,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import ua.com.programmer.agentventa.http.HttpAuthInterceptor
 import ua.com.programmer.agentventa.http.HttpClientApi
+import ua.com.programmer.agentventa.http.TokenManager
+import ua.com.programmer.agentventa.http.TokenManagerImpl
 import ua.com.programmer.agentventa.http.TokenRefresh
+import ua.com.programmer.agentventa.logger.Logger
+import ua.com.programmer.agentventa.repository.UserAccountRepository
 import javax.inject.Singleton
 
 @Module
@@ -26,6 +30,15 @@ class NetworkModule {
     @Singleton
     fun provideAuthenticator(): TokenRefresh {
         return TokenRefresh()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTokenManager(
+        userAccountRepository: UserAccountRepository,
+        logger: Logger
+    ): TokenManager {
+        return TokenManagerImpl(userAccountRepository, logger)
     }
 
     @Provides

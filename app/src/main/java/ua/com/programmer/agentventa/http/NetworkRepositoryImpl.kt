@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import ua.com.programmer.agentventa.dao.entity.UserAccount
@@ -37,6 +36,7 @@ class NetworkRepositoryImpl @Inject constructor(
     private val retrofit: Retrofit.Builder,
     private val httpAuthInterceptor: HttpAuthInterceptor,
     private val logger: Logger,
+    private val tokenManager: TokenManager,
     tokenRefresh: TokenRefresh
 ): NetworkRepository {
 
@@ -51,14 +51,11 @@ class NetworkRepositoryImpl @Inject constructor(
 
     private val logTag = "NetworkRepo"
 
-    private val typeToken = "token"
-    private val maxTokenRefresh = 3
-
     private val gson = Gson()
 
     init {
 
-        tokenRefresh.setRefreshToken(::refreshToken)
+        tokenRefresh.setRefreshToken { tokenManager.refreshTokenSync() }
 
         userAccountRepository.currentAccount.onEach { userAccount ->
 
@@ -94,54 +91,21 @@ class NetworkRepositoryImpl @Inject constructor(
                 val retrofit = retrofit.baseUrl(it.getBaseUrl()).build()
                 apiService = retrofit.create(HttpClientApi::class.java)
 
+                // Configure token manager with new account and API service
+                tokenManager.configure(it)
+                if (tokenManager is TokenManagerImpl) {
+                    tokenManager.setApiService(apiService!!)
+                }
+
                 //logger.d("NetworkRepositoryImpl", "set connection: ${it.dbServer}: ${it.dbUser}")
             }
 
         }.launchIn(CoroutineScope(Dispatchers.IO))
     }
 
-    @Synchronized
-    private fun refreshToken(tag: String = "interceptor"): String {
-        counters[typeToken] = counters[typeToken]?.plus(1) ?: 1
-        if (counters[typeToken]!! > maxTokenRefresh) {
-            logger.w(logTag, "$tag: token refresh limit reached")
-            throw Exception("token refresh limit reached")
-        }
-        val accountGuid = account?.guid ?: ""
-        if (accountGuid.isEmpty()) {
-            logger.w(logTag, "wrong account data")
-            throw Exception("account guid is empty")
-        }
-        val response = runBlocking { apiService?.check(accountGuid) }
-        val options = XMap(response as Map<*, *>)
-        val newToken = options.getString("token")
-        val canRead = options.getBoolean("read")
-
-        account?.let {
-            logger.d(logTag, "$tag: token received: ${newToken.trimForLog()}")
-            val updatedAccount = it.copy(
-                token = newToken,
-                options = options.toJson(),
-                license = options.getString("license")
-            )
-            runBlocking { userAccountRepository.saveAccount(updatedAccount) }
-        }
-        if (!canRead) {
-            logger.w(logTag, "$tag: user has no read access")
-            throw Exception("$tag: user has no read access")
-        }
-        return newToken
-    }
-
-    private fun onConnectionError() {
+    private suspend fun onConnectionError() {
         token = ""
-        account?.let {
-            logger.w(logTag, "deleting token on error")
-            val updatedAccount = it.copy(
-                token = "",
-            )
-            runBlocking { userAccountRepository.saveAccount(updatedAccount) }
-        }
+        tokenManager.clearToken()
     }
 
     private val prepare: Flow<Result> = flow {
@@ -153,6 +117,8 @@ class NetworkRepositoryImpl @Inject constructor(
         _timestamp = System.currentTimeMillis()
         val accountGuid = account?.guid ?: ""
         counters.clear()
+        tokenManager.resetCounter()
+
         if (accountGuid.isBlank()) {
             emit(Result.Error("No settings for connection"))
             return@flow
@@ -161,16 +127,22 @@ class NetworkRepositoryImpl @Inject constructor(
         _options = UserOptionsBuilder.build(account)
         token = account?.token ?: ""
 
-        if (token.isBlank() || _options.isEmpty) try {
-            token = refreshToken("prepare")
-        } catch (e: HttpException) {
-            logger.e(logTag, "Token refresh error: $e")
-            emit(Result.Error("${e.message()} (${e.code()})"))
-            return@flow
-        } catch (e: Exception) {
-            logger.e(logTag, "Token refresh failed: $e")
-            emit(Result.Error(e.message ?: "unknown error"))
-            return@flow
+        if (token.isBlank() || _options.isEmpty) {
+            when (val result = tokenManager.refreshToken("prepare")) {
+                is TokenManager.TokenResult.Success -> {
+                    token = result.token
+                    if (!result.canRead) {
+                        logger.w(logTag, "User has no read access")
+                        emit(Result.Error("User has no read access"))
+                        return@flow
+                    }
+                }
+                is TokenManager.TokenResult.Error -> {
+                    logger.e(logTag, "Token refresh failed: ${result.message}")
+                    emit(Result.Error(result.message))
+                    return@flow
+                }
+            }
         }
 
         if (token.isBlank()) {
