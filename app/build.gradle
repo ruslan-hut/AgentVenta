@@ -40,12 +40,12 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
             debuggable true
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
@@ -74,14 +74,14 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.guava:guava:33.4.8-android'
+    implementation 'com.google.guava:guava:33.5.0-android'
 
-    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'com.google.android.material:material:1.13.0'
 
     //androidx
     implementation 'androidx.legacy:legacy-support-core-utils:1.0.0'
     implementation 'androidx.browser:browser:1.9.0'
-    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.vectordrawable:vectordrawable:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
@@ -91,11 +91,11 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
 
     // Lifecycle libraries
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.9.2"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.10.0"
 
     //firebase
-    implementation platform('com.google.firebase:firebase-bom:34.1.0')
+    implementation platform('com.google.firebase:firebase-bom:34.6.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-auth'
@@ -104,11 +104,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:21.3.0'
     implementation 'com.google.android.gms:play-services-maps:19.2.0'
     //maps
-    implementation 'com.google.maps.android:android-maps-utils:3.14.0'
+    implementation 'com.google.maps.android:android-maps-utils:3.19.1'
     //volley
     implementation 'com.android.volley:volley:1.2.1'
     //glide
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation 'com.github.bumptech.glide:glide:5.0.5'
 
     //external libs
     //implementation files('libs/commons-net-3.6.jar')
@@ -120,14 +120,14 @@ dependencies {
     // Hilt
     implementation "com.google.dagger:hilt-android:${hilt_version}"
     ksp "com.google.dagger:hilt-compiler:${hilt_version}"
-    implementation 'androidx.hilt:hilt-navigation-compose:1.2.0'
+    implementation 'androidx.hilt:hilt-navigation-compose:1.3.0'
 
     // Navigation
-    implementation "androidx.navigation:navigation-fragment-ktx:2.9.3"
-    implementation "androidx.navigation:navigation-ui-ktx:2.9.3"
+    implementation "androidx.navigation:navigation-fragment-ktx:2.9.6"
+    implementation "androidx.navigation:navigation-ui-ktx:2.9.6"
 
     // Room
-    def room_version = "2.7.2"
+    def room_version = "2.8.4"
     implementation "androidx.room:room-common:${room_version}"
     implementation "androidx.room:room-runtime:${room_version}"
     ksp "androidx.room:room-compiler:${room_version}"
@@ -138,10 +138,10 @@ dependencies {
     implementation "com.squareup.retrofit2:retrofit:${retrofit_version}"
     implementation "com.squareup.retrofit2:converter-moshi:${retrofit_version}"
     implementation "com.squareup.retrofit2:converter-gson:${retrofit_version}"
-    implementation "com.squareup.okhttp3:logging-interceptor:5.1.0"
+    implementation "com.squareup.okhttp3:logging-interceptor:5.3.2"
 
     // CameraX dependencies
-    def camerax_version = "1.4.2"
+    def camerax_version = "1.5.1"
     implementation "androidx.camera:camera-camera2:${camerax_version}"
     implementation "androidx.camera:camera-lifecycle:${camerax_version}"
     implementation "androidx.camera:camera-view:${camerax_version}"
