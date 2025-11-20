@@ -15,7 +15,10 @@ import ua.com.programmer.agentventa.geo.GeocodeHelperImpl
 import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.geo.GeocodeHelper
 import ua.com.programmer.agentventa.license.LicenseManager
+import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.shared.BarcodeHandler
+import ua.com.programmer.agentventa.shared.GlideImageLoadingManager
+import ua.com.programmer.agentventa.shared.ImageLoadingManager
 import ua.com.programmer.agentventa.utility.Utils
 import ua.com.programmer.agentventa.utility.UtilsInterface
 import javax.inject.Singleton
@@ -64,6 +67,15 @@ class GlobalModule {
     @Singleton
     fun provideBarcodeHandler(): BarcodeHandler {
         return BarcodeHandler()
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageLoadingManager(
+        glide: RequestManager,
+        logger: Logger
+    ): ImageLoadingManager {
+        return GlideImageLoadingManager(glide, logger)
     }
 }
 

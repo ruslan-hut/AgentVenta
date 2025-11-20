@@ -7,12 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.RequestManager
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.load.model.LazyHeaders
-import com.bumptech.glide.load.resource.bitmap.Rotate
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,8 +23,6 @@ import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.dao.entity.fileName
-import ua.com.programmer.agentventa.dao.entity.getBaseUrl
-import ua.com.programmer.agentventa.dao.entity.hasImageData
 import ua.com.programmer.agentventa.dao.entity.isDemo
 import ua.com.programmer.agentventa.http.Result
 import ua.com.programmer.agentventa.logger.Logger
@@ -55,7 +47,7 @@ class SharedViewModel @Inject constructor(
     private val networkRepository: NetworkRepository,
     private val filesRepository: FilesRepository,
     private val logger: Logger,
-    private val imager: RequestManager,
+    private val imageLoadingManager: ImageLoadingManager,
     private val orderRepository: OrderRepository,
     private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
@@ -85,9 +77,6 @@ class SharedViewModel @Inject constructor(
     val isRefreshing get() = _isRefreshing
     private var _progressMessage = ""
     val progressMessage get() = _progressMessage
-
-    private var _baseUrl = ""
-    private var _headers: LazyHeaders? = null
 
     private var _companies: List<Company> = emptyList()
     private var _stores: List<Store> = emptyList()
@@ -189,19 +178,15 @@ class SharedViewModel @Inject constructor(
 
     fun setCacheDir(dir: File) {
         cacheDir = dir
+        imageLoadingManager.setCacheDir(dir)
     }
 
     fun fileInCache(fileName: String): File {
-        return File(cacheDir, fileName)
+        return imageLoadingManager.fileInCache(fileName)
     }
 
     fun deleteFileInCache(fileName: String) {
-        try {
-            val file = fileInCache(fileName)
-            if (file.exists()) file.delete()
-        } catch (e: Exception) {
-            logger.e(logTag, "delete file: ${e.message}")
-        }
+        imageLoadingManager.deleteFileInCache(fileName)
     }
 
     init {
@@ -215,7 +200,7 @@ class SharedViewModel @Inject constructor(
         viewModelScope.launch {
             userAccountRepository.currentAccount.collect {
                 val account = it ?: UserAccount(guid = "")
-                _baseUrl = account.getBaseUrl()
+                imageLoadingManager.configure(account)
                 _options = UserOptionsBuilder.build(account)
                 _sharedParams.value = state.copy(
                         currentAccount = account.guid,
@@ -269,85 +254,12 @@ class SharedViewModel @Inject constructor(
         }
     }
 
-    private fun getHeaders(): LazyHeaders {
-        if (_headers == null) {
-            val encodedAuth = android.util.Base64.encodeToString(
-                "${_currentAccount.value?.dbUser ?: ""}:${_currentAccount.value?.dbPassword ?: ""}".toByteArray(),
-                android.util.Base64.NO_WRAP
-            )
-            _headers = LazyHeaders.Builder()
-                .addHeader("Authorization", "Basic $encodedAuth")
-                .build()
-        }
-        return _headers!!
-    }
-
-    /**
-     * Returns the full image URL based on the provided parameters.
-     *
-     * @param base The base URL to use if the `url` parameter is blank.
-     * @param guid The unique identifier for the image, used in constructing the URL if `url` is blank.
-     * @param url The image URL. If this is not blank, it will be returned as-is.
-     *
-     * @return The full image URL. If `url` is blank, constructs the URL using `base` and `guid`.
-     */
-    private fun getImageUrl(base: String, guid: String, url: String): String {
-        return url.ifBlank { "$base/image/$guid" }
-    }
-
     fun loadImage(product: LProduct, view: ImageView, rotation: Int = 0) {
-
-        if (!options.loadImages) return
-        if (!product.hasImageData()) return
-
-        val url = getImageUrl(_baseUrl, product.imageGuid ?: "", product.imageUrl ?: "")
-        val glideUrl = GlideUrl(
-            url,
-            getHeaders()
-        )
-        imager.load(glideUrl)
-            .diskCacheStrategy(DiskCacheStrategy.ALL)
-            .placeholder(R.drawable.baseline_downloading_24)
-            .error(R.drawable.baseline_error_outline_24)
-            .transform(Rotate(rotation))
-            .into(view)
-
+        imageLoadingManager.loadProductImage(product, view, rotation, options.loadImages)
     }
 
     fun loadClientImage(image: ClientImage, view: ImageView, rotation: Int = 0) {
-
-        if (image.isLocal == 0) {
-
-            // if file was saved in a local cache, delete it after sending to the server
-            val imageFile = fileInCache(image.fileName())
-            try {
-                if (imageFile.exists()) {
-                    imageFile.delete()
-                }
-            } catch (e: Exception) {
-                logger.e(logTag, "delete file: ${e.message}")
-            }
-
-            val url = getImageUrl(_baseUrl, image.guid, image.url)
-            val glideUrl = GlideUrl(
-                url,
-                getHeaders()
-            )
-            imager.load(glideUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.baseline_downloading_24)
-                .error(R.drawable.baseline_error_outline_24)
-                .transform(Rotate(rotation))
-                .into(view)
-        } else {
-            imager.load(fileInCache(image.fileName()))
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .placeholder(R.drawable.baseline_downloading_24)
-                .error(R.drawable.baseline_error_outline_24)
-                .transform(Rotate(rotation))
-                .into(view)
-        }
-
+        imageLoadingManager.loadClientImage(image, view, rotation)
     }
 
     private suspend fun setupDemoAccount() {
@@ -434,23 +346,13 @@ class SharedViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val imageWithData = if (imageFile.exists()) {
-                    image.copy(url = encodeBase64(imageFile))
+                    image.copy(url = imageLoadingManager.encodeBase64(imageFile))
                 } else {
                     logger.e(logTag, "client image file not found: $imageGuid")
                     image
                 }
                 filesRepository.saveClientImage(imageWithData)
             }
-        }
-    }
-
-    private fun encodeBase64(file: File): String {
-        return try {
-            val bytes = file.readBytes()
-            android.util.Base64.encodeToString(bytes, android.util.Base64.DEFAULT)
-        } catch (e: Exception) {
-            logger.e(logTag, "encode Base64: ${e.message}")
-            ""
         }
     }
 
