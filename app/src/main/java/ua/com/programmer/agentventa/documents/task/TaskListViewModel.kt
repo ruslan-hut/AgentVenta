@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.documents.task
 
-import android.view.View
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ua.com.programmer.agentventa.dao.entity.Task
 import ua.com.programmer.agentventa.documents.common.DocumentListViewModel
@@ -15,7 +14,7 @@ class TaskListViewModel @Inject constructor(
 ): DocumentListViewModel<Task>(taskRepository, userAccountRepository) {
 
     init {
-        totalsVisibility.value = View.VISIBLE
+        setTotalsVisible(true)
     }
 
 }

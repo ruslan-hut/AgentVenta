@@ -56,7 +56,7 @@ class OrderPageContent: Fragment() {
         recyclerView.adapter = adapter
 
         viewModel.currentContent.observe(viewLifecycleOwner) {
-            adapter.submitList(it)
+            adapter.submitList(it )
         }
         viewModel.document.observe(viewLifecycleOwner) {
             binding.apply {

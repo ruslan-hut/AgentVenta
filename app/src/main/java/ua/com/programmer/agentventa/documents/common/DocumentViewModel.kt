@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.documents.common
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -41,7 +42,7 @@ abstract class DocumentViewModel<T>(
     val documentGuid: StateFlow<String> = _documentGuid.asStateFlow()
 
     // Observable document from database using flatMapLatest
-    val document: StateFlow<T> = _documentGuid
+    private val _documentFlow: StateFlow<T> = _documentGuid
         .flatMapLatest { guid ->
             if (guid.isEmpty()) flowOf(emptyDocument())
             else repository.getDocument(guid)
@@ -51,10 +52,12 @@ abstract class DocumentViewModel<T>(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyDocument()
         )
+    val documentFlow: StateFlow<T> get() = _documentFlow
+    val document: androidx.lifecycle.LiveData<T> = _documentFlow.asLiveData()
 
     // Current document value (non-null accessor)
     protected val currentDocument: T
-        get() = document.value
+        get() = _documentFlow.value
 
     // One-time events channel
     protected val _events = EventChannel<DocumentEvent>()
@@ -63,6 +66,10 @@ abstract class DocumentViewModel<T>(
     // Loading state
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    // Save result for backward compatibility with observe()
+    private val _saveResult = MutableStateFlow<Boolean?>(null)
+    val saveResult: androidx.lifecycle.LiveData<Boolean?> = _saveResult.asLiveData()
 
     /**
      * Set current document by GUID. Creates new document if ID is null/empty.
@@ -119,6 +126,9 @@ abstract class DocumentViewModel<T>(
             _isLoading.value = true
             withContext(Dispatchers.IO) {
                 val saved = repository.updateDocument(updated)
+                withContext(Dispatchers.Main) {
+                    _saveResult.value = saved
+                }
                 if (saved) {
                     _events.send(DocumentEvent.SaveSuccess(getDocumentGuid(updated)))
                 } else {

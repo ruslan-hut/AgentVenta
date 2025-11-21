@@ -16,20 +16,21 @@ import ua.com.programmer.agentventa.dao.impl.CashRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.OrderRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.TaskRepositoryImpl
 import ua.com.programmer.agentventa.repository.DocumentRepository
+import ua.com.programmer.agentventa.utility.UtilsInterface
 
 @Module
 @InstallIn(ViewModelComponent::class)
 object RepositoryModule {
     @Provides
-    fun provideOrderRepository(dao: OrderDao, accountDao: UserAccountDao, locationDao: LocationDao): DocumentRepository<Order> {
-        return OrderRepositoryImpl(dao, accountDao, locationDao)
+    fun provideOrderRepository(dao: OrderDao, accountDao: UserAccountDao, locationDao: LocationDao, utils: UtilsInterface): DocumentRepository<Order> {
+        return OrderRepositoryImpl(dao, accountDao, locationDao, utils)
     }
     @Provides
-    fun provideCashRepository(dao: CashDao, accountDao: UserAccountDao): DocumentRepository<Cash> {
-        return CashRepositoryImpl(dao, accountDao)
+    fun provideCashRepository(dao: CashDao, accountDao: UserAccountDao, utils: UtilsInterface): DocumentRepository<Cash> {
+        return CashRepositoryImpl(dao, accountDao, utils)
     }
     @Provides
-    fun provideTaskRepository(dao: TaskDao, accountDao: UserAccountDao): DocumentRepository<Task> {
-        return TaskRepositoryImpl(dao, accountDao)
+    fun provideTaskRepository(dao: TaskDao, accountDao: UserAccountDao, utils: UtilsInterface): DocumentRepository<Task> {
+        return TaskRepositoryImpl(dao, accountDao, utils)
     }
 }

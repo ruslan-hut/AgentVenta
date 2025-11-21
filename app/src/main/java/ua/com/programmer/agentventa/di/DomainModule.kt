@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ServiceComponent
 import dagger.hilt.android.components.ViewModelComponent
+import dagger.hilt.components.SingletonComponent
 import ua.com.programmer.agentventa.dao.AppDatabase
 import ua.com.programmer.agentventa.dao.CashDao
 import ua.com.programmer.agentventa.dao.ClientDao
@@ -46,7 +47,7 @@ import ua.com.programmer.agentventa.repository.TaskRepository
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 
 @Module
-@InstallIn(ViewModelComponent::class, ServiceComponent::class)
+@InstallIn(SingletonComponent::class, ViewModelComponent::class, ServiceComponent::class)
 class DomainModule {
     @Provides
     fun provideOrderDao(database: AppDatabase): OrderDao {
@@ -103,7 +104,7 @@ class DomainModule {
 }
 
 @Module
-@InstallIn(ViewModelComponent::class, ServiceComponent::class)
+@InstallIn(SingletonComponent::class, ViewModelComponent::class, ServiceComponent::class)
 abstract class RepositoryBindModule {
 
     @Binds

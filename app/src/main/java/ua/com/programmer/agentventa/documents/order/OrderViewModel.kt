@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.documents.order
 
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,7 @@ import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.Order
-import ua.com.programmer.agentventa.dao.entity.OrderContent
+import ua.com.programmer.agentventa.dao.entity.LOrderContent
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.setClient
 import ua.com.programmer.agentventa.dao.entity.toUi
@@ -51,13 +52,18 @@ class OrderViewModel @Inject constructor(
 
     // StateFlow for selected price type
     private val _selectedPriceType = MutableStateFlow("")
-    val selectedPriceType: StateFlow<String> = _selectedPriceType.asStateFlow()
+    val selectedPriceTypeFlow: StateFlow<String> = _selectedPriceType.asStateFlow()
+    val selectedPriceType: androidx.lifecycle.LiveData<String> = _selectedPriceType.asLiveData()
     private var selectedPriceCode = ""
 
     private var ignoreBarcodes = false
 
+    // Navigation LiveData for backward compatibility
+    private val _navigateToPage = MutableStateFlow(-1)
+    val navigateToPage: androidx.lifecycle.LiveData<Int> = _navigateToPage.asLiveData()
+
     // Order content as StateFlow
-    val currentContent: StateFlow<List<OrderContent>> = _documentGuid
+    private val _currentContentFlow: StateFlow<List<LOrderContent>> = _documentGuid
         .flatMapLatest { guid ->
             if (guid.isEmpty()) flowOf(emptyList())
             else orderRepository.getDocumentContent(guid)
@@ -67,6 +73,16 @@ class OrderViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+    val currentContentFlow: StateFlow<List<LOrderContent>> get() = _currentContentFlow
+    val currentContent: androidx.lifecycle.MutableLiveData<List<LOrderContent>> = androidx.lifecycle.MutableLiveData(emptyList())
+
+    init {
+        viewModelScope.launch {
+            _currentContentFlow.collect { content ->
+                currentContent.postValue(content)
+            }
+        }
+    }
 
     override fun getDocumentGuid(document: Order): String = document.guid
 
@@ -272,8 +288,8 @@ class OrderViewModel @Inject constructor(
                     onFail()
                 }
             }
-            // Emit navigation event instead of LiveData
-            _events.send(DocumentEvent.NavigateToPage(1))
+            // Set navigation page
+            _navigateToPage.value = 1
         }
     }
 }

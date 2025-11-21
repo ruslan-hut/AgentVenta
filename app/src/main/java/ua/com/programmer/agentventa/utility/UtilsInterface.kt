@@ -16,9 +16,9 @@ interface UtilsInterface {
     fun formatWeight(weight: Double): String
 
     // Type conversion
-    fun getInteger(i: String): Int
-    fun getLong(i: String): Long
-    fun getString(s: String): String
+    fun getInteger(i: String?): Int
+    fun getLong(i: String?): Long
+    fun getString(s: String?): String
 
     // Date and time operations
     fun currentTime(): Long

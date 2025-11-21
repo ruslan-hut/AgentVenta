@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.documents.cash
 
-import android.view.View
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.documents.common.DocumentListViewModel
@@ -15,7 +14,7 @@ class CashListViewModel @Inject constructor(
 ): DocumentListViewModel<Cash>(cashRepository, userAccountRepository) {
 
     init {
-        totalsVisibility.value = View.VISIBLE
+        setTotalsVisible(true)
     }
 
 }

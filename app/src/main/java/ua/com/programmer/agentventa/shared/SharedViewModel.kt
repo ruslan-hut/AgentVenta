@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.shared
 import android.content.SharedPreferences
 import android.widget.ImageView
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +65,10 @@ class SharedViewModel @Inject constructor(
 
     // Account state from AccountStateManager
     private val _currentAccount = MutableStateFlow(UserAccount(guid = ""))
-    val currentAccount: StateFlow<UserAccount> = _currentAccount.asStateFlow()
+    val currentAccountFlow: StateFlow<UserAccount> = _currentAccount.asStateFlow()
+
+    // LiveData for XML binding and legacy observe() calls
+    val currentAccount: androidx.lifecycle.LiveData<UserAccount> = _currentAccount.asLiveData()
 
     val options: UserOptions get() = accountStateManager.options.value
     val priceTypes: List<PriceType> get() = accountStateManager.priceTypes.value
@@ -72,21 +76,26 @@ class SharedViewModel @Inject constructor(
 
     // Barcode state
     private val _barcode = MutableStateFlow("")
-    val barcode: StateFlow<String> = _barcode.asStateFlow()
+    val barcodeFlow: StateFlow<String> = _barcode.asStateFlow()
+    val barcode: androidx.lifecycle.LiveData<String> = _barcode.asLiveData()
 
     // Shared parameters state
     private val _sharedParams = MutableStateFlow(SharedParameters())
-    val sharedParams: StateFlow<SharedParameters> = _sharedParams.asStateFlow()
+    val sharedParamsFlow: StateFlow<SharedParameters> = _sharedParams.asStateFlow()
+    val sharedParams: androidx.lifecycle.LiveData<SharedParameters> = _sharedParams.asLiveData()
 
     // Sync state
     private val _updateState = MutableStateFlow<Result?>(null)
-    val updateState: StateFlow<Result?> = _updateState.asStateFlow()
+    val updateStateFlow: StateFlow<Result?> = _updateState.asStateFlow()
+    val updateState: androidx.lifecycle.LiveData<Result?> = _updateState.asLiveData()
 
     private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    val isRefreshingFlow: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+    val isRefreshing: androidx.lifecycle.LiveData<Boolean> = _isRefreshing.asLiveData()
 
     private val _progressMessage = MutableStateFlow("")
-    val progressMessage: StateFlow<String> = _progressMessage.asStateFlow()
+    val progressMessageFlow: StateFlow<String> = _progressMessage.asStateFlow()
+    val progressMessage: String get() = _progressMessage.value
 
     // Sync events channel
     private val _syncEvents = EventChannel<SyncEvent>()
@@ -96,7 +105,7 @@ class SharedViewModel @Inject constructor(
         private set
 
     // Document totals as StateFlow
-    val documentTotals: StateFlow<DocumentTotals> = _sharedParams
+    private val _documentTotalsFlow: StateFlow<DocumentTotals> = _sharedParams
         .flatMapLatest { params ->
             if (params.docGuid.isEmpty()) flowOf(DocumentTotals())
             else orderRepository.watchDocumentTotals(params.docGuid)
@@ -106,6 +115,7 @@ class SharedViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = DocumentTotals()
         )
+    val documentTotals: androidx.lifecycle.LiveData<DocumentTotals> = _documentTotalsFlow.asLiveData()
 
     var selectClientAction: (LClient, () -> Unit) -> Unit = { _, _ -> }
     var selectProductAction: (LProduct?, () -> Unit) -> Unit = { _, _ -> }

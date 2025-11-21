@@ -17,7 +17,7 @@ class OrderListViewModel @Inject constructor(
 ): DocumentListViewModel<Order>(orderRepository, userAccountRepository) {
 
     init {
-        totalsVisibility.value = View.VISIBLE
+        setTotalsVisible(true)
     }
 
     fun copyDocument(document: Order, onResult: (String) -> Unit) {

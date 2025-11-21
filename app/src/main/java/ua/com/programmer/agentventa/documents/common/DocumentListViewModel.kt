@@ -2,8 +2,10 @@ package ua.com.programmer.agentventa.documents.common
 
 import android.view.View
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +51,8 @@ open class DocumentListViewModel<T>(
     val searchText: StateFlow<String> = _searchText.asStateFlow()
 
     private val _listDate = MutableStateFlow<Date?>(Date())
-    val listDate: StateFlow<Date?> = _listDate.asStateFlow()
+    val listDateFlow: StateFlow<Date?> = _listDate.asStateFlow()
+    val listDate: androidx.lifecycle.LiveData<Date?> = _listDate.asLiveData()
 
     private val _searchVisible = MutableStateFlow(false)
     val searchVisible: StateFlow<Boolean> = _searchVisible.asStateFlow()
@@ -68,7 +71,7 @@ open class DocumentListViewModel<T>(
     }
 
     // Documents list as StateFlow
-    val documents: StateFlow<List<T>> = filterParams
+    private val _documentsFlow: StateFlow<List<T>> = filterParams
         .flatMapLatest { params ->
             repository.getDocuments(params.filter, params.listDate)
         }
@@ -77,9 +80,11 @@ open class DocumentListViewModel<T>(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+    val documentsFlow: StateFlow<List<T>> get() = _documentsFlow
+    val documents: androidx.lifecycle.LiveData<List<T>> = _documentsFlow.asLiveData()
 
     // Totals as StateFlow
-    val totals: StateFlow<List<DocumentTotals>> = filterParams
+    private val _totalsFlow: StateFlow<List<DocumentTotals>> = filterParams
         .flatMapLatest { params ->
             repository.getDocumentListTotals(params.filter, params.listDate)
         }
@@ -88,6 +93,8 @@ open class DocumentListViewModel<T>(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+    val totalsFlow: StateFlow<List<DocumentTotals>> get() = _totalsFlow
+    val totals: androidx.lifecycle.LiveData<List<DocumentTotals>> = _totalsFlow.asLiveData()
 
     init {
         viewModelScope.launch {
@@ -98,7 +105,7 @@ open class DocumentListViewModel<T>(
 
         // Auto-update UI state when totals change
         viewModelScope.launch {
-            totals.collect { totalsList ->
+            _totalsFlow.collect { totalsList ->
                 updateCounters(totalsList)
             }
         }
@@ -145,12 +152,39 @@ open class DocumentListViewModel<T>(
         _uiState.value = transform(_uiState.value)
     }
 
-    // Legacy LiveData-compatible properties for gradual migration
-    @Deprecated("Use uiState.documentsCount instead")
-    val documentsCountValue: String get() = _uiState.value.documentsCount
+    fun setTotalsVisible(visible: Boolean) {
+        updateUiState { it.copy(totalsVisible = visible) }
+    }
 
-    @Deprecated("Use uiState.noDataVisible instead")
-    val noDataTextVisibility: Int get() = if (_uiState.value.noDataVisible) View.VISIBLE else View.GONE
+    // LiveData-compatible properties for XML data binding
+    val searchVisibility: androidx.lifecycle.LiveData<Int> = _searchVisible
+        .map { if (it) View.VISIBLE else View.GONE }
+        .asLiveData()
+
+    val noDataTextVisibility: androidx.lifecycle.LiveData<Int> = _uiState
+        .map { if (it.noDataVisible) View.VISIBLE else View.GONE }
+        .asLiveData()
+
+    val totalsVisibility: androidx.lifecycle.LiveData<Int> = _uiState
+        .map { if (it.totalsVisible) View.VISIBLE else View.GONE }
+        .asLiveData()
+
+    val documentsCount: androidx.lifecycle.LiveData<String> = _uiState
+        .map { it.documentsCount }
+        .asLiveData()
+
+    val returnsCount: androidx.lifecycle.LiveData<String> = _uiState
+        .map { it.returnsCount }
+        .asLiveData()
+
+    val totalWeight: androidx.lifecycle.LiveData<String> = _uiState
+        .map { it.totalWeight }
+        .asLiveData()
+
+    val totalSum: androidx.lifecycle.LiveData<String> = _uiState
+        .map { it.totalSum }
+        .asLiveData()
+
 }
 
 data class ListParams(
