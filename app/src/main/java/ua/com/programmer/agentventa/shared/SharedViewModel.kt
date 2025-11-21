@@ -31,7 +31,6 @@ import ua.com.programmer.agentventa.http.Result
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.CommonRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
-import ua.com.programmer.agentventa.repository.NetworkRepository
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.settings.UserOptions
 import java.io.File
@@ -39,19 +38,9 @@ import java.util.GregorianCalendar
 import javax.inject.Inject
 import androidx.core.content.edit
 
-/**
- * Sync operation events (one-time).
- */
-sealed class SyncEvent {
-    data class Progress(val message: String) : SyncEvent()
-    data class Success(val message: String) : SyncEvent()
-    data class Error(val message: String) : SyncEvent()
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SharedViewModel @Inject constructor(
-    private val networkRepository: NetworkRepository,
     private val filesRepository: FilesRepository,
     private val logger: Logger,
     private val imageLoadingManager: ImageLoadingManager,
@@ -59,6 +48,7 @@ class SharedViewModel @Inject constructor(
     private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
     private val accountStateManager: AccountStateManager,
+    private val syncManager: SyncManager,
 ) : ViewModel() {
 
     private val logTag = "Shared"
@@ -84,22 +74,17 @@ class SharedViewModel @Inject constructor(
     val sharedParamsFlow: StateFlow<SharedParameters> = _sharedParams.asStateFlow()
     val sharedParams: androidx.lifecycle.LiveData<SharedParameters> = _sharedParams.asLiveData()
 
-    // Sync state
-    private val _updateState = MutableStateFlow<Result?>(null)
-    val updateStateFlow: StateFlow<Result?> = _updateState.asStateFlow()
-    val updateState: androidx.lifecycle.LiveData<Result?> = _updateState.asLiveData()
+    // Sync state (delegated to SyncManager)
+    val updateStateFlow: StateFlow<Result?> = syncManager.updateState
+    val updateState: androidx.lifecycle.LiveData<Result?> = syncManager.updateState.asLiveData()
 
-    private val _isRefreshing = MutableStateFlow(false)
-    val isRefreshingFlow: StateFlow<Boolean> = _isRefreshing.asStateFlow()
-    val isRefreshing: androidx.lifecycle.LiveData<Boolean> = _isRefreshing.asLiveData()
+    val isRefreshingFlow: StateFlow<Boolean> = syncManager.isRefreshing
+    val isRefreshing: androidx.lifecycle.LiveData<Boolean> = syncManager.isRefreshing.asLiveData()
 
-    private val _progressMessage = MutableStateFlow("")
-    val progressMessageFlow: StateFlow<String> = _progressMessage.asStateFlow()
-    val progressMessage: String get() = _progressMessage.value
+    val progressMessageFlow: StateFlow<String> = syncManager.progressMessage
+    val progressMessage: String get() = syncManager.progressMessage.value
 
-    // Sync events channel
-    private val _syncEvents = EventChannel<SyncEvent>()
-    val syncEvents = _syncEvents.flow
+    val syncEvents = syncManager.syncEvents
 
     var cacheDir: File? = null
         private set
@@ -234,78 +219,19 @@ class SharedViewModel @Inject constructor(
     }
 
     fun callDiffSync(afterSync: () -> Unit) {
-        if (_isRefreshing.value) return
-        _isRefreshing.value = true
-        _progressMessage.value = ""
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                networkRepository.updateDifferential().collect { result ->
-                    withContext(Dispatchers.Main) {
-                        _updateState.value = result
-                        handleSyncResult(result)
-                    }
-                }
-            }
-            afterSync()
-        }
+        syncManager.callDiffSync(viewModelScope, afterSync)
     }
 
     fun callFullSync(afterSync: () -> Unit) {
-        if (_isRefreshing.value) return
-        _isRefreshing.value = true
-        _progressMessage.value = ""
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                networkRepository.updateAll().collect { result ->
-                    withContext(Dispatchers.Main) {
-                        _updateState.value = result
-                        handleSyncResult(result)
-                    }
-                }
-            }
-            afterSync()
-        }
-    }
-
-    private fun handleSyncResult(result: Result) {
-        when (result) {
-            is Result.Success -> {
-                _isRefreshing.value = false
-                _syncEvents.send(SyncEvent.Success(result.message))
-            }
-            is Result.Error -> {
-                _isRefreshing.value = false
-                _syncEvents.send(SyncEvent.Error(result.message))
-            }
-            is Result.Progress -> {
-                _syncEvents.send(SyncEvent.Progress(result.message))
-            }
-        }
+        syncManager.callFullSync(viewModelScope, afterSync)
     }
 
     fun callPrintDocument(guid: String, afterSync: (Boolean) -> Unit) {
-        if (_isRefreshing.value) return afterSync(false)
-        if (cacheDir == null) return afterSync(false)
-        _isRefreshing.value = true
-        _progressMessage.value = ""
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                networkRepository.getPrintData(guid, cacheDir!!).collect { result ->
-                    withContext(Dispatchers.Main) {
-                        _updateState.value = result
-                        if (result is Result.Success || result is Result.Error) {
-                            _isRefreshing.value = false
-                            afterSync(result is Result.Success)
-                        }
-                    }
-                }
-            }
-        }
+        syncManager.callPrintDocument(viewModelScope, guid, cacheDir, afterSync)
     }
 
     fun addProgressText(text: String) {
-        val current = _progressMessage.value
-        _progressMessage.value = if (current.isBlank()) text else "$current\n$text"
+        syncManager.addProgressText(text)
     }
 
     fun saveClientImage(clientGuid: String, imageGuid: String) {
