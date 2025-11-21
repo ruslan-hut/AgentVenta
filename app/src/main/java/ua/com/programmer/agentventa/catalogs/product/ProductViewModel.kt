@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import ua.com.programmer.agentventa.dao.entity.LPrice
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.repository.ProductRepository
+import ua.com.programmer.agentventa.shared.EventChannel
 import javax.inject.Inject
 
 data class ProductParams(
@@ -22,11 +23,22 @@ data class ProductParams(
     val priceType: String = ""
 )
 
+/**
+ * One-time UI events for product screen.
+ */
+sealed class ProductEvent {
+    data class Error(val message: String) : ProductEvent()
+    data class PriceSelected(val price: LPrice) : ProductEvent()
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ProductViewModel @Inject constructor(
     private val productRepository: ProductRepository
 ): ViewModel() {
+
+    private val _events = EventChannel<ProductEvent>()
+    val events = _events.flow
 
     private val _params = MutableStateFlow(ProductParams())
 
@@ -60,5 +72,9 @@ class ProductViewModel @Inject constructor(
 
     fun setProductParameters(guid: String, orderGuid: String, priceType: String) {
         _params.value = ProductParams(guid, orderGuid, priceType)
+    }
+
+    fun onPriceSelected(price: LPrice) {
+        _events.send(ProductEvent.PriceSelected(price))
     }
 }

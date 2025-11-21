@@ -45,9 +45,9 @@
 ### Remaining
 - [x] Migrate remaining ViewModels to StateFlow (CashViewModel, TaskViewModel, ClientViewModel, ProductViewModel)
 - [x] Create use cases for Cash and Task documents
-- [ ] Implement CashViewModel and TaskViewModel with use cases
+- [x] Implement CashViewModel and TaskViewModel with use cases
 - [x] Extract Utils to interface for DI (currently direct instantiation blocks testing)
-- [ ] Create EventChannel for one-time UI events in remaining ViewModels
+- [x] Create EventChannel for one-time UI events in remaining ViewModels
 
 ---
 

@@ -19,8 +19,17 @@ import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.repository.ClientRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
+import ua.com.programmer.agentventa.shared.EventChannel
 import ua.com.programmer.agentventa.shared.SharedParameters
 import javax.inject.Inject
+
+/**
+ * One-time UI events for client screen.
+ */
+sealed class ClientEvent {
+    data class ImageSetAsDefault(val success: Boolean) : ClientEvent()
+    data class Error(val message: String) : ClientEvent()
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -28,6 +37,9 @@ class ClientViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val filesRepository: FilesRepository
 ): ViewModel() {
+
+    private val _events = EventChannel<ClientEvent>()
+    val events = _events.flow
 
     private val _clientGuid = MutableStateFlow("")
     private val _params = MutableStateFlow(SharedParameters())
@@ -88,7 +100,12 @@ class ClientViewModel @Inject constructor(
 
     fun setDefaultImage(image: ClientImage) {
         viewModelScope.launch {
-            filesRepository.setAsDefault(image)
+            try {
+                filesRepository.setAsDefault(image)
+                _events.send(ClientEvent.ImageSetAsDefault(true))
+            } catch (e: Exception) {
+                _events.send(ClientEvent.Error(e.message ?: "Failed to set default image"))
+            }
         }
     }
 
