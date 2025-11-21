@@ -77,7 +77,7 @@ open class DocumentListViewModel<T>(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
     val documentsFlow: StateFlow<List<T>> get() = _documentsFlow
@@ -90,7 +90,7 @@ open class DocumentListViewModel<T>(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
     val totalsFlow: StateFlow<List<DocumentTotals>> get() = _totalsFlow

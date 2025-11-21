@@ -29,7 +29,6 @@ import ua.com.programmer.agentventa.extensions.roundToInt
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.ProductRepository
-import ua.com.programmer.agentventa.shared.DocumentEvent
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Date
@@ -70,7 +69,7 @@ class OrderViewModel @Inject constructor(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
     val currentContentFlow: StateFlow<List<LOrderContent>> get() = _currentContentFlow

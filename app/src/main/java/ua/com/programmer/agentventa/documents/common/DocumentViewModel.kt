@@ -49,7 +49,7 @@ abstract class DocumentViewModel<T>(
         }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyDocument()
         )
     val documentFlow: StateFlow<T> get() = _documentFlow
@@ -75,6 +75,8 @@ abstract class DocumentViewModel<T>(
      * Set current document by GUID. Creates new document if ID is null/empty.
      */
     fun setCurrentDocument(id: String?) {
+        // Reset save result to prevent immediate popBackStack on re-open
+        _saveResult.value = null
         if (id.isNullOrEmpty()) {
             initNewDocument()
         } else {
