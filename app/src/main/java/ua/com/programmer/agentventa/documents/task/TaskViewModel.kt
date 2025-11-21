@@ -1,94 +1,49 @@
 package ua.com.programmer.agentventa.documents.task
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.Task
+import ua.com.programmer.agentventa.documents.common.DocumentViewModel
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.TaskRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class TaskViewModel@Inject constructor(
-    private val taskRepository: TaskRepository,
-    private val logger: Logger
-): ViewModel()   {
-    private val _documentGuid = MutableLiveData("")
-    private val currentDocument get() = document.value ?: Task(guid = "", time = 0L)
+class TaskViewModel @Inject constructor(
+    taskRepository: TaskRepository,
+    logger: Logger
+) : DocumentViewModel<Task>(
+    repository = taskRepository,
+    logger = logger,
+    logTag = "TaskVM",
+    emptyDocument = { Task(guid = "", time = 0L) }
+) {
 
-    val document = _documentGuid.switchMap {
-        taskRepository.getDocument(it).asLiveData()
+    private val task get() = currentDocument
+
+    override fun getDocumentGuid(document: Task): String = document.guid
+
+    override fun markAsProcessed(document: Task): Task = document
+
+    override fun enableEdit() {
+        // Tasks don't have processed/sent flags in the same way
+        updateDocument(task)
     }
 
-    private fun updateDocument(updated: Task) {
-        //updated.- = - //todo: replace '-' with actual value
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                taskRepository.updateDocument(updated)
-            }
-        }
-    }
+    override fun isNotEditable(): Boolean = false
 
-    fun setCurrentDocument(id: String?) {
-        if (id.isNullOrEmpty()) {
-            initNewDocument()
-        } else {
-            _documentGuid.value = id
-        }
-    }
-
-    private fun initNewDocument() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val document = taskRepository.newDocument()
-                if (document != null) {
-                    withContext(Dispatchers.Main) {
-                        _documentGuid.value = document.guid
-                    }
-                } else {
-                    logger.e("TaskViewModel", "initNewDocument: failed to create new document")
-                }
-            }
-        }
+    override fun onEditNotes(notes: String) {
+        updateDocument(task.copy(notes = notes))
     }
 
     fun onEditDescription(description: String) {
-        updateDocument(currentDocument.copy(description = description))
-    }
-
-    fun onEditNotes(notes: String) {
-        updateDocument(currentDocument.copy(notes = notes))
+        updateDocument(task.copy(description = description))
     }
 
     fun onEditDone(isDone: Int) {
-        updateDocument(currentDocument.copy(isDone = isDone))
+        updateDocument(task.copy(isDone = isDone))
     }
 
     fun saveDocument() {
-        updateDocument(currentDocument.copy(
-
-        ))
-    }
-
-    fun deleteDocument() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                taskRepository.deleteDocument(currentDocument)
-            }
-        }
-    }
-
-    fun enableEdit() {
-        updateDocument(currentDocument.copy()) //todo: is this function needed?
-    }
-
-    fun onDestroy() {
-        _documentGuid.value = ""
+        updateDocument(task)
     }
 }
