@@ -54,8 +54,8 @@
 ## Phase 3: Testing Infrastructure
 
 ### Not Started
-- [ ] Add test dependencies (JUnit, Mockito-Kotlin, Turbine, Truth)
-- [ ] Create MainDispatcherRule for coroutine testing
+- [x] Add test dependencies (JUnit, Mockito-Kotlin, Turbine, Truth)
+- [x] Create MainDispatcherRule for coroutine testing
 - [ ] Write unit tests for ViewModels (target: 80%)
 - [ ] Write unit tests for use cases (target: 90%)
 - [ ] Write integration tests for repositories with in-memory Room database
@@ -71,7 +71,7 @@
 - [x] Create MIGRATION_20_21 for existing installations
 
 ### Remaining
-- [ ] Cache current account GUID to eliminate subqueries in DAOs
+- [x] Cache current account GUID to eliminate subqueries in DAOs
 - [ ] Implement Paging 3 for large lists (orders, clients, products)
 - [ ] Add Full-Text Search (FTS) for client/product search
 - [ ] Optimize Glide configuration (memory/disk cache limits)
