@@ -7,43 +7,33 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ua.com.programmer.agentventa.BuildConfig
-import ua.com.programmer.agentventa.R
-import ua.com.programmer.agentventa.dao.cloud.CUserAccount
 import ua.com.programmer.agentventa.dao.entity.ClientImage
+import ua.com.programmer.agentventa.dao.entity.Company
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.PriceType
+import ua.com.programmer.agentventa.dao.entity.Store
 import ua.com.programmer.agentventa.dao.entity.UserAccount
 import ua.com.programmer.agentventa.dao.entity.fileName
-import ua.com.programmer.agentventa.dao.entity.isDemo
 import ua.com.programmer.agentventa.http.Result
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.CommonRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
 import ua.com.programmer.agentventa.repository.NetworkRepository
 import ua.com.programmer.agentventa.repository.OrderRepository
-import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.settings.UserOptions
-import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import java.io.File
 import java.util.GregorianCalendar
 import javax.inject.Inject
 import androidx.core.content.edit
-import ua.com.programmer.agentventa.dao.entity.Company
-import ua.com.programmer.agentventa.dao.entity.Store
-import ua.com.programmer.agentventa.license.LicenseManager
 
 @HiltViewModel
 class SharedViewModel @Inject constructor(
-    private val userAccountRepository: UserAccountRepository,
     private val networkRepository: NetworkRepository,
     private val filesRepository: FilesRepository,
     private val logger: Logger,
@@ -51,19 +41,18 @@ class SharedViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
-    private val lm: LicenseManager,
+    private val accountStateManager: AccountStateManager,
 ): ViewModel() {
 
     private val logTag = "Shared"
 
+    // Delegate to AccountStateManager for account state
     private val _currentAccount = MutableLiveData<UserAccount>()
     val currentAccount get() = _currentAccount
-    private var _options = UserOptions(isEmpty = true)
-    val options get() = _options
-    private var _priceTypes = listOf<PriceType>()
-    val priceTypes get() = _priceTypes
-    private var _paymentTypes = listOf<PaymentType>()
-    val paymentTypes get() = _paymentTypes
+
+    val options: UserOptions get() = accountStateManager.options.value
+    val priceTypes: List<PriceType> get() = accountStateManager.priceTypes.value
+    val paymentTypes: List<PaymentType> get() = accountStateManager.paymentTypes.value
 
     val barcode = MutableLiveData<String>()
 
@@ -77,9 +66,6 @@ class SharedViewModel @Inject constructor(
     val isRefreshing get() = _isRefreshing
     private var _progressMessage = ""
     val progressMessage get() = _progressMessage
-
-    private var _companies: List<Company> = emptyList()
-    private var _stores: List<Store> = emptyList()
 
     var cacheDir: File? = null
         private set
@@ -95,13 +81,11 @@ class SharedViewModel @Inject constructor(
         _sharedParams.value = state.copy(sortByName = !state.sortByName)
     }
 
-    // method is used in the product list screen menu
     fun toggleRestsOnly() {
         _sharedParams.value = state.copy(restsOnly = !state.restsOnly)
         preference.edit { putBoolean("show_rests_only", state.restsOnly) }
     }
 
-    // method is used in a preference screen and should not change the value of the preference
     fun setRestsOnly(value: Boolean) {
         _sharedParams.value = state.copy(restsOnly = value)
     }
@@ -120,14 +104,14 @@ class SharedViewModel @Inject constructor(
                 docType = type,
                 docGuid = guid,
             )
-        }else{
+        } else {
             _sharedParams.value = state.copy(
                 docType = type,
                 docGuid = guid,
                 companyGuid = companyGuid,
-                company = _companies.find { it.guid == companyGuid }?.description ?: "",
+                company = accountStateManager.findCompany(companyGuid)?.description ?: "",
                 storeGuid = storeGuid,
-                store = _stores.find { it.guid == storeGuid }?.description ?: "",
+                store = accountStateManager.findStore(storeGuid)?.description ?: "",
             )
         }
     }
@@ -135,20 +119,20 @@ class SharedViewModel @Inject constructor(
     fun setCompany(guid: String) {
         _sharedParams.value = state.copy(
             companyGuid = guid,
-            company = _companies.find { it.guid == guid }?.description ?: "",
+            company = accountStateManager.findCompany(guid)?.description ?: "",
         )
     }
 
     fun setStore(guid: String) {
         _sharedParams.value = state.copy(
             storeGuid = guid,
-            store = _stores.find { it.guid == guid }?.description ?: "",
+            store = accountStateManager.findStore(guid)?.description ?: "",
         )
     }
 
     private fun setDefaults() {
-        val company = _companies.find { it.isDefault == 1 } ?: Company()
-        val store = _stores.find { it.isDefault == 1 } ?: Store()
+        val company = accountStateManager.defaultCompany.value
+        val store = accountStateManager.defaultStore.value
 
         _sharedParams.value = state.copy(
             company = company.description,
@@ -158,17 +142,10 @@ class SharedViewModel @Inject constructor(
         )
     }
 
-    fun getPriceTypeCode(description: String): String {
-        return priceTypes.find { it.description == description }?.priceType ?: ""
-    }
-
-    fun getPriceDescription(code: String): String {
-        return priceTypes.find { it.priceType == code }?.description ?: ""
-    }
-
-    fun getPaymentType(description: String): PaymentType {
-        return paymentTypes.find { it.description == description } ?: PaymentType()
-    }
+    // Delegate to AccountStateManager
+    fun getPriceTypeCode(description: String): String = accountStateManager.getPriceTypeCode(description)
+    fun getPriceDescription(code: String): String = accountStateManager.getPriceDescription(code)
+    fun getPaymentType(description: String): PaymentType = accountStateManager.getPaymentType(description)
 
     fun clearActions() {
         setDocumentGuid()
@@ -192,65 +169,23 @@ class SharedViewModel @Inject constructor(
     init {
         deleteOldData()
         logger.cleanUp()
-        viewModelScope.launch {
-            if (!userAccountRepository.hasAccounts()) {
-                setupDemoAccount()
-            }
+
+        // Listen for account changes from AccountStateManager
+        accountStateManager.addAccountChangeListener { account ->
+            imageLoadingManager.configure(account)
+            _sharedParams.value = state.copy(
+                currentAccount = account.guid,
+                priceType = "",
+            )
+            _currentAccount.value = account
+            setDefaults()
         }
-        viewModelScope.launch {
-            userAccountRepository.currentAccount.collect {
-                val account = it ?: UserAccount(guid = "")
-                imageLoadingManager.configure(account)
-                _options = UserOptionsBuilder.build(account)
-                _sharedParams.value = state.copy(
-                        currentAccount = account.guid,
-                        priceType = "",
-                    )
-                _currentAccount.value = account
 
-                _priceTypes = orderRepository.getPriceTypes()
-                _paymentTypes = orderRepository.getPaymentTypes()
-
-                _companies = orderRepository.getCompanies()
-                _stores = orderRepository.getStores()
-
-                setDefaults()
-
-                if (account.guid.isNotEmpty() && !account.isDemo()) {
-                    FirebaseCrashlytics.getInstance().setUserId(account.guid)
-                    sendUserInfo()
-                }
-            }
-        }
         preference.getBoolean("show_rests_only", false).let {
             _sharedParams.value = state.copy(restsOnly = it)
         }
         preference.getBoolean("ignore_sequential_barcodes", false).let {
             _sharedParams.value = state.copy(ignoreBarcodeReads = it)
-        }
-
-    }
-
-//    private fun sendUserInfo() {
-//        val auth = FirebaseAuth.getInstance()
-//        if (auth.currentUser == null) {
-//            auth.signInWithEmailAndPassword(BuildConfig.FIREBASE_EMAIL, BuildConfig.FIREBASE_PASSWORD)
-//                .addOnSuccessListener { sendUserInfoContinue() }
-//                .addOnFailureListener { e -> logger.w("FA", e.message ?: "sign in failed") }
-//        } else {
-//            sendUserInfoContinue()
-//        }
-//    }
-
-    private fun sendUserInfo() {
-        val account = CUserAccount.build(_currentAccount.value)
-        if (account.guid.isBlank()) return
-        viewModelScope.launch {
-//            val firebase = FirebaseFirestore.getInstance()
-//            firebase.collection("users_venta")
-//                .document(account.guid)
-//                .set(account)
-            lm.getLicense(account)
         }
     }
 
@@ -260,12 +195,6 @@ class SharedViewModel @Inject constructor(
 
     fun loadClientImage(image: ClientImage, view: ImageView, rotation: Int = 0) {
         imageLoadingManager.loadClientImage(image, view, rotation)
-    }
-
-    private suspend fun setupDemoAccount() {
-        val demo = UserAccount.buildDemo()
-        userAccountRepository.saveAccount(demo)
-        userAccountRepository.setIsCurrent(demo.guid)
     }
 
     fun callDiffSync(afterSync: () -> Unit) {
@@ -365,16 +294,8 @@ class SharedViewModel @Inject constructor(
         barcode.value = ""
     }
 
-    /**
-     * Deletes old data from the repository.
-     *
-     * This method calculates a timestamp for 60 days prior to the current date
-     * and triggers the cleanup process in the `CommonRepository` to delete
-     * data older than this timestamp.
-     */
     private fun deleteOldData() {
         val currentTime = GregorianCalendar.getInstance().timeInMillis / 1000
-        // take 60 days from the current date
         val from = currentTime - 60 * 24 * 60 * 60
         viewModelScope.launch {
             commonRepository.cleanup(from)
@@ -382,14 +303,10 @@ class SharedViewModel @Inject constructor(
     }
 
     fun getCompanies(loadList: (List<Company>) -> Unit) {
-        viewModelScope.launch {
-          loadList(orderRepository.getCompanies())
-        }
+        loadList(accountStateManager.companies.value)
     }
 
     fun getStores(loadList: (List<Store>) -> Unit) {
-        viewModelScope.launch {
-            loadList(orderRepository.getStores())
-        }
+        loadList(accountStateManager.stores.value)
     }
 }
