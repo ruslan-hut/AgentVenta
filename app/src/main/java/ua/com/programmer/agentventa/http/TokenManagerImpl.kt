@@ -2,6 +2,7 @@ package ua.com.programmer.agentventa.http
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -12,6 +13,7 @@ import ua.com.programmer.agentventa.extensions.trimForLog
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.utility.XMap
+import java.util.concurrent.Executors
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,6 +25,7 @@ import javax.inject.Singleton
  * - Uses suspend functions with proper dispatchers
  * - Mutex prevents concurrent token refreshes
  * - Timeout prevents infinite blocking
+ * - Dedicated single-thread executor for sync operations (avoids ANR on shared pools)
  * - Clear separation of sync vs async refresh
  */
 @Singleton
@@ -43,6 +46,13 @@ class TokenManagerImpl @Inject constructor(
 
     // Mutex to prevent concurrent token refreshes
     private val refreshMutex = Mutex()
+
+    // Dedicated single-thread dispatcher for synchronous token operations
+    // This prevents runBlocking from blocking shared IO thread pool
+    private val tokenRefreshExecutor = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "TokenRefresh-Thread").apply { isDaemon = true }
+    }
+    private val tokenRefreshDispatcher = tokenRefreshExecutor.asCoroutineDispatcher()
 
     // Dedicated scope for token operations
     private val tokenScope = CoroutineScope(Dispatchers.IO)
@@ -72,11 +82,16 @@ class TokenManagerImpl @Inject constructor(
         // We use runBlocking here but in a controlled, safe way:
         // 1. Protected by mutex to prevent concurrent refreshes
         // 2. Has timeout to prevent infinite blocking
-        // 3. Runs on IO dispatcher
+        // 3. Runs on DEDICATED single-thread dispatcher (not shared IO pool)
         // 4. Only used by Authenticator, not general application code
+        //
+        // Using a dedicated thread ensures:
+        // - No ANR risk on main thread
+        // - No blocking of shared Dispatchers.IO thread pool
+        // - Predictable, isolated execution
 
         return try {
-            runBlocking(Dispatchers.IO) {
+            runBlocking(tokenRefreshDispatcher) {
                 withTimeout(tokenRefreshTimeout) {
                     when (val result = refreshToken(tag)) {
                         is TokenManager.TokenResult.Success -> {
