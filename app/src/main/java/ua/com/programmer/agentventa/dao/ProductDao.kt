@@ -12,9 +12,9 @@ interface ProductDao {
 
     @Query("SELECT * FROM products " +
             "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
+            "db_guid = :currentDbGuid " +
             "AND guid=:guid")
-    fun getProduct(guid: String): Flow<Product?>
+    fun getProduct(currentDbGuid: String, guid: String): Flow<Product?>
 
     @Query("""
         SELECT
@@ -236,9 +236,9 @@ interface ProductDao {
             WHERE isDefault = 1
         ) AS images ON product.guid = images.product_guid AND product.db_guid = images.db_guid
         WHERE product.guid = :guid
-          AND product.db_guid IN (SELECT guid FROM user_accounts WHERE is_current = 1)
+          AND product.db_guid = :currentDbGuid
     """)
-    fun getProductOrderContent(guid: String, order: String, type: String): Flow<LProduct?>
+    fun getProductOrderContent(currentDbGuid: String, guid: String, order: String, type: String): Flow<LProduct?>
 
     @Query("""
         SELECT
@@ -257,10 +257,10 @@ interface ProductDao {
             FROM products 
             WHERE guid=:productGuid
         ) AS product ON prices.product_guid=product.guid AND prices.db_guid=product.db_guid
-        WHERE prices.product_guid=:productGuid 
-            AND prices.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        WHERE prices.product_guid=:productGuid
+            AND prices.db_guid = :currentDbGuid
     """)
-    fun fetchProductPrices(productGuid: String, currentPriceType: String): Flow<List<LPrice>?>
+    fun fetchProductPrices(currentDbGuid: String, productGuid: String, currentPriceType: String): Flow<List<LPrice>?>
 
     @Query("""
         SELECT
@@ -305,7 +305,7 @@ interface ProductDao {
             ON product.guid=prices.product_guid AND product.db_guid=prices.db_guid
         LEFT OUTER JOIN (SELECT product_guid, url, guid, db_guid FROM product_images WHERE isDefault=1) AS images
             ON product.guid=images.product_guid AND product.db_guid=images.db_guid
-        WHERE product.barcode LIKE :barcode AND product.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        WHERE product.barcode LIKE :barcode AND product.db_guid = :currentDbGuid
     """)
-    suspend fun getProductByBarcode(barcode: String, order: String, type: String): LProduct?
+    suspend fun getProductByBarcode(currentDbGuid: String, barcode: String, order: String, type: String): LProduct?
 }

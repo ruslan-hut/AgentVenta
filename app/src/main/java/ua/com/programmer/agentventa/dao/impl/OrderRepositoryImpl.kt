@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.dao.impl
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.LocationDao
 import ua.com.programmer.agentventa.dao.OrderDao
@@ -22,15 +23,18 @@ import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.settings.UserOptions
 import ua.com.programmer.agentventa.settings.UserOptionsBuilder
 import ua.com.programmer.agentventa.utility.UtilsInterface
 import java.util.Date
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val userAccountDao: UserAccountDao,
+    private val userAccountRepository: UserAccountRepository,
     private val locationDao: LocationDao,
     private val utils: UtilsInterface
 ): OrderRepository {
@@ -41,6 +45,8 @@ class OrderRepositoryImpl @Inject constructor(
     private var stores = emptyList<Store>()
     private var priceTypes = emptyList<PriceType>()
     private var paymentTypes = emptyList<PaymentType>()
+
+    private suspend fun getCurrentDbGuid(): String = userAccountRepository.currentAccountGuid.first()
 
     private suspend fun initDefaults() {
         val currentAccount = userAccountDao.getCurrent() ?: UserAccount.buildEmpty()
@@ -71,7 +77,8 @@ class OrderRepositoryImpl @Inject constructor(
 
         initDefaults()
 
-        val newNumber = (orderDao.getLastDocumentNumber() ?: 0) + 1
+        val currentDbGuid = getCurrentDbGuid()
+        val newNumber = (orderDao.getLastDocumentNumber(currentDbGuid) ?: 0) + 1
         val time = utils.currentTime()
         val dbGuid = userAccount.guid
 
@@ -128,17 +135,27 @@ class OrderRepositoryImpl @Inject constructor(
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Order>> {
-        if (listDate == null) return orderDao.getDocumentsWithFilter(filter.asFilter())
-        val startTime = listDate.beginOfDay()
-        val endTime = listDate.endOfDay()
-        return orderDao.getDocumentsWithFilter(filter.asFilter(), startTime, endTime)
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            if (listDate == null) {
+                orderDao.getDocumentsWithFilter(currentDbGuid, filter.asFilter())
+            } else {
+                val startTime = listDate.beginOfDay()
+                val endTime = listDate.endOfDay()
+                orderDao.getDocumentsWithFilter(currentDbGuid, filter.asFilter(), startTime, endTime)
+            }
+        }
     }
 
     override fun getDocumentListTotals(filter: String, listDate: Date?): Flow<List<DocumentTotals>> {
-        if (listDate == null) return orderDao.getDocumentsTotals(filter.asFilter())
-        val startTime = listDate.beginOfDay()
-        val endTime = listDate.endOfDay()
-        return orderDao.getDocumentsTotals(filter.asFilter(), startTime, endTime)
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            if (listDate == null) {
+                orderDao.getDocumentsTotals(currentDbGuid, filter.asFilter())
+            } else {
+                val startTime = listDate.beginOfDay()
+                val endTime = listDate.endOfDay()
+                orderDao.getDocumentsTotals(currentDbGuid, filter.asFilter(), startTime, endTime)
+            }
+        }
     }
 
     override suspend fun updateDocument(document: Order): Boolean {
@@ -220,6 +237,7 @@ class OrderRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateLocation(document: Order): Boolean {
+        val currentDbGuid = getCurrentDbGuid()
         locationDao.getLastLocation()?.let { lastLocation ->
             document.latitude = lastLocation.latitude
             document.longitude = lastLocation.longitude
@@ -227,7 +245,7 @@ class OrderRepositoryImpl @Inject constructor(
         }
         val clientGuid = document.clientGuid ?: ""
         if (clientGuid.isNotEmpty()) {
-            locationDao.getClientLocation(clientGuid)?.let {
+            locationDao.getClientLocation(currentDbGuid, clientGuid)?.let {
                 document.updateDistance(it.latitude, it.longitude)
             }
         }

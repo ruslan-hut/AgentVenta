@@ -16,21 +16,38 @@ import ua.com.programmer.agentventa.dao.impl.CashRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.OrderRepositoryImpl
 import ua.com.programmer.agentventa.dao.impl.TaskRepositoryImpl
 import ua.com.programmer.agentventa.repository.DocumentRepository
+import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.utility.UtilsInterface
 
 @Module
 @InstallIn(ViewModelComponent::class)
 object RepositoryModule {
     @Provides
-    fun provideOrderRepository(dao: OrderDao, accountDao: UserAccountDao, locationDao: LocationDao, utils: UtilsInterface): DocumentRepository<Order> {
-        return OrderRepositoryImpl(dao, accountDao, locationDao, utils)
+    fun provideOrderRepository(
+        dao: OrderDao,
+        accountDao: UserAccountDao,
+        userAccountRepository: UserAccountRepository,
+        locationDao: LocationDao,
+        utils: UtilsInterface
+    ): DocumentRepository<Order> {
+        return OrderRepositoryImpl(dao, accountDao, userAccountRepository, locationDao, utils)
     }
     @Provides
-    fun provideCashRepository(dao: CashDao, accountDao: UserAccountDao, utils: UtilsInterface): DocumentRepository<Cash> {
-        return CashRepositoryImpl(dao, accountDao, utils)
+    fun provideCashRepository(
+        dao: CashDao,
+        accountDao: UserAccountDao,
+        userAccountRepository: UserAccountRepository,
+        utils: UtilsInterface
+    ): DocumentRepository<Cash> {
+        return CashRepositoryImpl(dao, accountDao, userAccountRepository, utils)
     }
     @Provides
-    fun provideTaskRepository(dao: TaskDao, accountDao: UserAccountDao, utils: UtilsInterface): DocumentRepository<Task> {
-        return TaskRepositoryImpl(dao, accountDao, utils)
+    fun provideTaskRepository(
+        dao: TaskDao,
+        accountDao: UserAccountDao,
+        userAccountRepository: UserAccountRepository,
+        utils: UtilsInterface
+    ): DocumentRepository<Task> {
+        return TaskRepositoryImpl(dao, accountDao, userAccountRepository, utils)
     }
 }

@@ -6,6 +6,7 @@ import ua.com.programmer.agentventa.dao.entity.PriceType
 
 interface UserAccountRepository {
     val currentAccount: Flow<UserAccount?>
+    val currentAccountGuid: Flow<String>
     val priceTypes: Flow<List<PriceType>?>
     suspend fun saveAccount(account: UserAccount): Long
     fun getAll(): Flow<List<UserAccount>>

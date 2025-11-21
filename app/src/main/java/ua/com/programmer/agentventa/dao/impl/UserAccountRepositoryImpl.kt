@@ -14,6 +14,10 @@ class UserAccountRepositoryImpl @Inject constructor(
 ): UserAccountRepository {
 
     override val currentAccount = userAccountDao.watchCurrent()
+
+    override val currentAccountGuid: Flow<String> = currentAccount
+        .map { it?.guid ?: "" }
+
     override val priceTypes = userAccountDao.getPriceTypes()
 
     override suspend fun saveAccount(account: UserAccount): Long {

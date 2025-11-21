@@ -19,10 +19,10 @@ interface ClientDao {
     @Query("""
         SELECT * FROM clients
             WHERE
-            db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            db_guid = :currentDbGuid
             AND guid=:guid
     """)
-    fun getClient(guid: String): Flow<Client?>
+    fun getClient(currentDbGuid: String, guid: String): Flow<Client?>
 
     @Query("""
         SELECT
@@ -58,10 +58,10 @@ interface ClientDao {
         AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter)
         ELSE clients.group_guid=:group
         AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END
-        AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        AND clients.db_guid = :currentDbGuid
         ORDER BY clients.is_group DESC, clients.description
     """)
-    fun getClients(group: String, filter: String, company: String): Flow<List<LClient>>
+    fun getClients(currentDbGuid: String, group: String, filter: String, company: String): Flow<List<LClient>>
 
     @Query("""
         SELECT
@@ -92,28 +92,28 @@ interface ClientDao {
         LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
         ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
         WHERE
-        clients.guid=:guid AND clients.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        clients.guid=:guid AND clients.db_guid = :currentDbGuid
     """)
-    fun getClientInfo(guid: String, companyGuid: String): Flow<LClient?>
+    fun getClientInfo(currentDbGuid: String, guid: String, companyGuid: String): Flow<LClient?>
 
-    @Query(""" 
+    @Query("""
             SELECT * FROM debts
             WHERE client_guid=:guid
             AND is_total=0
             AND company_guid=:companyGuid
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            AND db_guid = :currentDbGuid
             ORDER BY sorting
     """)
-    fun getClientDebts(guid: String, companyGuid: String): Flow<List<Debt>>
+    fun getClientDebts(currentDbGuid: String, guid: String, companyGuid: String): Flow<List<Debt>>
 
     @Query("""
         SELECT * FROM debts
             WHERE client_guid=:guid AND doc_id=:docId
             AND is_total=0
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            AND db_guid = :currentDbGuid
             ORDER BY sorting
     """)
-    fun getClientDebt(guid: String, docId: String): Flow<Debt?>
+    fun getClientDebt(currentDbGuid: String, guid: String, docId: String): Flow<Debt?>
 
     @Query("""
         SELECT
@@ -126,9 +126,9 @@ interface ClientDao {
         FROM client_locations cl
         LEFT OUTER JOIN clients c ON cl.client_guid = c.guid AND cl.db_guid = c.db_guid
         WHERE cl.client_guid = :guid
-        AND cl.db_guid IN (SELECT guid FROM user_accounts WHERE is_current = 1)
+        AND cl.db_guid = :currentDbGuid
     """)
-    fun getClientLocation(guid: String): Flow<LClientLocation?>
+    fun getClientLocation(currentDbGuid: String, guid: String): Flow<LClientLocation?>
 
     @Query("""
         SELECT
@@ -140,9 +140,9 @@ interface ClientDao {
             CASE TRIM(IFNULL(c.address, '')) WHEN '' THEN cl.address ELSE c.address END AS address
         FROM client_locations cl
         LEFT OUTER JOIN clients c ON cl.client_guid = c.guid AND cl.db_guid = c.db_guid
-        WHERE cl.db_guid IN (SELECT guid FROM user_accounts WHERE is_current = 1)
+        WHERE cl.db_guid = :currentDbGuid
     """)
-    fun getClientLocations(): Flow<List<LClientLocation>?>
+    fun getClientLocations(currentDbGuid: String): Flow<List<LClientLocation>?>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertClientImage(image: ClientImage): Long
@@ -161,7 +161,7 @@ interface ClientDao {
     @Query("""
         SELECT * FROM client_images
         WHERE client_guid=:guid
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        AND db_guid = :currentDbGuid
     UNION ALL
     SELECT
         db_guid,
@@ -177,16 +177,16 @@ interface ClientDao {
         WHERE product_guid=:guid AND type='client'
             AND guid NOT IN
             (SELECT guid FROM client_images
-            WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            WHERE db_guid = :currentDbGuid)
+        AND db_guid = :currentDbGuid
     ORDER BY is_default DESC, timestamp DESC
     """)
-    fun getClientImages(guid: String): Flow<List<ClientImage>>
+    fun getClientImages(currentDbGuid: String, guid: String): Flow<List<ClientImage>>
 
     @Query("""
         SELECT * FROM client_images
         WHERE guid=:imageGuid
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        AND db_guid = :currentDbGuid
     UNION ALL
     SELECT
         db_guid,
@@ -202,33 +202,33 @@ interface ClientDao {
         WHERE guid=:imageGuid AND type='client'
             AND guid NOT IN
             (SELECT guid FROM client_images
-            WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1))
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            WHERE db_guid = :currentDbGuid)
+        AND db_guid = :currentDbGuid
     """)
-    fun getClientImage(imageGuid: String): Flow<ClientImage>
+    fun getClientImage(currentDbGuid: String, imageGuid: String): Flow<ClientImage>
 
     @Query("""DELETE FROM client_images
             WHERE guid=:imageGuid
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)""")
-    suspend fun deleteClientImage(imageGuid: String)
+            AND db_guid = :currentDbGuid""")
+    suspend fun deleteClientImage(currentDbGuid: String, imageGuid: String)
 
     @Query("""
         UPDATE client_images SET is_default=1
             WHERE guid=:imageGuid
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            AND db_guid = :currentDbGuid
     """)
-    suspend fun setAsDefault(imageGuid: String)
+    suspend fun setAsDefault(currentDbGuid: String, imageGuid: String)
 
     @Query("""
         UPDATE client_images SET is_default=0
             WHERE client_guid=:clientGuid
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+            AND db_guid = :currentDbGuid
     """)
-    suspend fun resetDefault(clientGuid: String)
+    suspend fun resetDefault(currentDbGuid: String, clientGuid: String)
 
     @Transaction
-    suspend fun makeImageDefault(clientGuid: String, imageGuid: String) {
-        resetDefault(clientGuid)
-        setAsDefault(imageGuid)
+    suspend fun makeImageDefault(currentDbGuid: String, clientGuid: String, imageGuid: String) {
+        resetDefault(currentDbGuid, clientGuid)
+        setAsDefault(currentDbGuid, imageGuid)
     }
 }

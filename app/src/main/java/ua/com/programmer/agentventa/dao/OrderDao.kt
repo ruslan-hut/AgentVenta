@@ -39,9 +39,9 @@ interface OrderDao {
 
     @Query("SELECT number " +
             "FROM orders " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1) " +
+            "WHERE db_guid = :currentDbGuid " +
             "ORDER BY time DESC LIMIT 1")
-    suspend fun getLastDocumentNumber(): Int?
+    suspend fun getLastDocumentNumber(currentDbGuid: String): Int?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(document: Order): Long
@@ -64,17 +64,17 @@ interface OrderDao {
     fun getAllDocuments(id: String): Flow<List<Order>>
 
     @Query("SELECT * FROM orders " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "WHERE db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
-    fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Order>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<Order>>
 
     @Query("SELECT * FROM orders " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "WHERE db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
-    fun getDocumentsWithFilter(filter: String): Flow<List<Order>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String): Flow<List<Order>>
 
     @Query("SELECT " +
             "SUM(1) AS documents," +
@@ -86,10 +86,10 @@ interface OrderDao {
             "0 AS sumReturn " +
             "FROM orders " +
             "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END ORDER BY time DESC")
-    fun getDocumentsTotals(filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
 
     @Query("SELECT " +
             "SUM(1) AS documents," +
@@ -101,9 +101,9 @@ interface OrderDao {
             "0 AS sumReturn " +
             "FROM orders " +
             "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_description LIKE :filter END ORDER BY time DESC")
-    fun getDocumentsTotals(filter: String): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String): Flow<List<DocumentTotals>>
 
     @Query("SELECT " +
             "1 AS documents," +

@@ -28,9 +28,9 @@ interface CashDao {
     @Query("""
         SELECT MAX(number)
         FROM cash
-        WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        WHERE db_guid = :currentDbGuid
     """)
-    suspend fun getMaxDocumentNumber(): Int?
+    suspend fun getMaxDocumentNumber(currentDbGuid: String): Int?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(document: Cash): Long
@@ -51,24 +51,24 @@ interface CashDao {
 
     @Query("""
         SELECT * FROM cash
-        WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)
+        WHERE db_guid = :currentDbGuid
         AND time >= :startTime AND time <= :endTime
         AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
         IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END
+        AND db_guid = :currentDbGuid) END
         ORDER BY time DESC LIMIT 200
     """)
-    fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Cash>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<Cash>>
 
     @Query("""
         SELECT * FROM cash
-        WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)
+        WHERE db_guid = :currentDbGuid
         AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
         IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
-        AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END
+        AND db_guid = :currentDbGuid) END
         ORDER BY time DESC LIMIT 200
     """)
-    fun getDocumentsWithFilter(filter: String): Flow<List<Cash>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String): Flow<List<Cash>>
 
     @Query("""
         SELECT
@@ -81,13 +81,13 @@ interface CashDao {
             0 AS sumReturn
         FROM cash
         WHERE
-            db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)
+            db_guid = :currentDbGuid
             AND time >= :startTime AND time <= :endTime
             AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
             IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END
+            AND db_guid = :currentDbGuid) END
     """)
-    fun getDocumentsTotals(filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
 
     @Query("""
         SELECT
@@ -100,12 +100,12 @@ interface CashDao {
             0 AS sumReturn
         FROM cash
         WHERE
-            db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)
+            db_guid = :currentDbGuid
             AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
             IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
-            AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) END
+            AND db_guid = :currentDbGuid) END
     """)
-    fun getDocumentsTotals(filter: String): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String): Flow<List<DocumentTotals>>
 
     @Query("UPDATE cash SET company_guid=:companyGuid, company=:companyDescription WHERE guid=:guid")
     suspend fun setCompany(guid: String, companyGuid: String, companyDescription: String)

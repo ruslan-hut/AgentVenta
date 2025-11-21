@@ -1,6 +1,8 @@
 package ua.com.programmer.agentventa.dao.impl
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.shared.SharedParameters
 import ua.com.programmer.agentventa.dao.ProductDao
@@ -9,24 +11,29 @@ import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.asInt
 import ua.com.programmer.agentventa.repository.ProductRepository
+import ua.com.programmer.agentventa.repository.UserAccountRepository
 import javax.inject.Inject
 
 class ProductRepositoryImpl @Inject constructor(
-    private val productDao: ProductDao
+    private val productDao: ProductDao,
+    private val userAccountRepository: UserAccountRepository
 ) : ProductRepository {
 
+    private suspend fun getCurrentDbGuid(): String = userAccountRepository.currentAccountGuid.first()
+
     override fun getProduct(guid: String): Flow<LProduct> {
-//        return productDao.getProduct(guid).map {
-//            it?.toUi() ?: return@map LProduct()
-//        }
-        return productDao.getProductOrderContent(guid, "", "").map {
-            it ?: return@map LProduct()
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            productDao.getProductOrderContent(currentDbGuid, guid, "", "").map {
+                it ?: LProduct()
+            }
         }
     }
 
     override fun getProduct(guid: String, orderGuid: String, priceType: String): Flow<LProduct> {
-        return productDao.getProductOrderContent(guid, orderGuid, priceType).map {
-            it ?: return@map LProduct()
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            productDao.getProductOrderContent(currentDbGuid, guid, orderGuid, priceType).map {
+                it ?: LProduct()
+            }
         }
     }
 
@@ -57,14 +64,17 @@ class ProductRepositoryImpl @Inject constructor(
     }
 
     override fun fetchProductPrices(guid: String, currentPriceType: String): Flow<List<LPrice>> {
-        return productDao.fetchProductPrices(guid, currentPriceType).map {
-            it ?: return@map emptyList()
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            productDao.fetchProductPrices(currentDbGuid, guid, currentPriceType).map {
+                it ?: emptyList()
+            }
         }
     }
 
     override suspend fun getProductByBarcode(barcode: String, orderGuid: String, priceType: String
     ): LProduct? {
-        return productDao.getProductByBarcode("$barcode%", orderGuid, priceType)
+        val currentDbGuid = getCurrentDbGuid()
+        return productDao.getProductByBarcode(currentDbGuid, "$barcode%", orderGuid, priceType)
     }
 
 }

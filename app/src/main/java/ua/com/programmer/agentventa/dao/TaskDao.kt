@@ -42,23 +42,23 @@ interface TaskDao {
     suspend fun delete(document: Task): Int
 
     @Query("SELECT * FROM tasks " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "WHERE db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
+            "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
-    fun getDocumentsWithFilter(filter: String, startTime: Long, endTime: Long): Flow<List<Task>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<Task>>
 
     @Query("SELECT * FROM tasks " +
-            "WHERE db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "WHERE db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
+            "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
-    fun getDocumentsWithFilter(filter: String): Flow<List<Task>>
+    fun getDocumentsWithFilter(currentDbGuid: String, filter: String): Flow<List<Task>>
 
     @Query("SELECT " +
             "SUM(CASE is_done WHEN 1 THEN 1 ELSE 0 END) AS documents," +
@@ -70,13 +70,13 @@ interface TaskDao {
             "0 AS sumReturn " +
             "FROM tasks " +
             "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
+            "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END")
-    fun getDocumentsTotals(filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
 
     @Query("SELECT " +
             "SUM(CASE is_done WHEN 1 THEN 1 ELSE 0 END) AS documents," +
@@ -88,10 +88,10 @@ interface TaskDao {
             "0 AS sumReturn " +
             "FROM tasks " +
             "WHERE " +
-            "db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1) " +
+            "db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
             "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
-            "AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1 LIMIT 1)) " +
+            "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END")
-    fun getDocumentsTotals(filter: String): Flow<List<DocumentTotals>>
+    fun getDocumentsTotals(currentDbGuid: String, filter: String): Flow<List<DocumentTotals>>
 }

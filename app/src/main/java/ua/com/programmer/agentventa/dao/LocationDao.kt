@@ -30,7 +30,7 @@ interface LocationDao {
             "LEFT OUTER JOIN (SELECT guid, db_guid, address  FROM clients WHERE guid=:guid) AS client " +
             "ON client_locations.client_guid=client.guid AND client_locations.db_guid=client.db_guid " +
             "WHERE client_locations.client_guid=:guid " +
-            "AND client_locations.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)")
-    suspend fun getClientLocation(guid: String): ClientLocation?
+            "AND client_locations.db_guid = :currentDbGuid")
+    suspend fun getClientLocation(currentDbGuid: String, guid: String): ClientLocation?
 
 }

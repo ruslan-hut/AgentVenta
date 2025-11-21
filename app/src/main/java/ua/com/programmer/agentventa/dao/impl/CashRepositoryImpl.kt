@@ -1,6 +1,8 @@
 package ua.com.programmer.agentventa.dao.impl
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.CashDao
 import ua.com.programmer.agentventa.dao.UserAccountDao
@@ -12,6 +14,7 @@ import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
 import ua.com.programmer.agentventa.repository.CashRepository
+import ua.com.programmer.agentventa.repository.UserAccountRepository
 import ua.com.programmer.agentventa.utility.UtilsInterface
 import java.util.Date
 import java.util.UUID
@@ -20,20 +23,23 @@ import javax.inject.Inject
 class CashRepositoryImpl @Inject constructor(
     private val dao: CashDao,
     private val userAccountDao: UserAccountDao,
+    private val userAccountRepository: UserAccountRepository,
     private val utils: UtilsInterface
 ): CashRepository {
+
+    private suspend fun getCurrentDbGuid(): String = userAccountRepository.currentAccountGuid.first()
 
     override fun getDocument(guid: String): Flow<Cash> {
         return dao.getDocument(guid).map { it ?: Cash() }
     }
 
     override suspend fun newDocument(): Cash? {
-        val number = (dao.getMaxDocumentNumber() ?: 0) + 1
+        val currentDbGuid = getCurrentDbGuid()
+        val number = (dao.getMaxDocumentNumber(currentDbGuid) ?: 0) + 1
         val time = utils.currentTime()
-        val dbGuid = userAccountDao.getCurrent()?.guid ?: return null
 
         val document = Cash(
-            databaseId = dbGuid,
+            databaseId = currentDbGuid,
             number = number,
             guid = UUID.randomUUID().toString(),
             time = time,
@@ -44,10 +50,15 @@ class CashRepositoryImpl @Inject constructor(
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Cash>> {
-        if (listDate == null) return dao.getDocumentsWithFilter(filter.asFilter())
-        val startTime = listDate.beginOfDay()
-        val endTime = listDate.endOfDay()
-        return dao.getDocumentsWithFilter(filter.asFilter(), startTime, endTime)
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            if (listDate == null) {
+                dao.getDocumentsWithFilter(currentDbGuid, filter.asFilter())
+            } else {
+                val startTime = listDate.beginOfDay()
+                val endTime = listDate.endOfDay()
+                dao.getDocumentsWithFilter(currentDbGuid, filter.asFilter(), startTime, endTime)
+            }
+        }
     }
 
     override suspend fun updateDocument(document: Cash): Boolean {
@@ -73,9 +84,14 @@ class CashRepositoryImpl @Inject constructor(
     }
 
     override fun getDocumentListTotals(filter: String, listDate: Date?): Flow<List<DocumentTotals>> {
-        if (listDate == null) return dao.getDocumentsTotals(filter.asFilter())
-        val startTime = listDate.beginOfDay()
-        val endTime = listDate.endOfDay()
-        return dao.getDocumentsTotals(filter.asFilter(), startTime, endTime)
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            if (listDate == null) {
+                dao.getDocumentsTotals(currentDbGuid, filter.asFilter())
+            } else {
+                val startTime = listDate.beginOfDay()
+                val endTime = listDate.endOfDay()
+                dao.getDocumentsTotals(currentDbGuid, filter.asFilter(), startTime, endTime)
+            }
+        }
     }
 }
