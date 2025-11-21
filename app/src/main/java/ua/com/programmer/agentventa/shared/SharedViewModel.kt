@@ -2,17 +2,23 @@ package ua.com.programmer.agentventa.shared
 
 import android.content.SharedPreferences
 import android.widget.ImageView
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.ClientImage
 import ua.com.programmer.agentventa.dao.entity.Company
+import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.PaymentType
@@ -32,6 +38,16 @@ import java.util.GregorianCalendar
 import javax.inject.Inject
 import androidx.core.content.edit
 
+/**
+ * Sync operation events (one-time).
+ */
+sealed class SyncEvent {
+    data class Progress(val message: String) : SyncEvent()
+    data class Success(val message: String) : SyncEvent()
+    data class Error(val message: String) : SyncEvent()
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SharedViewModel @Inject constructor(
     private val networkRepository: NetworkRepository,
@@ -42,70 +58,85 @@ class SharedViewModel @Inject constructor(
     private val commonRepository: CommonRepository,
     private val preference: SharedPreferences,
     private val accountStateManager: AccountStateManager,
-): ViewModel() {
+) : ViewModel() {
 
     private val logTag = "Shared"
 
-    // Delegate to AccountStateManager for account state
-    private val _currentAccount = MutableLiveData<UserAccount>()
-    val currentAccount get() = _currentAccount
+    // Account state from AccountStateManager
+    private val _currentAccount = MutableStateFlow(UserAccount(guid = ""))
+    val currentAccount: StateFlow<UserAccount> = _currentAccount.asStateFlow()
 
     val options: UserOptions get() = accountStateManager.options.value
     val priceTypes: List<PriceType> get() = accountStateManager.priceTypes.value
     val paymentTypes: List<PaymentType> get() = accountStateManager.paymentTypes.value
 
-    val barcode = MutableLiveData<String>()
+    // Barcode state
+    private val _barcode = MutableStateFlow("")
+    val barcode: StateFlow<String> = _barcode.asStateFlow()
 
-    private val _sharedParams = MutableLiveData<SharedParameters>()
-    val sharedParams get() = _sharedParams
-    private val state get() = _sharedParams.value ?: SharedParameters()
+    // Shared parameters state
+    private val _sharedParams = MutableStateFlow(SharedParameters())
+    val sharedParams: StateFlow<SharedParameters> = _sharedParams.asStateFlow()
 
-    private val _updateState = MutableLiveData<Result>()
-    val updateState get() = _updateState
-    private val _isRefreshing = MutableLiveData<Boolean>()
-    val isRefreshing get() = _isRefreshing
-    private var _progressMessage = ""
-    val progressMessage get() = _progressMessage
+    // Sync state
+    private val _updateState = MutableStateFlow<Result?>(null)
+    val updateState: StateFlow<Result?> = _updateState.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _progressMessage = MutableStateFlow("")
+    val progressMessage: StateFlow<String> = _progressMessage.asStateFlow()
+
+    // Sync events channel
+    private val _syncEvents = EventChannel<SyncEvent>()
+    val syncEvents = _syncEvents.flow
 
     var cacheDir: File? = null
         private set
 
-    val documentTotals get() = _sharedParams.switchMap {
-        orderRepository.watchDocumentTotals(it.docGuid).asLiveData()
-    }
+    // Document totals as StateFlow
+    val documentTotals: StateFlow<DocumentTotals> = _sharedParams
+        .flatMapLatest { params ->
+            if (params.docGuid.isEmpty()) flowOf(DocumentTotals())
+            else orderRepository.watchDocumentTotals(params.docGuid)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DocumentTotals()
+        )
 
     var selectClientAction: (LClient, () -> Unit) -> Unit = { _, _ -> }
     var selectProductAction: (LProduct?, () -> Unit) -> Unit = { _, _ -> }
 
     fun toggleSortByName() {
-        _sharedParams.value = state.copy(sortByName = !state.sortByName)
+        _sharedParams.value = _sharedParams.value.copy(sortByName = !_sharedParams.value.sortByName)
     }
 
     fun toggleRestsOnly() {
-        _sharedParams.value = state.copy(restsOnly = !state.restsOnly)
-        preference.edit { putBoolean("show_rests_only", state.restsOnly) }
+        val newValue = !_sharedParams.value.restsOnly
+        _sharedParams.value = _sharedParams.value.copy(restsOnly = newValue)
+        preference.edit { putBoolean("show_rests_only", newValue) }
     }
 
     fun setRestsOnly(value: Boolean) {
-        _sharedParams.value = state.copy(restsOnly = value)
+        _sharedParams.value = _sharedParams.value.copy(restsOnly = value)
     }
 
     fun toggleClientProducts() {
-        _sharedParams.value = state.copy(clientProducts = !state.clientProducts)
+        _sharedParams.value = _sharedParams.value.copy(clientProducts = !_sharedParams.value.clientProducts)
     }
 
     fun setPrice(description: String) {
-        _sharedParams.value = state.copy(priceType = getPriceTypeCode(description))
+        _sharedParams.value = _sharedParams.value.copy(priceType = getPriceTypeCode(description))
     }
 
     fun setDocumentGuid(type: String = "", guid: String = "", companyGuid: String = "", storeGuid: String = "") {
         if (guid.isBlank()) {
-            _sharedParams.value = state.copy(
-                docType = type,
-                docGuid = guid,
-            )
+            _sharedParams.value = _sharedParams.value.copy(docType = type, docGuid = guid)
         } else {
-            _sharedParams.value = state.copy(
+            _sharedParams.value = _sharedParams.value.copy(
                 docType = type,
                 docGuid = guid,
                 companyGuid = companyGuid,
@@ -117,14 +148,14 @@ class SharedViewModel @Inject constructor(
     }
 
     fun setCompany(guid: String) {
-        _sharedParams.value = state.copy(
+        _sharedParams.value = _sharedParams.value.copy(
             companyGuid = guid,
             company = accountStateManager.findCompany(guid)?.description ?: "",
         )
     }
 
     fun setStore(guid: String) {
-        _sharedParams.value = state.copy(
+        _sharedParams.value = _sharedParams.value.copy(
             storeGuid = guid,
             store = accountStateManager.findStore(guid)?.description ?: "",
         )
@@ -134,7 +165,7 @@ class SharedViewModel @Inject constructor(
         val company = accountStateManager.defaultCompany.value
         val store = accountStateManager.defaultStore.value
 
-        _sharedParams.value = state.copy(
+        _sharedParams.value = _sharedParams.value.copy(
             company = company.description,
             companyGuid = company.guid,
             store = store.description,
@@ -158,22 +189,18 @@ class SharedViewModel @Inject constructor(
         imageLoadingManager.setCacheDir(dir)
     }
 
-    fun fileInCache(fileName: String): File {
-        return imageLoadingManager.fileInCache(fileName)
-    }
+    fun fileInCache(fileName: String): File = imageLoadingManager.fileInCache(fileName)
 
-    fun deleteFileInCache(fileName: String) {
-        imageLoadingManager.deleteFileInCache(fileName)
-    }
+    fun deleteFileInCache(fileName: String) = imageLoadingManager.deleteFileInCache(fileName)
 
     init {
         deleteOldData()
         logger.cleanUp()
 
-        // Listen for account changes from AccountStateManager
+        // Listen for account changes
         accountStateManager.addAccountChangeListener { account ->
             imageLoadingManager.configure(account)
-            _sharedParams.value = state.copy(
+            _sharedParams.value = _sharedParams.value.copy(
                 currentAccount = account.guid,
                 priceType = "",
             )
@@ -181,12 +208,11 @@ class SharedViewModel @Inject constructor(
             setDefaults()
         }
 
-        preference.getBoolean("show_rests_only", false).let {
-            _sharedParams.value = state.copy(restsOnly = it)
-        }
-        preference.getBoolean("ignore_sequential_barcodes", false).let {
-            _sharedParams.value = state.copy(ignoreBarcodeReads = it)
-        }
+        // Load preferences
+        _sharedParams.value = _sharedParams.value.copy(
+            restsOnly = preference.getBoolean("show_rests_only", false),
+            ignoreBarcodeReads = preference.getBoolean("ignore_sequential_barcodes", false)
+        )
     }
 
     fun loadImage(product: LProduct, view: ImageView, rotation: Int = 0) {
@@ -198,17 +224,15 @@ class SharedViewModel @Inject constructor(
     }
 
     fun callDiffSync(afterSync: () -> Unit) {
-        if (_isRefreshing.value == true) return
+        if (_isRefreshing.value) return
         _isRefreshing.value = true
-        _progressMessage = ""
+        _progressMessage.value = ""
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 networkRepository.updateDifferential().collect { result ->
                     withContext(Dispatchers.Main) {
                         _updateState.value = result
-                        if (result is Result.Success || result is Result.Error) {
-                            _isRefreshing.value = false
-                        }
+                        handleSyncResult(result)
                     }
                 }
             }
@@ -217,17 +241,15 @@ class SharedViewModel @Inject constructor(
     }
 
     fun callFullSync(afterSync: () -> Unit) {
-        if (_isRefreshing.value == true) return
+        if (_isRefreshing.value) return
         _isRefreshing.value = true
-        _progressMessage = ""
+        _progressMessage.value = ""
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 networkRepository.updateAll().collect { result ->
                     withContext(Dispatchers.Main) {
                         _updateState.value = result
-                        if (result is Result.Success || result is Result.Error) {
-                            _isRefreshing.value = false
-                        }
+                        handleSyncResult(result)
                     }
                 }
             }
@@ -235,11 +257,27 @@ class SharedViewModel @Inject constructor(
         }
     }
 
+    private fun handleSyncResult(result: Result) {
+        when (result) {
+            is Result.Success -> {
+                _isRefreshing.value = false
+                _syncEvents.send(SyncEvent.Success(result.message))
+            }
+            is Result.Error -> {
+                _isRefreshing.value = false
+                _syncEvents.send(SyncEvent.Error(result.message))
+            }
+            is Result.Progress -> {
+                _syncEvents.send(SyncEvent.Progress(result.message))
+            }
+        }
+    }
+
     fun callPrintDocument(guid: String, afterSync: (Boolean) -> Unit) {
-        if (_isRefreshing.value == true) return afterSync(false)
+        if (_isRefreshing.value) return afterSync(false)
         if (cacheDir == null) return afterSync(false)
         _isRefreshing.value = true
-        _progressMessage = ""
+        _progressMessage.value = ""
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 networkRepository.getPrintData(guid, cacheDir!!).collect { result ->
@@ -256,12 +294,13 @@ class SharedViewModel @Inject constructor(
     }
 
     fun addProgressText(text: String) {
-        _progressMessage = if (_progressMessage.isBlank()) text else "$progressMessage\n$text"
+        val current = _progressMessage.value
+        _progressMessage.value = if (current.isBlank()) text else "$current\n$text"
     }
 
     fun saveClientImage(clientGuid: String, imageGuid: String) {
         val image = ClientImage(
-            databaseId = state.currentAccount,
+            databaseId = _sharedParams.value.currentAccount,
             clientGuid = clientGuid,
             guid = imageGuid,
             url = "",
@@ -287,11 +326,11 @@ class SharedViewModel @Inject constructor(
 
     fun onBarcodeRead(value: String) {
         if (value.isBlank() || value.length < 10) return
-        barcode.value = value
+        _barcode.value = value
     }
 
     fun clearBarcode() {
-        barcode.value = ""
+        _barcode.value = ""
     }
 
     private fun deleteOldData() {

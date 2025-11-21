@@ -1,17 +1,23 @@
 package ua.com.programmer.agentventa.documents.order
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.dao.entity.LProduct
 import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.dao.entity.OrderContent
 import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.setClient
 import ua.com.programmer.agentventa.dao.entity.toUi
@@ -22,11 +28,13 @@ import ua.com.programmer.agentventa.extensions.roundToInt
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.OrderRepository
 import ua.com.programmer.agentventa.repository.ProductRepository
+import ua.com.programmer.agentventa.shared.DocumentEvent
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Date
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class OrderViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
@@ -41,18 +49,24 @@ class OrderViewModel @Inject constructor(
 
     private val order get() = currentDocument
 
-    // LiveData for SharedModel to pass value to ProductListFragment
-    private val _selectedPriceType = MutableLiveData<String>()
-    val selectedPriceType get() = _selectedPriceType
+    // StateFlow for selected price type
+    private val _selectedPriceType = MutableStateFlow("")
+    val selectedPriceType: StateFlow<String> = _selectedPriceType.asStateFlow()
     private var selectedPriceCode = ""
 
     private var ignoreBarcodes = false
 
-    val navigateToPage = MutableLiveData<Int>()
-
-    val currentContent = _documentGuid.switchMap {
-        orderRepository.getDocumentContent(it).asLiveData()
-    }
+    // Order content as StateFlow
+    val currentContent: StateFlow<List<OrderContent>> = _documentGuid
+        .flatMapLatest { guid ->
+            if (guid.isEmpty()) flowOf(emptyList())
+            else orderRepository.getDocumentContent(guid)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     override fun getDocumentGuid(document: Order): String = document.guid
 
@@ -67,11 +81,6 @@ class OrderViewModel @Inject constructor(
 
     override fun onEditNotes(notes: String) {
         updateDocument(order.copy(notes = notes))
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        navigateToPage.value = -1
     }
 
     fun setSharedParameters(ignoreBarcodeReads: Boolean) {
@@ -263,7 +272,8 @@ class OrderViewModel @Inject constructor(
                     onFail()
                 }
             }
-            navigateToPage.value = 1
+            // Emit navigation event instead of LiveData
+            _events.send(DocumentEvent.NavigateToPage(1))
         }
     }
 }

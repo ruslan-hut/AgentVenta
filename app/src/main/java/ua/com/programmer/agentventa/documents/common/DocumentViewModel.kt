@@ -1,20 +1,26 @@
 package ua.com.programmer.agentventa.documents.common
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.DocumentRepository
+import ua.com.programmer.agentventa.shared.DocumentEvent
+import ua.com.programmer.agentventa.shared.EventChannel
 
 /**
  * Base ViewModel for document management (Order, Cash, Task).
- * Provides common CRUD operations and state management.
+ * Uses StateFlow for reactive state and EventChannel for one-time events.
  *
  * @param T The document entity type
  * @param repository The document repository
@@ -22,6 +28,7 @@ import ua.com.programmer.agentventa.repository.DocumentRepository
  * @param logTag Tag for logging
  * @param emptyDocument Factory for creating empty document instance
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 abstract class DocumentViewModel<T>(
     protected val repository: DocumentRepository<T>,
     protected val logger: Logger,
@@ -30,19 +37,32 @@ abstract class DocumentViewModel<T>(
 ) : ViewModel() {
 
     // Document GUID state
-    protected val _documentGuid = MutableLiveData("")
+    protected val _documentGuid = MutableStateFlow("")
+    val documentGuid: StateFlow<String> = _documentGuid.asStateFlow()
 
-    // Observable document from database
-    val document: LiveData<T> = _documentGuid.switchMap {
-        repository.getDocument(it).asLiveData()
-    }
+    // Observable document from database using flatMapLatest
+    val document: StateFlow<T> = _documentGuid
+        .flatMapLatest { guid ->
+            if (guid.isEmpty()) flowOf(emptyDocument())
+            else repository.getDocument(guid)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyDocument()
+        )
 
     // Current document value (non-null accessor)
     protected val currentDocument: T
-        get() = document.value ?: emptyDocument()
+        get() = document.value
 
-    // Save operation result
-    val saveResult = MutableLiveData<Boolean?>()
+    // One-time events channel
+    protected val _events = EventChannel<DocumentEvent>()
+    val events = _events.flow
+
+    // Loading state
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     /**
      * Set current document by GUID. Creates new document if ID is null/empty.
@@ -58,24 +78,25 @@ abstract class DocumentViewModel<T>(
     /**
      * Get current document GUID.
      */
-    fun getGuid(): String = _documentGuid.value ?: ""
+    fun getGuid(): String = _documentGuid.value
 
     /**
      * Initialize a new document.
      */
     protected open fun initNewDocument() {
         viewModelScope.launch {
+            _isLoading.value = true
             withContext(Dispatchers.IO) {
                 val newDoc = repository.newDocument()
                 if (newDoc != null) {
                     val guid = getDocumentGuid(newDoc)
-                    withContext(Dispatchers.Main) {
-                        _documentGuid.value = guid
-                    }
+                    _documentGuid.value = guid
                 } else {
                     logger.e(logTag, "initNewDocument: failed to create new document")
+                    _events.send(DocumentEvent.SaveError("Failed to create document"))
                 }
             }
+            _isLoading.value = false
         }
     }
 
@@ -91,16 +112,20 @@ abstract class DocumentViewModel<T>(
     }
 
     /**
-     * Update document and notify result.
+     * Update document and emit save result event.
      */
     protected fun updateDocumentWithResult(updated: T) {
         viewModelScope.launch {
+            _isLoading.value = true
             withContext(Dispatchers.IO) {
                 val saved = repository.updateDocument(updated)
-                withContext(Dispatchers.Main) {
-                    saveResult.value = saved
+                if (saved) {
+                    _events.send(DocumentEvent.SaveSuccess(getDocumentGuid(updated)))
+                } else {
+                    _events.send(DocumentEvent.SaveError("Failed to save document"))
                 }
             }
+            _isLoading.value = false
         }
     }
 
@@ -111,13 +136,13 @@ abstract class DocumentViewModel<T>(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 repository.deleteDocument(currentDocument)
+                _events.send(DocumentEvent.DeleteSuccess)
             }
         }
     }
 
     /**
      * Enable editing by resetting processed/sent flags.
-     * Override to customize behavior.
      */
     abstract fun enableEdit()
 
@@ -136,12 +161,10 @@ abstract class DocumentViewModel<T>(
      */
     open fun onDestroy() {
         _documentGuid.value = ""
-        saveResult.value = null
     }
 
     /**
      * Extract GUID from document entity.
-     * Must be implemented by subclasses since entities have different structures.
      */
     protected abstract fun getDocumentGuid(document: T): String
 
