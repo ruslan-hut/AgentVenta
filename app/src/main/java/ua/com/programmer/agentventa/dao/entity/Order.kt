@@ -8,7 +8,17 @@ import androidx.room.PrimaryKey
 import ua.com.programmer.agentventa.utility.Constants
 import java.util.Locale
 
-@Entity(tableName = "orders", indices = [Index(value = ["guid"], unique = true)])
+@Entity(
+    tableName = "orders",
+    indices = [
+        Index(value = ["guid"], unique = true),
+        Index(value = ["db_guid"]),
+        Index(value = ["db_guid", "time"]),           // For date-filtered queries
+        Index(value = ["db_guid", "client_guid"]),    // For client-related queries
+        Index(value = ["db_guid", "is_sent"]),        // For sync queries
+        Index(value = ["client_guid", "time"])        // For previous order lookup
+    ]
+)
 data class Order(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Int = 0,
     @ColumnInfo(name = "db_guid") var databaseId: String = "",

@@ -46,7 +46,7 @@ import ua.com.programmer.agentventa.dao.entity.UserAccount
     Rest::class,
     Company::class,
     Store::class,
-                     ], version = 20)
+                     ], version = 21)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -172,6 +172,34 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add indexes for Order table
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid ON orders(db_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid_time ON orders(db_guid, time)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid_client_guid ON orders(db_guid, client_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid_is_sent ON orders(db_guid, is_sent)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_client_guid_time ON orders(client_guid, time)")
+
+                // Add indexes for Client table
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_clients_db_guid ON clients(db_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_clients_db_guid_group_guid ON clients(db_guid, group_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_clients_db_guid_is_group ON clients(db_guid, is_group)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_clients_db_guid_description_lc ON clients(db_guid, description_lc)")
+
+                // Add indexes for Product table
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_products_db_guid ON products(db_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_products_db_guid_group_guid ON products(db_guid, group_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_products_db_guid_is_group ON products(db_guid, is_group)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_products_db_guid_barcode ON products(db_guid, barcode)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_products_db_guid_description_lc ON products(db_guid, description_lc)")
+
+                // Add indexes for OrderContent table
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_order_content_order_guid ON order_content(order_guid)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_order_content_order_guid_product_guid ON order_content(order_guid, product_guid)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -186,6 +214,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_17_18,
                         MIGRATION_18_19,
                         MIGRATION_19_20,
+                        MIGRATION_20_21,
                     )
                     .build()
                 INSTANCE = instance

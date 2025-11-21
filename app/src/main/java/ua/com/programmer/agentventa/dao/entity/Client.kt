@@ -2,11 +2,18 @@ package ua.com.programmer.agentventa.dao.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import ua.com.programmer.agentventa.utility.XMap
 
 @Entity(
     tableName = "clients",
-    primaryKeys = ["guid","db_guid"]
+    primaryKeys = ["guid", "db_guid"],
+    indices = [
+        Index(value = ["db_guid"]),
+        Index(value = ["db_guid", "group_guid"]),      // For group filtering
+        Index(value = ["db_guid", "is_group"]),        // For groups vs items
+        Index(value = ["db_guid", "description_lc"])   // For search queries
+    ]
 )
 data class Client(
     @ColumnInfo(name = "db_guid") val databaseId: String = "",

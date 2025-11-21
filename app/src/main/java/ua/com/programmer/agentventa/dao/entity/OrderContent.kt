@@ -2,10 +2,17 @@ package ua.com.programmer.agentventa.dao.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.Locale
 
-@Entity(tableName = "order_content")
+@Entity(
+    tableName = "order_content",
+    indices = [
+        Index(value = ["order_guid"]),                    // For order content lookup
+        Index(value = ["order_guid", "product_guid"])     // For content line lookup
+    ]
+)
 data class OrderContent(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Int = 0,
     @ColumnInfo(name = "order_guid") val orderGuid: String,
