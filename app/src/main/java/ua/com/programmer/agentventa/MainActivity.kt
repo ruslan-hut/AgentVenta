@@ -17,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -39,7 +40,13 @@ private lateinit var drawerLayout: DrawerLayout
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-    private val _locationPermissionRequestCode = 34
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startLocationUpdatesService()
+        }
+    }
 
     private val sharedViewModel: SharedViewModel by viewModels()
     private var _binding: ActivityMainBinding? = null
@@ -234,24 +241,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun makePermissionRequest() {
-        ActivityCompat.requestPermissions(this,
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            _locationPermissionRequestCode)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == _locationPermissionRequestCode) {
-            if (grantResults.isEmpty()) {
-                // If the user interaction was interrupted, the permission request is cancelled and you
-                // receive empty arrays.
-            } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission was granted.
-                startLocationUpdatesService()
-            } else {
-                // Permission was denied.
-            }
-        }
+        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
