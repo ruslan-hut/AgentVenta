@@ -51,8 +51,8 @@ class ClientInfoFragment: Fragment(){
         )
         clientRecycler.adapter = adapter
 
-        viewModel.client.observe(viewLifecycleOwner) {
-            updateView(it)
+        viewModel.client.observe(viewLifecycleOwner) { client ->
+            client?.let { updateView(it) }
         }
 
         viewModel.clientImages.observe(viewLifecycleOwner) {

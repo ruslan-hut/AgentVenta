@@ -54,8 +54,8 @@ class ClientDebtsFragment: Fragment() {
             adapter.submitList(it)
             binding.empty.visibility = if (it.isEmpty()) View.VISIBLE else View.GONE
         }
-        viewModel.client.observe(viewLifecycleOwner) {
-            binding.debt.text = it.debt.format(2, "0.00")
+        viewModel.client.observe(viewLifecycleOwner) { client ->
+            client?.let { binding.debt.text = it.debt.format(2, "0.00") }
         }
 
     }

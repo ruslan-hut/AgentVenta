@@ -1,45 +1,89 @@
 package ua.com.programmer.agentventa.catalogs.client
 
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.dao.entity.ClientImage
+import ua.com.programmer.agentventa.dao.entity.Debt
 import ua.com.programmer.agentventa.dao.entity.LClient
 import ua.com.programmer.agentventa.repository.ClientRepository
 import ua.com.programmer.agentventa.repository.FilesRepository
 import ua.com.programmer.agentventa.shared.SharedParameters
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ClientViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val filesRepository: FilesRepository
 ): ViewModel() {
 
-    private val _client = MediatorLiveData <LClient>()
-    val client get() = _client
+    private val _clientGuid = MutableStateFlow("")
+    private val _params = MutableStateFlow(SharedParameters())
 
-    private val params = MutableLiveData<SharedParameters>()
-    private val clientGuid = MutableLiveData("")
+    // Client as StateFlow
+    private val _clientFlow: StateFlow<LClient?> = combine(
+        _clientGuid,
+        _params
+    ) { guid, params ->
+        Pair(guid, params.companyGuid)
+    }.flatMapLatest { (guid, companyGuid) ->
+        if (guid.isEmpty()) flowOf(null)
+        else clientRepository.getClient(guid, companyGuid)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+    val clientFlow: StateFlow<LClient?> = _clientFlow
+    val client = _clientFlow.asLiveData()
 
-    private val guid get() = clientGuid.value ?: ""
-    private val companyGuid get() = params.value?.companyGuid ?: ""
+    // Debt list as StateFlow
+    private val _debtListFlow: StateFlow<List<Debt>> = combine(
+        _clientGuid,
+        _params
+    ) { guid, params ->
+        Pair(guid, params.companyGuid)
+    }.flatMapLatest { (guid, companyGuid) ->
+        if (guid.isEmpty()) flowOf(emptyList())
+        else clientRepository.getDebts(guid, companyGuid)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+    val debtListFlow: StateFlow<List<Debt>> = _debtListFlow
+    val debtList = _debtListFlow.asLiveData()
 
-    val debtList = _client.switchMap { client ->
-        clientRepository.getDebts(guid, companyGuid).asLiveData()
-    }
+    // Client images as StateFlow
+    private val _clientImagesFlow: StateFlow<List<ClientImage>> = _clientGuid
+        .flatMapLatest { guid ->
+            if (guid.isEmpty()) flowOf(emptyList())
+            else filesRepository.getClientImages(guid)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    val clientImagesFlow: StateFlow<List<ClientImage>> = _clientImagesFlow
+    val clientImages = _clientImagesFlow.asLiveData()
 
-    val clientImages = _client.switchMap { client ->
-        filesRepository.getClientImages(client.guid).asLiveData()
-    }
+    val paramsFlow: StateFlow<SharedParameters> = _params.asStateFlow()
 
     fun setParameters(parameters: SharedParameters) {
-        params.value = parameters
+        _params.value = parameters
     }
 
     fun setDefaultImage(image: ClientImage) {
@@ -48,21 +92,7 @@ class ClientViewModel @Inject constructor(
         }
     }
 
-    private fun loadData() {
-        viewModelScope.launch {
-            clientRepository.getClient(guid, companyGuid).collect { clientInfo ->
-                _client.value = clientInfo
-            }
-        }
-    }
-
     fun setClientParameters(guid: String) {
-        clientGuid.value = guid
+        _clientGuid.value = guid
     }
-
-    init {
-        _client.addSource(clientGuid) { loadData() }
-        _client.addSource(params) { loadData() }
-    }
-
 }

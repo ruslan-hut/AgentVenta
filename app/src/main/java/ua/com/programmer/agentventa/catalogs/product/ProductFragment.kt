@@ -65,9 +65,9 @@ class ProductFragment: Fragment() {
             adapter.submitList(list)
         }
 
-        viewModel.product.observe(viewLifecycleOwner) {
-            binding.product = it
-            updateView(it)
+        viewModel.product.observe(viewLifecycleOwner) { product ->
+            binding.product = product
+            product?.let { updateView(it) }
         }
 
         binding.productImageView.setOnClickListener {
