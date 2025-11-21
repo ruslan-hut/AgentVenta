@@ -5,6 +5,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.scopes.ViewModelScoped
+import ua.com.programmer.agentventa.domain.usecase.cash.CreateCashUseCase
+import ua.com.programmer.agentventa.domain.usecase.cash.DeleteCashUseCase
+import ua.com.programmer.agentventa.domain.usecase.cash.EnableCashEditUseCase
+import ua.com.programmer.agentventa.domain.usecase.cash.SaveCashUseCase
+import ua.com.programmer.agentventa.domain.usecase.cash.ValidateCashUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.CopyOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.CreateOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.DeleteOrderUseCase
@@ -14,7 +19,14 @@ import ua.com.programmer.agentventa.domain.usecase.order.GetOrderWithContentUseC
 import ua.com.programmer.agentventa.domain.usecase.order.GetOrdersUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
+import ua.com.programmer.agentventa.domain.usecase.task.CreateTaskUseCase
+import ua.com.programmer.agentventa.domain.usecase.task.DeleteTaskUseCase
+import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
+import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
+import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
+import ua.com.programmer.agentventa.repository.CashRepository
 import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.repository.TaskRepository
 
 /**
  * Hilt module providing use cases.
@@ -76,4 +88,66 @@ object UseCaseModule {
     fun provideCopyOrderUseCase(
         orderRepository: OrderRepository
     ): CopyOrderUseCase = CopyOrderUseCase(orderRepository)
+
+    // Cash use cases
+
+    @Provides
+    @ViewModelScoped
+    fun provideValidateCashUseCase(): ValidateCashUseCase = ValidateCashUseCase()
+
+    @Provides
+    @ViewModelScoped
+    fun provideSaveCashUseCase(
+        cashRepository: CashRepository,
+        validateCashUseCase: ValidateCashUseCase
+    ): SaveCashUseCase = SaveCashUseCase(cashRepository, validateCashUseCase)
+
+    @Provides
+    @ViewModelScoped
+    fun provideCreateCashUseCase(
+        cashRepository: CashRepository
+    ): CreateCashUseCase = CreateCashUseCase(cashRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideDeleteCashUseCase(
+        cashRepository: CashRepository
+    ): DeleteCashUseCase = DeleteCashUseCase(cashRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideEnableCashEditUseCase(
+        cashRepository: CashRepository
+    ): EnableCashEditUseCase = EnableCashEditUseCase(cashRepository)
+
+    // Task use cases
+
+    @Provides
+    @ViewModelScoped
+    fun provideValidateTaskUseCase(): ValidateTaskUseCase = ValidateTaskUseCase()
+
+    @Provides
+    @ViewModelScoped
+    fun provideSaveTaskUseCase(
+        taskRepository: TaskRepository,
+        validateTaskUseCase: ValidateTaskUseCase
+    ): SaveTaskUseCase = SaveTaskUseCase(taskRepository, validateTaskUseCase)
+
+    @Provides
+    @ViewModelScoped
+    fun provideCreateTaskUseCase(
+        taskRepository: TaskRepository
+    ): CreateTaskUseCase = CreateTaskUseCase(taskRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideDeleteTaskUseCase(
+        taskRepository: TaskRepository
+    ): DeleteTaskUseCase = DeleteTaskUseCase(taskRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideMarkTaskDoneUseCase(
+        taskRepository: TaskRepository
+    ): MarkTaskDoneUseCase = MarkTaskDoneUseCase(taskRepository)
 }
