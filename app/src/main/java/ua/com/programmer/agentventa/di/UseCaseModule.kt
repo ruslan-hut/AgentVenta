@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.scopes.ViewModelScoped
+import ua.com.programmer.agentventa.domain.usecase.order.CopyOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.CreateOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.DeleteOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
@@ -69,4 +70,10 @@ object UseCaseModule {
     fun provideEnableOrderEditUseCase(
         orderRepository: OrderRepository
     ): EnableOrderEditUseCase = EnableOrderEditUseCase(orderRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideCopyOrderUseCase(
+        orderRepository: OrderRepository
+    ): CopyOrderUseCase = CopyOrderUseCase(orderRepository)
 }

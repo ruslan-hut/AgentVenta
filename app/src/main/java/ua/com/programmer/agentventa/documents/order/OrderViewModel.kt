@@ -23,6 +23,11 @@ import ua.com.programmer.agentventa.dao.entity.PaymentType
 import ua.com.programmer.agentventa.dao.entity.setClient
 import ua.com.programmer.agentventa.dao.entity.toUi
 import ua.com.programmer.agentventa.documents.common.DocumentViewModel
+import ua.com.programmer.agentventa.domain.result.DomainException
+import ua.com.programmer.agentventa.domain.result.Result
+import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
 import ua.com.programmer.agentventa.extensions.localFormatted
 import ua.com.programmer.agentventa.extensions.round
 import ua.com.programmer.agentventa.extensions.roundToInt
@@ -39,6 +44,9 @@ import javax.inject.Inject
 class OrderViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
+    private val validateOrderUseCase: ValidateOrderUseCase,
+    private val saveOrderUseCase: SaveOrderUseCase,
+    private val enableOrderEditUseCase: EnableOrderEditUseCase,
     logger: Logger
 ) : DocumentViewModel<Order>(
     repository = orderRepository,
@@ -89,7 +97,9 @@ class OrderViewModel @Inject constructor(
         document.copy(isProcessed = 1, timeSaved = System.currentTimeMillis() / 1000)
 
     override fun enableEdit() {
-        updateDocument(order.copy(isProcessed = 0, isSent = 0))
+        viewModelScope.launch {
+            enableOrderEditUseCase(order)
+        }
     }
 
     override fun isNotEditable(): Boolean = order.isProcessed > 0
@@ -224,6 +234,26 @@ class OrderViewModel @Inject constructor(
 
     fun canPrint() = order.isSent > 0 && order.guid.isNotEmpty()
 
+    /**
+     * Check if order is not ready to process using validation use case.
+     * Returns validation error message or null if valid.
+     */
+    suspend fun validateOrder(): String? {
+        return when (val result = validateOrderUseCase(order)) {
+            is Result.Success -> null
+            is Result.Error -> {
+                when (val ex = result.exception) {
+                    is DomainException.ValidationError -> ex.message
+                    else -> ex.message
+                }
+            }
+        }
+    }
+
+    /**
+     * Legacy method for backward compatibility.
+     * Prefer using validateOrder() for detailed error messages.
+     */
     fun notReadyToProcess(): Boolean {
         if (order.clientGuid.isNullOrEmpty()) return true
         if (order.isFiscal == 1) {
