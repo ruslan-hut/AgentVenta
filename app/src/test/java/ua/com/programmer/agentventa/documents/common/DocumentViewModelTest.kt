@@ -9,6 +9,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -26,6 +29,8 @@ import java.util.*
  *
  * Uses Order as the concrete document type for testing the abstract base class.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 @OptIn(ExperimentalCoroutinesApi::class)
 class DocumentViewModelTest {
 

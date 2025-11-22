@@ -8,6 +8,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -36,6 +39,8 @@ import java.util.Calendar
  * - Current account integration
  * - Edge cases and error handling
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class OrderListViewModelTest {
 
     @get:Rule

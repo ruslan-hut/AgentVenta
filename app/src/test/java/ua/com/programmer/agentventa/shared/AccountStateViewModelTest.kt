@@ -7,6 +7,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -35,6 +38,8 @@ import ua.com.programmer.agentventa.util.MainDispatcherRule
  * - Delegation methods (price type lookups, company/store finds)
  * - Reactive state updates
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class AccountStateViewModelTest {
 
     @get:Rule

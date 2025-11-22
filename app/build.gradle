@@ -71,6 +71,13 @@ android {
         viewBinding = true
     }
     namespace = 'ua.com.programmer.agentventa'
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -176,6 +183,9 @@ dependencies {
     testImplementation 'androidx.test:core-ktx:1.7.0'
     testImplementation 'androidx.test.ext:junit-ktx:1.3.0'
     testImplementation 'androidx.arch.core:core-testing:2.2.0'
+
+    // Robolectric for Android framework simulation in unit tests
+    testImplementation 'org.robolectric:robolectric:4.15.1'
 
     // Instrumented testing (androidTest)
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'

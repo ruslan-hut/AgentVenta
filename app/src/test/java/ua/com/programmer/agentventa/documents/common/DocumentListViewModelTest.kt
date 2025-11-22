@@ -10,6 +10,9 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import ua.com.programmer.agentventa.dao.entity.Order
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fake.FakeUserAccountRepository
@@ -24,6 +27,8 @@ import java.util.*
  *
  * Uses Order as the concrete document type for testing the generic DocumentListViewModel.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 @OptIn(ExperimentalCoroutinesApi::class)
 class DocumentListViewModelTest {
 

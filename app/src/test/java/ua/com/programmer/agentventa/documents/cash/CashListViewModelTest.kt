@@ -6,6 +6,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import ua.com.programmer.agentventa.fake.FakeCashRepository
 import ua.com.programmer.agentventa.fake.FakeUserAccountRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
@@ -24,6 +27,8 @@ import java.util.Calendar
  * - Current account integration
  * - Edge cases and error handling
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class CashListViewModelTest {
 
     @get:Rule

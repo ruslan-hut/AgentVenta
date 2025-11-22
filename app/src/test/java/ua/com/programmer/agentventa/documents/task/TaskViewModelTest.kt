@@ -8,7 +8,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import ua.com.programmer.agentventa.dao.entity.Task
 import ua.com.programmer.agentventa.shared.DocumentEvent
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
@@ -33,6 +36,8 @@ import java.util.UUID
  * - Save/delete operations
  * - Error handling and edge cases
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class TaskViewModelTest {
 
     @get:Rule

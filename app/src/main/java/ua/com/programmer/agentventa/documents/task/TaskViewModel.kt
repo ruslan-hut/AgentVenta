@@ -12,6 +12,7 @@ import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
 import ua.com.programmer.agentventa.logger.Logger
 import ua.com.programmer.agentventa.repository.TaskRepository
+import ua.com.programmer.agentventa.shared.DocumentEvent
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,7 +29,23 @@ class TaskViewModel @Inject constructor(
     emptyDocument = { Task(guid = "", time = 0L) }
 ) {
 
-    private val task get() = currentDocument
+    // In-memory editable task to avoid race conditions with StateFlow updates
+    private var _editableTask: Task? = null
+    private var _currentGuid: String = ""
+
+    private val task: Task
+        get() {
+            // If document GUID changed, reload from currentDocument
+            if (_currentGuid != _documentGuid.value) {
+                _currentGuid = _documentGuid.value
+                _editableTask = null
+            }
+            // Initialize editable task on first access
+            if (_editableTask == null) {
+                _editableTask = currentDocument
+            }
+            return _editableTask!!
+        }
 
     override fun getDocumentGuid(document: Task): String = document.guid
 
@@ -36,17 +53,20 @@ class TaskViewModel @Inject constructor(
 
     override fun enableEdit() {
         // Tasks don't have processed/sent flags
+        _editableTask = currentDocument
         updateDocument(task)
     }
 
     override fun isNotEditable(): Boolean = false
 
     override fun onEditNotes(notes: String) {
-        updateDocument(task.copy(notes = notes))
+        _editableTask = task.copy(notes = notes)
+        updateDocument(_editableTask!!)
     }
 
     fun onEditDescription(description: String) {
-        updateDocument(task.copy(description = description))
+        _editableTask = task.copy(description = description)
+        updateDocument(_editableTask!!)
     }
 
     fun onEditDone(isDone: Int) {
@@ -56,7 +76,21 @@ class TaskViewModel @Inject constructor(
     }
 
     fun saveDocument() {
-        updateDocumentWithResult(task)
+        viewModelScope.launch {
+            val taskToSave = task
+            when (val result = saveTaskUseCase(taskToSave)) {
+                is Result.Success -> {
+                    _events.send(DocumentEvent.SaveSuccess(taskToSave.guid))
+                }
+                is Result.Error -> {
+                    val message = when (val ex = result.exception) {
+                        is DomainException.ValidationError -> ex.message
+                        else -> ex.message
+                    }
+                    _events.send(DocumentEvent.SaveError(message))
+                }
+            }
+        }
     }
 
     /**

@@ -8,6 +8,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -30,6 +33,8 @@ import ua.com.programmer.agentventa.util.getOrAwaitValue
  * Note: This is a simple ViewModel that only loads product details
  * for image display purposes. It doesn't handle image CRUD operations.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28])
 class ProductImageViewModelTest {
 
     @get:Rule
