@@ -42,12 +42,20 @@ class ProductImageViewModelTest {
     private lateinit var viewModel: ProductImageViewModel
 
     // Mock flow
-    private lateinit var mockProductFlow: MutableStateFlow<LProduct?>
+    private lateinit var mockProductFlow: MutableStateFlow<LProduct>
 
     @Before
     fun setup() {
         // Initialize mock flow
-        mockProductFlow = MutableStateFlow(null)
+        // Default empty product for non-nullable flow
+        val defaultProduct = LProduct(
+            guid = "",
+            description = "",
+            code = "",
+            vendorCode = "",
+            isGroup = false
+        )
+        mockProductFlow = MutableStateFlow(defaultProduct)
 
         // Mock repository
         productRepository = mock {
@@ -67,14 +75,11 @@ class ProductImageViewModelTest {
     ) = LProduct(
         guid = guid,
         description = description,
-        barcode = "1234567890",
-        article = "ART001",
+        vendorCode = "VND001",
         price = 100.0,
         quantity = 50.0,
         rest = 100.0,
-        db_guid = TestFixtures.TEST_DB_GUID,
-        isGroup = 0,
-        parentGuid = "",
+        isGroup = false,
         code = "P001"
     )
 
@@ -83,10 +88,11 @@ class ProductImageViewModelTest {
     // ========================================
 
     @Test
-    fun `initial product is null`() = runTest {
+    fun `initial product is empty`() = runTest {
         // Assert
         val product = viewModel.product.value
-        assertThat(product).isNull()
+        assertThat(product?.guid).isEmpty()
+        assertThat(product?.description).isEmpty()
     }
 
     // ========================================
@@ -152,20 +158,21 @@ class ProductImageViewModelTest {
     }
 
     @Test
-    fun `product with null from repository updates to null`() = runTest {
+    fun `product with empty product from repository updates to empty`() = runTest {
         // Arrange: Start with a product
         val product = createTestProduct()
         viewModel.setProductParameters(product.guid)
         mockProductFlow.value = product
         advanceUntilIdle()
 
-        // Act: Repository returns null
-        mockProductFlow.value = null
+        // Act: Repository returns empty product
+        val emptyProduct = LProduct(guid = "", description = "", code = "", vendorCode = "", isGroup = false)
+        mockProductFlow.value = emptyProduct
         advanceUntilIdle()
 
         // Assert
         val loadedProduct = viewModel.product.value
-        assertThat(loadedProduct).isNull()
+        assertThat(loadedProduct?.guid).isEmpty()
     }
 
     // ========================================
@@ -178,15 +185,23 @@ class ProductImageViewModelTest {
         val fullProduct = LProduct(
             guid = "full-product",
             description = "Full Product Description",
-            barcode = "9876543210",
-            article = "ART-FULL-001",
+            vendorCode = "VND-FULL-001",
             price = 250.50,
             quantity = 75.0,
             rest = 200.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "parent-group",
-            code = "FULL001"
+            isGroup = false,
+            code = "FULL001",
+            unit = "pcs",
+            unitType = "piece",
+            groupName = "Electronics",
+            weight = 1.5,
+            priceType = "Retail",
+            basePrice = 200.0,
+            minPrice = 180.0,
+            packageValue = 10.0,
+            packageOnly = false,
+            indivisible = false,
+            isActive = true
         )
 
         mockProductFlow.value = fullProduct
@@ -199,27 +214,27 @@ class ProductImageViewModelTest {
         val product = viewModel.product.getOrAwaitValue()
         assertThat(product.guid).isEqualTo("full-product")
         assertThat(product.description).isEqualTo("Full Product Description")
-        assertThat(product.barcode).isEqualTo("9876543210")
-        assertThat(product.article).isEqualTo("ART-FULL-001")
+        assertThat(product.vendorCode).isEqualTo("VND-FULL-001")
         assertThat(product.price).isEqualTo(250.50)
         assertThat(product.quantity).isEqualTo(75.0)
         assertThat(product.rest).isEqualTo(200.0)
         assertThat(product.code).isEqualTo("FULL001")
+        assertThat(product.unit).isEqualTo("pcs")
     }
 
     @Test
-    fun `product with empty barcode loads correctly`() = runTest {
+    fun `product with empty vendorCode loads correctly`() = runTest {
         // Arrange
-        val productNoBarcode = createTestProduct().copy(barcode = "")
-        mockProductFlow.value = productNoBarcode
+        val productNoVendorCode = createTestProduct().copy(vendorCode = "")
+        mockProductFlow.value = productNoVendorCode
 
         // Act
-        viewModel.setProductParameters(productNoBarcode.guid)
+        viewModel.setProductParameters(productNoVendorCode.guid)
         advanceUntilIdle()
 
         // Assert
         val product = viewModel.product.getOrAwaitValue()
-        assertThat(product.barcode).isEmpty()
+        assertThat(product.vendorCode).isEmpty()
     }
 
     @Test
@@ -253,10 +268,10 @@ class ProductImageViewModelTest {
     }
 
     @Test
-    fun `product group (isGroup=1) loads correctly`() = runTest {
+    fun `product group (isGroup=true) loads correctly`() = runTest {
         // Arrange
         val productGroup = createTestProduct().copy(
-            isGroup = 1,
+            isGroup = true,
             description = "Product Category"
         )
         mockProductFlow.value = productGroup
@@ -267,7 +282,7 @@ class ProductImageViewModelTest {
 
         // Assert
         val product = viewModel.product.getOrAwaitValue()
-        assertThat(product.isGroup).isEqualTo(1)
+        assertThat(product.isGroup).isTrue()
         assertThat(product.description).isEqualTo("Product Category")
     }
 
@@ -409,18 +424,18 @@ class ProductImageViewModelTest {
     }
 
     @Test
-    fun `product with empty article loads correctly`() = runTest {
+    fun `product with empty unit loads correctly`() = runTest {
         // Arrange
-        val noArticle = createTestProduct().copy(article = "")
-        mockProductFlow.value = noArticle
+        val noUnit = createTestProduct().copy(unit = "")
+        mockProductFlow.value = noUnit
 
         // Act
-        viewModel.setProductParameters(noArticle.guid)
+        viewModel.setProductParameters(noUnit.guid)
         advanceUntilIdle()
 
         // Assert
         val product = viewModel.product.getOrAwaitValue()
-        assertThat(product.article).isEmpty()
+        assertThat(product.unit).isEmpty()
     }
 
     @Test
@@ -439,9 +454,9 @@ class ProductImageViewModelTest {
     }
 
     @Test
-    fun `product with parent GUID loads correctly`() = runTest {
+    fun `product with group name loads correctly`() = runTest {
         // Arrange
-        val childProduct = createTestProduct().copy(parentGuid = "parent-category")
+        val childProduct = createTestProduct().copy(groupName = "Parent Category")
         mockProductFlow.value = childProduct
 
         // Act
@@ -450,7 +465,7 @@ class ProductImageViewModelTest {
 
         // Assert
         val product = viewModel.product.getOrAwaitValue()
-        assertThat(product.parentGuid).isEqualTo("parent-category")
+        assertThat(product.groupName).isEqualTo("Parent Category")
     }
 
     @Test

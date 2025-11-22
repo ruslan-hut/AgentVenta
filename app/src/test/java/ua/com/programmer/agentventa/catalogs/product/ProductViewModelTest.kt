@@ -38,13 +38,21 @@ class ProductViewModelTest {
     private lateinit var viewModel: ProductViewModel
 
     // Mock flows
-    private lateinit var mockProductFlow: MutableStateFlow<LProduct?>
+    private lateinit var mockProductFlow: MutableStateFlow<LProduct>
     private lateinit var mockPriceListFlow: MutableStateFlow<List<LPrice>>
 
     @Before
     fun setup() {
         // Initialize mock flows
-        mockProductFlow = MutableStateFlow(null)
+        // Default empty product for non-nullable flow
+        val defaultProduct = LProduct(
+            guid = "",
+            description = "",
+            code = "",
+            vendorCode = "",
+            isGroup = false
+        )
+        mockProductFlow = MutableStateFlow(defaultProduct)
         mockPriceListFlow = MutableStateFlow(emptyList())
 
         // Mock repository
@@ -67,38 +75,35 @@ class ProductViewModelTest {
     ) = LProduct(
         guid = guid,
         description = description,
-        barcode = "1234567890",
-        article = "ART001",
+        vendorCode = "VND001",
         price = price,
         quantity = 50.0,
         rest = 100.0,
-        db_guid = TestFixtures.TEST_DB_GUID,
-        isGroup = 0,
-        parentGuid = "",
+        isGroup = false,
         code = "P001"
     )
 
     private fun createTestPrices() = listOf(
         LPrice(
-            productGuid = "product-1",
-            priceTypeGuid = "P1",
-            priceTypeDescription = "Retail",
+            priceType = "P1",
+            description = "Retail",
             price = 100.0,
-            db_guid = TestFixtures.TEST_DB_GUID
+            basePrice = 90.0,
+            isCurrent = true
         ),
         LPrice(
-            productGuid = "product-1",
-            priceTypeGuid = "P2",
-            priceTypeDescription = "Wholesale",
+            priceType = "P2",
+            description = "Wholesale",
             price = 80.0,
-            db_guid = TestFixtures.TEST_DB_GUID
+            basePrice = 70.0,
+            isCurrent = false
         ),
         LPrice(
-            productGuid = "product-1",
-            priceTypeGuid = "P3",
-            priceTypeDescription = "VIP",
+            priceType = "P3",
+            description = "VIP",
             price = 90.0,
-            db_guid = TestFixtures.TEST_DB_GUID
+            basePrice = 80.0,
+            isCurrent = false
         )
     )
 
@@ -107,9 +112,11 @@ class ProductViewModelTest {
     // ========================================
 
     @Test
-    fun `initial product is null`() = runTest {
+    fun `initial product is empty`() = runTest {
         viewModel.productFlow.test {
-            assertThat(awaitItem()).isNull()
+            val product = awaitItem()
+            assertThat(product?.guid).isEmpty()
+            assertThat(product?.description).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -236,9 +243,9 @@ class ProductViewModelTest {
         viewModel.priceListFlow.test {
             val loadedPrices = awaitItem()
             assertThat(loadedPrices).hasSize(3)
-            assertThat(loadedPrices[0].priceTypeDescription).isEqualTo("Retail")
-            assertThat(loadedPrices[1].priceTypeDescription).isEqualTo("Wholesale")
-            assertThat(loadedPrices[2].priceTypeDescription).isEqualTo("VIP")
+            assertThat(loadedPrices[0].description).isEqualTo("Retail")
+            assertThat(loadedPrices[1].description).isEqualTo("Wholesale")
+            assertThat(loadedPrices[2].description).isEqualTo("VIP")
             cancelAndIgnoreRemainingEvents()
         }
 
@@ -367,12 +374,12 @@ class ProductViewModelTest {
         viewModel.events.test {
             viewModel.onPriceSelected(prices[0])
             var event = awaitItem()
-            assertThat((event as ProductEvent.PriceSelected).price.priceTypeDescription)
+            assertThat((event as ProductEvent.PriceSelected).price.description)
                 .isEqualTo("Retail")
 
             viewModel.onPriceSelected(prices[1])
             event = awaitItem()
-            assertThat((event as ProductEvent.PriceSelected).price.priceTypeDescription)
+            assertThat((event as ProductEvent.PriceSelected).price.description)
                 .isEqualTo("Wholesale")
 
             cancelAndIgnoreRemainingEvents()
@@ -462,11 +469,11 @@ class ProductViewModelTest {
         // Arrange: 10 different prices
         val largePriceList = (1..10).map { index ->
             LPrice(
-                productGuid = "product-1",
-                priceTypeGuid = "P$index",
-                priceTypeDescription = "Price Type $index",
+                priceType = "P$index",
+                description = "Price Type $index",
                 price = index.toDouble() * 10,
-                db_guid = TestFixtures.TEST_DB_GUID
+                basePrice = index.toDouble() * 8,
+                isCurrent = index == 1
             )
         }
 
@@ -478,8 +485,8 @@ class ProductViewModelTest {
         viewModel.priceListFlow.test {
             val prices = awaitItem()
             assertThat(prices).hasSize(10)
-            assertThat(prices.first().priceTypeDescription).isEqualTo("Price Type 1")
-            assertThat(prices.last().priceTypeDescription).isEqualTo("Price Type 10")
+            assertThat(prices.first().description).isEqualTo("Price Type 1")
+            assertThat(prices.last().description).isEqualTo("Price Type 10")
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -490,15 +497,19 @@ class ProductViewModelTest {
         val fullProduct = LProduct(
             guid = "full-product",
             description = "Full Product Description",
-            barcode = "9876543210",
-            article = "ART-FULL-001",
+            vendorCode = "VND-FULL-001",
             price = 250.50,
             quantity = 75.0,
             rest = 200.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "parent-group",
-            code = "FULL001"
+            isGroup = false,
+            code = "FULL001",
+            unit = "pcs",
+            unitType = "piece",
+            groupName = "Electronics",
+            weight = 1.5,
+            priceType = "Retail",
+            basePrice = 200.0,
+            minPrice = 180.0
         )
 
         mockProductFlow.value = fullProduct
@@ -512,11 +523,11 @@ class ProductViewModelTest {
             val product = awaitItem()
             assertThat(product?.guid).isEqualTo("full-product")
             assertThat(product?.description).isEqualTo("Full Product Description")
-            assertThat(product?.barcode).isEqualTo("9876543210")
-            assertThat(product?.article).isEqualTo("ART-FULL-001")
+            assertThat(product?.vendorCode).isEqualTo("VND-FULL-001")
             assertThat(product?.price).isEqualTo(250.50)
             assertThat(product?.quantity).isEqualTo(75.0)
             assertThat(product?.rest).isEqualTo(200.0)
+            assertThat(product?.unit).isEqualTo("pcs")
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -561,11 +572,11 @@ class ProductViewModelTest {
     fun `price selection with zero price works`() = runTest {
         // Arrange
         val zeroPrice = LPrice(
-            productGuid = "product-1",
-            priceTypeGuid = "P1",
-            priceTypeDescription = "Free",
+            priceType = "P1",
+            description = "Free",
             price = 0.0,
-            db_guid = TestFixtures.TEST_DB_GUID
+            basePrice = 0.0,
+            isCurrent = true
         )
 
         // Act & Assert
@@ -583,11 +594,11 @@ class ProductViewModelTest {
     fun `price selection with negative price works`() = runTest {
         // Arrange
         val negativePrice = LPrice(
-            productGuid = "product-1",
-            priceTypeGuid = "P1",
-            priceTypeDescription = "Discount",
+            priceType = "P1",
+            description = "Discount",
             price = -10.0,
-            db_guid = TestFixtures.TEST_DB_GUID
+            basePrice = 0.0,
+            isCurrent = true
         )
 
         // Act & Assert
@@ -605,7 +616,7 @@ class ProductViewModelTest {
     fun `product group (isGroup=1) loads correctly`() = runTest {
         // Arrange
         val productGroup = createTestProduct().copy(
-            isGroup = 1,
+            isGroup = true,
             description = "Product Category"
         )
         mockProductFlow.value = productGroup

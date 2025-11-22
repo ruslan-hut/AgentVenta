@@ -46,13 +46,22 @@ class ProductListViewModelTest {
 
     // Mock flows
     private lateinit var mockProductsFlow: MutableStateFlow<List<LProduct>>
-    private lateinit var mockCurrentGroupFlow: MutableStateFlow<LProduct?>
+    private lateinit var mockCurrentGroupFlow: MutableStateFlow<LProduct>
 
     @Before
     fun setup() {
         // Initialize mock flows
         mockProductsFlow = MutableStateFlow(emptyList())
-        mockCurrentGroupFlow = MutableStateFlow(null)
+
+        // Default empty product for non-nullable flow
+        val defaultProduct = LProduct(
+            guid = "",
+            description = "",
+            code = "",
+            vendorCode = "",
+            isGroup = false
+        )
+        mockCurrentGroupFlow = MutableStateFlow(defaultProduct)
 
         // Mock repository
         productRepository = mock {
@@ -71,40 +80,31 @@ class ProductListViewModelTest {
         LProduct(
             guid = "product-1",
             description = "Laptop ABC",
-            barcode = "1111111111",
-            article = "LAP001",
+            vendorCode = "LAP001",
             price = 1000.0,
             quantity = 10.0,
             rest = 50.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
+            isGroup = false,
             code = "P001"
         ),
         LProduct(
             guid = "product-2",
             description = "Mouse XYZ",
-            barcode = "2222222222",
-            article = "MOU001",
+            vendorCode = "MOU001",
             price = 25.0,
             quantity = 100.0,
             rest = 200.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
+            isGroup = false,
             code = "P002"
         ),
         LProduct(
             guid = "product-3",
             description = "Keyboard ABC Pro",
-            barcode = "3333333333",
-            article = "KEY001",
+            vendorCode = "KEY001",
             price = 75.0,
             quantity = 50.0,
             rest = 100.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
+            isGroup = false,
             code = "P003"
         )
     )
@@ -113,28 +113,24 @@ class ProductListViewModelTest {
         LProduct(
             guid = "group-electronics",
             description = "Electronics",
-            barcode = "",
-            article = "",
+            vendorCode = "",
             price = 0.0,
             quantity = 0.0,
             rest = 0.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 1,
-            parentGuid = "",
-            code = "GRP001"
+            isGroup = true,
+            code = "GRP001",
+            groupName = ""
         ),
         LProduct(
             guid = "product-in-group",
             description = "Laptop in Electronics",
-            barcode = "4444444444",
-            article = "LAP002",
+            vendorCode = "LAP002",
             price = 1500.0,
             quantity = 5.0,
             rest = 10.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "group-electronics",
-            code = "P004"
+            isGroup = false,
+            code = "P004",
+            groupName = "Electronics"
         )
     )
 
@@ -379,13 +375,13 @@ class ProductListViewModelTest {
 
         // Act
         viewModel.setCurrentGroup("group-electronics")
-        mockProductsFlow.value = createGroupProducts().filter { it.parentGuid == "group-electronics" }
+        mockProductsFlow.value = createGroupProducts().filter { it.groupName == "Electronics" }
         advanceUntilIdle()
 
         // Assert
         val products = viewModel.products.getOrAwaitValue()
         assertThat(products).hasSize(1)
-        assertThat(products[0].parentGuid).isEqualTo("group-electronics")
+        assertThat(products[0].groupName).isEqualTo("Electronics")
     }
 
     @Test
@@ -529,7 +525,7 @@ class ProductListViewModelTest {
         // Assert
         val products = viewModel.products.getOrAwaitValue()
         assertThat(products).hasSize(1)
-        assertThat(products[0].parentGuid).isEqualTo("group-electronics")
+        assertThat(products[0].groupName).isEqualTo("Electronics")
         assertThat(products[0].description).contains("Laptop")
     }
 
@@ -576,14 +572,11 @@ class ProductListViewModelTest {
             LProduct(
                 guid = "product-$index",
                 description = "Product $index",
-                barcode = "${1000000000 + index}",
-                article = "ART$index",
+                vendorCode = "VND$index",
                 price = index.toDouble() * 10,
                 quantity = index.toDouble(),
                 rest = index.toDouble() * 2,
-                db_guid = TestFixtures.TEST_DB_GUID,
-                isGroup = 0,
-                parentGuid = "",
+                isGroup = false,
                 code = "P$index"
             )
         }
@@ -774,6 +767,6 @@ class ProductListViewModelTest {
         // Assert
         val products = viewModel.products.getOrAwaitValue()
         assertThat(products).hasSize(2)
-        assertThat(products.all { it.isGroup == 1 }).isTrue()
+        assertThat(products.all { it.isGroup }).isTrue()
     }
 }

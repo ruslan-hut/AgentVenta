@@ -46,13 +46,25 @@ class ClientListViewModelTest {
 
     // Mock flows
     private lateinit var mockClientsFlow: MutableStateFlow<List<LClient>>
-    private lateinit var mockCurrentGroupFlow: MutableStateFlow<LClient?>
+    private lateinit var mockCurrentGroupFlow: MutableStateFlow<LClient>
 
     @Before
     fun setup() {
         // Initialize mock flows
         mockClientsFlow = MutableStateFlow(emptyList())
-        mockCurrentGroupFlow = MutableStateFlow(null)
+
+        // Default empty client for non-nullable flow
+        val defaultClient = LClient(
+            guid = "",
+            description = "",
+            address = "",
+            phone = "",
+            debt = 0.0,
+            isGroup = false,
+            groupGuid = "",
+            code = ""
+        )
+        mockCurrentGroupFlow = MutableStateFlow(defaultClient)
 
         // Mock repository
         clientRepository = mock {
@@ -73,39 +85,30 @@ class ClientListViewModelTest {
             description = "ABC Store",
             address = "123 Main St",
             phone = "555-0001",
-            email = "abc@test.com",
             debt = 1000.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
-            code = "C001",
-            inn = "111111111"
+            isGroup = false,
+            groupGuid = "",
+            code = "C001"
         ),
         LClient(
             guid = "client-2",
             description = "XYZ Market",
             address = "456 Oak Ave",
             phone = "555-0002",
-            email = "xyz@test.com",
             debt = 500.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
-            code = "C002",
-            inn = "222222222"
+            isGroup = false,
+            groupGuid = "",
+            code = "C002"
         ),
         LClient(
             guid = "client-3",
             description = "ABC Wholesale",
             address = "789 Pine Rd",
             phone = "555-0003",
-            email = "wholesale@test.com",
             debt = 2000.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "",
-            code = "C003",
-            inn = "333333333"
+            isGroup = false,
+            groupGuid = "",
+            code = "C003"
         )
     )
 
@@ -115,26 +118,20 @@ class ClientListViewModelTest {
             description = "Retail Group",
             address = "",
             phone = "",
-            email = "",
             debt = 0.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 1,
-            parentGuid = "",
-            code = "G001",
-            inn = ""
+            isGroup = true,
+            groupGuid = "",
+            code = "G001"
         ),
         LClient(
             guid = "client-4",
             description = "Client in Group",
             address = "111 Group St",
             phone = "555-0004",
-            email = "group@test.com",
             debt = 300.0,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "group-1",
-            code = "C004",
-            inn = "444444444"
+            isGroup = false,
+            groupGuid = "group-1",
+            code = "C004"
         )
     )
 
@@ -370,13 +367,13 @@ class ClientListViewModelTest {
 
         // Act
         viewModel.setCurrentGroup("group-1")
-        mockClientsFlow.value = createGroupClients().filter { it.parentGuid == "group-1" }
+        mockClientsFlow.value = createGroupClients().filter { it.groupGuid == "group-1" }
         advanceUntilIdle()
 
         // Assert
         val clients = viewModel.clients.getOrAwaitValue()
         assertThat(clients).hasSize(1)
-        assertThat(clients[0].parentGuid).isEqualTo("group-1")
+        assertThat(clients[0].groupGuid).isEqualTo("group-1")
     }
 
     @Test
@@ -426,7 +423,7 @@ class ClientListViewModelTest {
         assertThat(currentGroup).isNotNull()
         assertThat(currentGroup?.guid).isEqualTo(group.guid)
         assertThat(currentGroup?.description).isEqualTo("Retail Group")
-        assertThat(currentGroup?.isGroup).isEqualTo(1)
+        assertThat(currentGroup?.isGroup).isTrue()
     }
 
     // ========================================
@@ -523,7 +520,7 @@ class ClientListViewModelTest {
         // Assert
         val clients = viewModel.clients.getOrAwaitValue()
         assertThat(clients).hasSize(1)
-        assertThat(clients[0].parentGuid).isEqualTo("group-1")
+        assertThat(clients[0].groupGuid).isEqualTo("group-1")
         assertThat(clients[0].description).contains("Client")
     }
 
@@ -588,13 +585,10 @@ class ClientListViewModelTest {
                 description = "Client $index",
                 address = "Address $index",
                 phone = "555-$index",
-                email = "client$index@test.com",
                 debt = index.toDouble() * 100,
-                db_guid = TestFixtures.TEST_DB_GUID,
-                isGroup = 0,
-                parentGuid = "",
-                code = "C$index",
-                inn = "$index"
+                isGroup = false,
+                groupGuid = "",
+                code = "C$index"
             )
         }
 

@@ -45,14 +45,25 @@ class ClientViewModelTest {
     private lateinit var viewModel: ClientViewModel
 
     // Mock flows
-    private lateinit var mockClientFlow: MutableStateFlow<LClient?>
+    private lateinit var mockClientFlow: MutableStateFlow<LClient>
     private lateinit var mockDebtsFlow: MutableStateFlow<List<Debt>>
     private lateinit var mockImagesFlow: MutableStateFlow<List<ClientImage>>
 
     @Before
     fun setup() {
         // Initialize mock flows
-        mockClientFlow = MutableStateFlow(null)
+        // Default empty client for non-nullable flow
+        val defaultClient = LClient(
+            guid = "",
+            description = "",
+            address = "",
+            phone = "",
+            debt = 0.0,
+            isGroup = false,
+            groupGuid = "",
+            code = ""
+        )
+        mockClientFlow = MutableStateFlow(defaultClient)
         mockDebtsFlow = MutableStateFlow(emptyList())
         mockImagesFlow = MutableStateFlow(emptyList())
 
@@ -81,33 +92,32 @@ class ClientViewModelTest {
         description = "Test Client $guid",
         address = "123 Main St",
         phone = "555-1234",
-        email = "client@test.com",
         debt = 1000.0,
-        db_guid = TestFixtures.TEST_DB_GUID,
-        isGroup = 0,
-        parentGuid = "",
-        code = "C001",
-        inn = "123456789"
+        isGroup = false,
+        groupGuid = "",
+        code = "C001"
     )
 
     private fun createTestDebts() = listOf(
         Debt(
-            documentGuid = "debt-1",
+            databaseId = TestFixtures.TEST_DB_GUID,
+            companyGuid = "company-1",
             clientGuid = "client-1",
+            docGuid = "debt-1",
+            docId = "DOC-001",
+            docType = "order",
             sum = 500.0,
-            date = "2025-01-15",
-            description = "Invoice 001",
-            db_guid = TestFixtures.TEST_DB_GUID,
-            companyGuid = "company-1"
+            timestamp = System.currentTimeMillis()
         ),
         Debt(
-            documentGuid = "debt-2",
+            databaseId = TestFixtures.TEST_DB_GUID,
+            companyGuid = "company-1",
             clientGuid = "client-1",
+            docGuid = "debt-2",
+            docId = "DOC-002",
+            docType = "order",
             sum = 500.0,
-            date = "2025-01-10",
-            description = "Invoice 002",
-            db_guid = TestFixtures.TEST_DB_GUID,
-            companyGuid = "company-1"
+            timestamp = System.currentTimeMillis()
         )
     )
 
@@ -141,9 +151,11 @@ class ClientViewModelTest {
     // ========================================
 
     @Test
-    fun `initial client is null`() = runTest {
+    fun `initial client is empty`() = runTest {
         viewModel.clientFlow.test {
-            assertThat(awaitItem()).isNull()
+            val client = awaitItem()
+            assertThat(client?.guid).isEmpty()
+            assertThat(client?.description).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -226,14 +238,15 @@ class ClientViewModelTest {
     }
 
     @Test
-    fun `setClientParameters with empty GUID keeps client null`() = runTest {
+    fun `setClientParameters with empty GUID keeps client empty`() = runTest {
         // Act
         viewModel.setClientParameters("")
         advanceUntilIdle()
 
         // Assert
         viewModel.clientFlow.test {
-            assertThat(awaitItem()).isNull()
+            val client = awaitItem()
+            assertThat(client?.guid).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -273,8 +286,8 @@ class ClientViewModelTest {
         viewModel.debtListFlow.test {
             val loadedDebts = awaitItem()
             assertThat(loadedDebts).hasSize(2)
-            assertThat(loadedDebts[0].description).isEqualTo("Invoice 001")
-            assertThat(loadedDebts[1].description).isEqualTo("Invoice 002")
+            assertThat(loadedDebts[0].docId).isEqualTo("DOC-001")
+            assertThat(loadedDebts[1].docId).isEqualTo("DOC-002")
             cancelAndIgnoreRemainingEvents()
         }
 
@@ -632,13 +645,14 @@ class ClientViewModelTest {
         // Arrange: 100 debts
         val largeDebtList = (1..100).map { index ->
             Debt(
-                documentGuid = "debt-$index",
+                databaseId = TestFixtures.TEST_DB_GUID,
+                companyGuid = "company-1",
                 clientGuid = "client-1",
+                docGuid = "debt-$index",
+                docId = "DOC-$index",
+                docType = "order",
                 sum = index.toDouble() * 10,
-                date = "2025-01-$index",
-                description = "Invoice $index",
-                db_guid = TestFixtures.TEST_DB_GUID,
-                companyGuid = "company-1"
+                timestamp = System.currentTimeMillis()
             )
         }
 
@@ -650,8 +664,8 @@ class ClientViewModelTest {
         viewModel.debtListFlow.test {
             val debts = awaitItem()
             assertThat(debts).hasSize(100)
-            assertThat(debts.first().description).isEqualTo("Invoice 1")
-            assertThat(debts.last().description).isEqualTo("Invoice 100")
+            assertThat(debts.first().docId).isEqualTo("DOC-1")
+            assertThat(debts.last().docId).isEqualTo("DOC-100")
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -681,13 +695,20 @@ class ClientViewModelTest {
             description = "Full Client Inc.",
             address = "123 Business Park, Suite 456",
             phone = "+1-555-123-4567",
-            email = "contact@fullclient.com",
             debt = 12345.67,
-            db_guid = TestFixtures.TEST_DB_GUID,
-            isGroup = 0,
-            parentGuid = "parent-group",
+            isGroup = false,
+            groupGuid = "parent-group",
             code = "FC001",
-            inn = "987654321"
+            notes = "Important client",
+            discount = 10.0,
+            bonus = 5.0,
+            priceType = "Retail",
+            isBanned = false,
+            banMessage = "",
+            groupName = "Parent Group",
+            isActive = true,
+            latitude = 50.4501,
+            longitude = 30.5234
         )
 
         mockClientFlow.value = fullClient
@@ -701,9 +722,9 @@ class ClientViewModelTest {
             assertThat(client?.description).isEqualTo("Full Client Inc.")
             assertThat(client?.address).isEqualTo("123 Business Park, Suite 456")
             assertThat(client?.phone).isEqualTo("+1-555-123-4567")
-            assertThat(client?.email).isEqualTo("contact@fullclient.com")
             assertThat(client?.debt).isEqualTo(12345.67)
-            assertThat(client?.inn).isEqualTo("987654321")
+            assertThat(client?.notes).isEqualTo("Important client")
+            assertThat(client?.discount).isEqualTo(10.0)
             cancelAndIgnoreRemainingEvents()
         }
     }

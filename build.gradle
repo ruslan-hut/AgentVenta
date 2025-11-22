@@ -20,7 +20,7 @@ plugins {
     id 'org.jetbrains.kotlin.android' version '2.2.21' apply false
     id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin' version '2.0.1' apply false
     id 'com.google.dagger.hilt.android' version "$hilt_version" apply false
-    id 'com.google.devtools.ksp' version '2.2.0-2.0.2' apply false
+    id 'com.google.devtools.ksp' version '2.2.21-2.0.4' apply false
 }
 
 tasks.register('clean', Delete) {

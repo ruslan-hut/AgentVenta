@@ -60,23 +60,15 @@ class CashListViewModelTest {
 
     @Test
     fun `initial totals visibility is true`() = runTest {
-        viewModel.totalsVisibleFlow.test {
-            assertThat(awaitItem()).isTrue()
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `initial loading state is false`() = runTest {
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isFalse()
+        viewModel.uiState.test {
+            assertThat(awaitItem().totalsVisible).isTrue()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `initial search text is empty`() = runTest {
-        viewModel.searchTextFlow.test {
+        viewModel.searchText.test {
             assertThat(awaitItem()).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
@@ -536,17 +528,17 @@ class CashListViewModelTest {
 
     @Test
     fun `setTotalsVisible toggles totals visibility`() = runTest {
-        viewModel.totalsVisibleFlow.test {
+        viewModel.uiState.test {
             // Initial: true
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             // Toggle off
             viewModel.setTotalsVisible(false)
-            assertThat(awaitItem()).isFalse()
+            assertThat(awaitItem().totalsVisible).isFalse()
 
             // Toggle on
             viewModel.setTotalsVisible(true)
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             cancelAndIgnoreRemainingEvents()
         }
