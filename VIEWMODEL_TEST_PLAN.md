@@ -177,7 +177,7 @@ This document outlines the comprehensive testing strategy for all ViewModels in 
 
 ---
 
-## Phase 4: Shared ViewModels (Priority: High)
+## Phase 4: Shared ViewModels (Priority: High) ✅ COMPLETED
 
 ### 4.1 SharedViewModel Tests ✅
 **File**: `SharedViewModelTest.kt` (850 lines, 57 test cases)
@@ -247,15 +247,45 @@ This document outlines the comprehensive testing strategy for all ViewModels in 
 - Mock AccountStateManager (with StateFlow delegates) ✅
 - Mock SyncManager (with StateFlow delegates) ✅
 
-### 4.2 AccountStateViewModel Tests
-**File**: `AccountStateViewModelTest.kt`
+### 4.2 AccountStateViewModel Tests ✅
+**File**: `AccountStateViewModelTest.kt` (650 lines, 34 test cases)
+
+**Complexity**: Medium (pure delegation to AccountStateManager)
 
 **Test Coverage**:
-- [ ] Current account state management
-- [ ] Account switching logic
-- [ ] Options loading
-- [ ] Price types loading
-- [ ] Payment types loading
+- ✅ **StateFlow Exposure** (16 tests)
+  - Current account StateFlow exposure and updates
+  - Options StateFlow exposure and updates
+  - Price types StateFlow exposure and updates
+  - Payment types StateFlow exposure and updates
+  - Companies StateFlow exposure and updates
+  - Stores StateFlow exposure and updates
+  - Default company StateFlow exposure and updates
+  - Default store StateFlow exposure and updates
+- ✅ **Delegation Methods** (7 tests)
+  - getPriceTypeCode delegation
+  - getPriceDescription delegation
+  - getPaymentType delegation
+  - findCompany delegation (success and null)
+  - findStore delegation (success and null)
+- ✅ **Reactive State Integration** (6 tests)
+  - All StateFlows reactive to manager changes
+  - Empty lists handling
+  - Default company/store with empty lists
+  - Multiple rapid state changes
+  - Delegation with empty/null responses
+  - Large lists performance (100 price types)
+- ✅ **Edge Cases** (5 tests)
+  - Account with all fields populated
+  - Empty lists across all catalog types
+  - Null returns from find methods
+  - Rapid sequential updates
+  - Large dataset handling
+
+**Dependencies**:
+- Mock AccountStateManager (with 8 StateFlows) ✅
+
+**Phase 4 Total**: 91 test cases, ~1,500 lines of test code
 
 ---
 
