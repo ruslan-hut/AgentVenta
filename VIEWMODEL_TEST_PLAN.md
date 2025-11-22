@@ -179,46 +179,73 @@ This document outlines the comprehensive testing strategy for all ViewModels in 
 
 ## Phase 4: Shared ViewModels (Priority: High)
 
-### 4.1 SharedViewModel Tests
-**File**: `SharedViewModelTest.kt`
+### 4.1 SharedViewModel Tests ✅
+**File**: `SharedViewModelTest.kt` (850 lines, 57 test cases)
 
 **Complexity**: Very High (many dependencies, complex state)
 
 **Test Coverage**:
-- [ ] **Account State**
-  - Current account flow updates
-  - Account switching
+- ✅ **Initial State** (7 tests)
+  - Account state initialization
+  - Barcode initialization
+  - Shared parameters defaults
+  - Sync state delegation
   - Options/PriceTypes/PaymentTypes access
-- [ ] **Barcode Handling**
+- ✅ **Barcode Handling** (5 tests)
   - Barcode emission and consumption
-  - Ignore barcode mode
-- [ ] **Shared Parameters**
-  - Document GUID tracking
+  - Blank/short barcode validation (minimum 10 chars)
+  - Multiple sequential reads
+  - Clear barcode functionality
+- ✅ **Shared Parameters** (11 tests)
+  - Document GUID tracking with company/store
   - Price type selection
   - Company/Store selection
-  - Filter text updates
-- [ ] **Image Loading**
-  - Client image loading
-  - Product image loading
-  - Authentication headers
-- [ ] **Action Callbacks**
+  - Sort/filter toggles (sortByName, restsOnly, clientProducts)
+  - Preferences integration
+- ✅ **Document Totals** (2 tests)
+  - Empty totals when no document set
+  - Totals calculation on document GUID set
+- ✅ **Action Callbacks** (3 tests)
   - Client selection callback
   - Product selection callback
-  - Company selection callback
-  - Store selection callback
-- [ ] **Sync State**
-  - Sync progress monitoring
-  - Error state handling
+  - Clear actions functionality
+- ✅ **Image Loading** (6 tests)
+  - Cache directory configuration
+  - Product image loading delegation
+  - Client image loading delegation
+  - File in cache access
+  - Delete file in cache
+  - Save client image with Base64 encoding
+- ✅ **Sync Delegation** (5 tests)
+  - Differential sync
+  - Full sync
+  - Print document
+  - Progress text updates
+  - Progress message access
+- ✅ **Company/Store Management** (5 tests)
+  - Get companies from AccountStateManager
+  - Get stores from AccountStateManager
+  - Price type code/description conversion
+  - Payment type retrieval
+- ✅ **Edge Cases** (13 tests)
+  - Multiple parameter updates
+  - Barcode length validation (exactly 10, 9 rejected)
+  - Empty company/store GUID handling
+  - Preferences loading on init
+  - Multiple clearBarcode calls
+  - Duplicate parameter values
+  - Long barcodes (100+ chars)
+  - Special characters in barcodes
 
 **Dependencies**:
-- FakeFilesRepository
-- Mock Logger
-- Mock ImageLoadingManager
-- FakeOrderRepository
-- FakeCommonRepository
-- Mock SharedPreferences
-- Mock AccountStateManager
-- Mock SyncManager
+- Mock FilesRepository ✅
+- Mock Logger ✅
+- Mock ImageLoadingManager ✅
+- FakeOrderRepository ✅
+- Mock CommonRepository ✅
+- Mock SharedPreferences ✅
+- Mock AccountStateManager (with StateFlow delegates) ✅
+- Mock SyncManager (with StateFlow delegates) ✅
 
 ### 4.2 AccountStateViewModel Tests
 **File**: `AccountStateViewModelTest.kt`
