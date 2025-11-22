@@ -61,23 +61,32 @@ class TaskViewModel @Inject constructor(
 
     override fun onEditNotes(notes: String) {
         _editableTask = task.copy(notes = notes)
-        updateDocument(_editableTask!!)
+        // Don't persist immediately - only update in-memory state
+        // Actual save happens in saveDocument()
     }
 
     fun onEditDescription(description: String) {
         _editableTask = task.copy(description = description)
-        updateDocument(_editableTask!!)
+        // Don't persist immediately - only update in-memory state
+        // Actual save happens in saveDocument()
     }
 
     fun onEditDone(isDone: Int) {
+        // Capture task reference before launching coroutine
+        val currentTask = task
         viewModelScope.launch {
-            markTaskDoneUseCase(MarkTaskDoneUseCase.Params(task, isDone == 1))
+            val result = markTaskDoneUseCase(MarkTaskDoneUseCase.Params(currentTask, isDone == 1))
+            // Reset editable task so next access reloads from repository
+            if (result is Result.Success) {
+                _editableTask = null
+            }
         }
     }
 
     fun saveDocument() {
+        // Capture task reference BEFORE launching coroutine to avoid getter issues
+        val taskToSave = task
         viewModelScope.launch {
-            val taskToSave = task
             when (val result = saveTaskUseCase(taskToSave)) {
                 is Result.Success -> {
                     _events.send(DocumentEvent.SaveSuccess(taskToSave.guid))

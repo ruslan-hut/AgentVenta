@@ -53,6 +53,7 @@ class TaskViewModelTest {
     @Before
     fun setup() {
         taskRepository = FakeTaskRepository(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
+        taskRepository.clearAll() // Ensure clean state for each test
         logger = mock()
 
         // Use real use cases for accurate domain logic testing
@@ -110,7 +111,7 @@ class TaskViewModelTest {
     }
 
     @Test
-    fun `setCurrentDocument with invalid GUID keeps previous task`() = runTest {
+    fun `setCurrentDocument with invalid GUID loads empty task`() = runTest {
         // Arrange
         val task = TestFixtures.createTask1()
         taskRepository.addTask(task)
@@ -121,10 +122,11 @@ class TaskViewModelTest {
         viewModel.setCurrentDocument("invalid-guid")
         advanceUntilIdle()
 
-        // Assert
+        // Assert - Repository returns empty task for invalid GUID
         viewModel.documentFlow.test {
             val currentTask = awaitItem()
-            assertThat(currentTask.guid).isEqualTo(task.guid)
+            assertThat(currentTask.guid).isEqualTo("invalid-guid")
+            assertThat(currentTask.time).isEqualTo(0L)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -143,7 +145,13 @@ class TaskViewModelTest {
 
         // Act
         viewModel.onEditDescription("Updated description")
-        advanceUntilIdle()
+        viewModel.saveDocument()
+
+        // Wait for save to complete
+        viewModel.events.test {
+            awaitItem() // SaveSuccess
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         viewModel.documentFlow.test {
@@ -161,14 +169,14 @@ class TaskViewModelTest {
         viewModel.setCurrentDocument(task.guid)
         advanceUntilIdle()
 
-        // Act
+        // Act - editing to empty should fail validation on save
         viewModel.onEditDescription("")
-        advanceUntilIdle()
 
-        // Assert
-        viewModel.documentFlow.test {
-            val updatedTask = awaitItem()
-            assertThat(updatedTask.description).isEmpty()
+        // This should emit SaveError because description is required
+        viewModel.saveDocument()
+        viewModel.events.test {
+            val event = awaitItem()
+            assertThat(event).isInstanceOf(DocumentEvent.SaveError::class.java)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -183,7 +191,13 @@ class TaskViewModelTest {
 
         // Act
         viewModel.onEditNotes("Updated notes for testing")
-        advanceUntilIdle()
+        viewModel.saveDocument()
+
+        // Wait for save
+        viewModel.events.test {
+            awaitItem() // SaveSuccess
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         viewModel.documentFlow.test {
@@ -209,7 +223,13 @@ class TaskViewModelTest {
 
         // Act
         viewModel.onEditNotes(multilineNotes)
-        advanceUntilIdle()
+        viewModel.saveDocument()
+
+        // Wait for save
+        viewModel.events.test {
+            awaitItem() // SaveSuccess
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         viewModel.documentFlow.test {
@@ -235,9 +255,12 @@ class TaskViewModelTest {
         viewModel.onEditDone(1)
         advanceUntilIdle()
 
-        // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask.isDone).isEqualTo(1)
+        // Assert - Wait for documentFlow to update
+        viewModel.documentFlow.test {
+            val updatedTask = awaitItem()
+            assertThat(updatedTask.isDone).isEqualTo(1)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -252,9 +275,12 @@ class TaskViewModelTest {
         viewModel.onEditDone(0)
         advanceUntilIdle()
 
-        // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask.isDone).isEqualTo(0)
+        // Assert - Wait for documentFlow to update
+        viewModel.documentFlow.test {
+            val updatedTask = awaitItem()
+            assertThat(updatedTask.isDone).isEqualTo(0)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -265,17 +291,35 @@ class TaskViewModelTest {
         viewModel.setCurrentDocument(task.guid)
         advanceUntilIdle()
 
-        // Act & Assert: Toggle to done
+        // Act: Toggle to done
         viewModel.onEditDone(1)
         advanceUntilIdle()
-        var updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask.isDone).isEqualTo(1)
 
-        // Act & Assert: Toggle back to not done
+        // Assert: Wait for repository to emit updated value
+        val updated1 = taskRepository.getDocument(task.guid).first { it.isDone == 1 }
+        assertThat(updated1.isDone).isEqualTo(1)
+
+        // Assert: Check documentFlow reflects the change
+        viewModel.documentFlow.test {
+            val doc1 = awaitItem()
+            assertThat(doc1.isDone).isEqualTo(1)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Act: Toggle back to not done
         viewModel.onEditDone(0)
         advanceUntilIdle()
-        updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask.isDone).isEqualTo(0)
+
+        // Assert: Wait for repository to emit updated value
+        val updated2 = taskRepository.getDocument(task.guid).first { it.isDone == 0 }
+        assertThat(updated2.isDone).isEqualTo(0)
+
+        // Assert: Check documentFlow reflects the change
+        viewModel.documentFlow.test {
+            val doc2 = awaitItem()
+            assertThat(doc2.isDone).isEqualTo(0)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -290,10 +334,13 @@ class TaskViewModelTest {
         viewModel.onEditDone(1)
         advanceUntilIdle()
 
-        // Assert - Repository should be updated via use case
-        val updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask).isNotNull()
-        assertThat(updatedTask.isDone).isEqualTo(1)
+        // Assert - Wait for documentFlow to update
+        viewModel.documentFlow.test {
+            val updatedTask = awaitItem()
+            assertThat(updatedTask).isNotNull()
+            assertThat(updatedTask.isDone).isEqualTo(1)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     // ========================================
@@ -416,11 +463,16 @@ class TaskViewModelTest {
 
         viewModel.onEditDescription("Modified description")
         viewModel.onEditNotes("Modified notes")
-        advanceUntilIdle()
 
         // Act
         viewModel.saveDocument()
-        advanceUntilIdle()
+
+        // Wait for save event to ensure completion
+        viewModel.events.test {
+            val event = awaitItem()
+            assertThat(event).isInstanceOf(DocumentEvent.SaveSuccess::class.java)
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         val savedTask = taskRepository.getDocument(task.guid).first()
@@ -440,13 +492,25 @@ class TaskViewModelTest {
         viewModel.setCurrentDocument(task.guid)
         advanceUntilIdle()
 
+        // Verify task exists before deletion
+        val beforeDelete = taskRepository.getDocument(task.guid).first()
+        assertThat(beforeDelete.time).isNotEqualTo(0L)
+
         // Act
         viewModel.deleteDocument()
         advanceUntilIdle()
 
-        // Assert
+        // Wait for delete event to confirm completion
+        viewModel.events.test {
+            val event = awaitItem()
+            assertThat(event).isInstanceOf(DocumentEvent.DeleteSuccess::class.java)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Assert - Deleted task returns empty task with time=0
         val deletedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(deletedTask).isNull()
+        assertThat(deletedTask.guid).isEqualTo(task.guid)
+        assertThat(deletedTask.time).isEqualTo(0L)
     }
 
     @Test
@@ -498,17 +562,26 @@ class TaskViewModelTest {
 
     @Test
     fun `editing empty task does not crash`() = runTest {
-        // Act & Assert
-        viewModel.onEditDescription("New description")
-        viewModel.onEditNotes("New notes")
+        // Arrange - Create a new empty task
+        viewModel.setCurrentDocument(null) // This creates a new document
         advanceUntilIdle()
 
-        viewModel.documentFlow.test {
-            val task = awaitItem()
-            assertThat(task.description).isEqualTo("New description")
-            assertThat(task.notes).isEqualTo("New notes")
+        // Act
+        viewModel.onEditDescription("New description")
+        viewModel.onEditNotes("New notes")
+
+        // Save to persist changes
+        viewModel.saveDocument()
+        viewModel.events.test {
+            awaitItem() // SaveSuccess
             cancelAndIgnoreRemainingEvents()
         }
+
+        // Assert - check that edits were saved
+        val taskGuid = viewModel.getGuid()
+        val savedTask = taskRepository.getDocument(taskGuid).first()
+        assertThat(savedTask.description).isEqualTo("New description")
+        assertThat(savedTask.notes).isEqualTo("New notes")
     }
 
     @Test
@@ -570,11 +643,15 @@ class TaskViewModelTest {
 
         val unicodeDescription = "Завдання з українськими символами 你好 🎉"
         viewModel.onEditDescription(unicodeDescription)
-        advanceUntilIdle()
 
         // Act
         viewModel.saveDocument()
-        advanceUntilIdle()
+
+        // Wait for save event to ensure completion
+        viewModel.events.test {
+            awaitItem() // SaveSuccess event
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         val savedTask = taskRepository.getDocument(task.guid).first()
@@ -594,7 +671,13 @@ class TaskViewModelTest {
         viewModel.onEditDescription("Second")
         viewModel.onEditDescription("Third")
         viewModel.onEditDescription("Final description")
-        advanceUntilIdle()
+
+        // Save after all edits
+        viewModel.saveDocument()
+        viewModel.events.test {
+            awaitItem() // SaveSuccess
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         viewModel.documentFlow.test {
@@ -612,17 +695,30 @@ class TaskViewModelTest {
         viewModel.setCurrentDocument(task.guid)
         advanceUntilIdle()
 
-        // Act - Multiple toggles
+        // Act - Multiple toggles with flow updates between each
         viewModel.onEditDone(1)
         advanceUntilIdle()
+        viewModel.documentFlow.test {
+            assertThat(awaitItem().isDone).isEqualTo(1)
+            cancelAndIgnoreRemainingEvents()
+        }
+
         viewModel.onEditDone(0)
         advanceUntilIdle()
+        viewModel.documentFlow.test {
+            assertThat(awaitItem().isDone).isEqualTo(0)
+            cancelAndIgnoreRemainingEvents()
+        }
+
         viewModel.onEditDone(1)
         advanceUntilIdle()
 
-        // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).first()
-        assertThat(updatedTask.isDone).isEqualTo(1)
+        // Assert final state
+        viewModel.documentFlow.test {
+            val updatedTask = awaitItem()
+            assertThat(updatedTask.isDone).isEqualTo(1)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
 }

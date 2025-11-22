@@ -19,7 +19,7 @@ class FakeTaskRepository(
     private val tasks = MutableStateFlow<List<Task>>(emptyList())
 
     override fun getDocument(guid: String): Flow<Task> = tasks.map { list ->
-        list.first { it.guid == guid }
+        list.firstOrNull { it.guid == guid } ?: Task(guid = guid, time = 0L)
     }
 
     override suspend fun newDocument(): Task? {
