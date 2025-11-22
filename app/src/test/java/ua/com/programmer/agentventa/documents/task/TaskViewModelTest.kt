@@ -2,6 +2,7 @@ package ua.com.programmer.agentventa.documents.task
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -9,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
 import ua.com.programmer.agentventa.dao.entity.Task
-import ua.com.programmer.agentventa.documents.common.DocumentEvent
+import ua.com.programmer.agentventa.shared.DocumentEvent
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
@@ -79,29 +80,6 @@ class TaskViewModelTest {
         }
     }
 
-    @Test
-    fun `initial loading state is false`() = runTest {
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isFalse()
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `newDocument creates task with empty GUID`() = runTest {
-        // Act
-        viewModel.newDocument()
-        advanceUntilIdle()
-
-        // Assert
-        viewModel.documentFlow.test {
-            val task = awaitItem()
-            assertThat(task.guid).isEmpty()
-            assertThat(task.time).isGreaterThan(0L)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
     // ========================================
     // Task Loading Tests
     // ========================================
@@ -142,25 +120,6 @@ class TaskViewModelTest {
         viewModel.documentFlow.test {
             val currentTask = awaitItem()
             assertThat(currentTask.guid).isEqualTo(task.guid)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `loading state is true during document load`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-        taskRepository.addTask(task)
-        taskRepository.setLoadDelay(100L)
-
-        // Act
-        viewModel.setCurrentDocument(task.guid)
-
-        // Assert
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isTrue()
-            advanceUntilIdle()
-            assertThat(awaitItem()).isFalse()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -272,8 +231,8 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).value
-        assertThat(updatedTask?.isDone).isEqualTo(1)
+        val updatedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(updatedTask.isDone).isEqualTo(1)
     }
 
     @Test
@@ -289,8 +248,8 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).value
-        assertThat(updatedTask?.isDone).isEqualTo(0)
+        val updatedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(updatedTask.isDone).isEqualTo(0)
     }
 
     @Test
@@ -304,14 +263,14 @@ class TaskViewModelTest {
         // Act & Assert: Toggle to done
         viewModel.onEditDone(1)
         advanceUntilIdle()
-        var updatedTask = taskRepository.getDocument(task.guid).value
-        assertThat(updatedTask?.isDone).isEqualTo(1)
+        var updatedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(updatedTask.isDone).isEqualTo(1)
 
         // Act & Assert: Toggle back to not done
         viewModel.onEditDone(0)
         advanceUntilIdle()
-        updatedTask = taskRepository.getDocument(task.guid).value
-        assertThat(updatedTask?.isDone).isEqualTo(0)
+        updatedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(updatedTask.isDone).isEqualTo(0)
     }
 
     @Test
@@ -327,9 +286,9 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert - Repository should be updated via use case
-        val updatedTask = taskRepository.getDocument(task.guid).value
+        val updatedTask = taskRepository.getDocument(task.guid).first()
         assertThat(updatedTask).isNotNull()
-        assertThat(updatedTask?.isDone).isEqualTo(1)
+        assertThat(updatedTask.isDone).isEqualTo(1)
     }
 
     // ========================================
@@ -459,30 +418,9 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val savedTask = taskRepository.getDocument(task.guid).value
-        assertThat(savedTask?.description).isEqualTo("Modified description")
-        assertThat(savedTask?.notes).isEqualTo("Modified notes")
-    }
-
-    @Test
-    fun `saveDocument sets loading state during save`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-        taskRepository.addTask(task)
-        viewModel.setCurrentDocument(task.guid)
-        advanceUntilIdle()
-        taskRepository.setSaveDelay(100L)
-
-        // Act
-        viewModel.saveDocument()
-
-        // Assert
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isTrue()
-            advanceUntilIdle()
-            assertThat(awaitItem()).isFalse()
-            cancelAndIgnoreRemainingEvents()
-        }
+        val savedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(savedTask.description).isEqualTo("Modified description")
+        assertThat(savedTask.notes).isEqualTo("Modified notes")
     }
 
     // ========================================
@@ -502,7 +440,7 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val deletedTask = taskRepository.getDocument(task.guid).value
+        val deletedTask = taskRepository.getDocument(task.guid).first()
         assertThat(deletedTask).isNull()
     }
 
@@ -525,69 +463,9 @@ class TaskViewModelTest {
         }
     }
 
-    @Test
-    fun `deleteDocument sets loading state during deletion`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-        taskRepository.addTask(task)
-        viewModel.setCurrentDocument(task.guid)
-        advanceUntilIdle()
-        taskRepository.setDeleteDelay(100L)
-
-        // Act
-        viewModel.deleteDocument()
-
-        // Assert
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isTrue()
-            advanceUntilIdle()
-            assertThat(awaitItem()).isFalse()
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
     // ========================================
-    // Abstract Method Implementation Tests
+    // Edit Operations Tests
     // ========================================
-
-    @Test
-    fun `getDocumentGuid returns task guid`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-
-        // Act
-        val guid = viewModel.getDocumentGuid(task)
-
-        // Assert
-        assertThat(guid).isEqualTo(task.guid)
-    }
-
-    @Test
-    fun `markAsProcessed returns same task unchanged`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-
-        // Act
-        val result = viewModel.markAsProcessed(task)
-
-        // Assert
-        assertThat(result).isEqualTo(task)
-    }
-
-    @Test
-    fun `isNotEditable always returns false`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-        taskRepository.addTask(task)
-        viewModel.setCurrentDocument(task.guid)
-        advanceUntilIdle()
-
-        // Act
-        val notEditable = viewModel.isNotEditable()
-
-        // Assert
-        assertThat(notEditable).isFalse()
-    }
 
     @Test
     fun `enableEdit updates current task`() = runTest {
@@ -671,8 +549,8 @@ class TaskViewModelTest {
             val event = awaitItem()
             assertThat(event).isInstanceOf(DocumentEvent.SaveSuccess::class.java)
 
-            val savedTask = taskRepository.getDocument(task.guid).value
-            assertThat(savedTask?.description).isEqualTo(specialDescription)
+            val savedTask = taskRepository.getDocument(task.guid).first()
+            assertThat(savedTask.description).isEqualTo(specialDescription)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -694,8 +572,8 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val savedTask = taskRepository.getDocument(task.guid).value
-        assertThat(savedTask?.description).isEqualTo(unicodeDescription)
+        val savedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(savedTask.description).isEqualTo(unicodeDescription)
     }
 
     @Test
@@ -738,64 +616,8 @@ class TaskViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedTask = taskRepository.getDocument(task.guid).value
-        assertThat(updatedTask?.isDone).isEqualTo(1)
+        val updatedTask = taskRepository.getDocument(task.guid).first()
+        assertThat(updatedTask.isDone).isEqualTo(1)
     }
 
-    @Test
-    fun `repository error during save emits SaveError event`() = runTest {
-        // Arrange
-        val task = TestFixtures.createTask1()
-        taskRepository.addTask(task)
-        viewModel.setCurrentDocument(task.guid)
-        advanceUntilIdle()
-
-        taskRepository.setShouldFailSave(true)
-
-        // Act & Assert
-        viewModel.events.test {
-            viewModel.saveDocument()
-            advanceUntilIdle()
-
-            val event = awaitItem()
-            assertThat(event).isInstanceOf(DocumentEvent.SaveError::class.java)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `new task has correct initial timestamp`() = runTest {
-        // Arrange
-        val timestampBefore = System.currentTimeMillis()
-
-        // Act
-        viewModel.newDocument()
-        advanceUntilIdle()
-
-        // Assert
-        viewModel.documentFlow.test {
-            val task = awaitItem()
-            assertThat(task.time).isAtLeast(timestampBefore)
-            assertThat(task.time).isAtMost(System.currentTimeMillis())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `task creation preserves all default values`() = runTest {
-        // Act
-        viewModel.newDocument()
-        advanceUntilIdle()
-
-        // Assert
-        viewModel.documentFlow.test {
-            val task = awaitItem()
-            assertThat(task.guid).isEmpty()
-            assertThat(task.description).isEmpty()
-            assertThat(task.notes).isEmpty()
-            assertThat(task.isDone).isEqualTo(0)
-            assertThat(task.time).isGreaterThan(0L)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
 }

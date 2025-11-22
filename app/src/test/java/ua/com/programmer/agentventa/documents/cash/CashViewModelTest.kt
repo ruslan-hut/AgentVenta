@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.documents.cash
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -156,7 +157,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.sum).isEqualTo(2500.50)
     }
 
@@ -173,7 +174,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.sum).isEqualTo(0.0)
     }
 
@@ -190,7 +191,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.sum).isEqualTo(0.0)
     }
 
@@ -207,7 +208,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.sum).isEqualTo(1234.56)
     }
 
@@ -226,7 +227,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.isFiscal).isEqualTo(1)
     }
 
@@ -243,7 +244,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.isFiscal).isEqualTo(0)
     }
 
@@ -267,7 +268,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.clientGuid).isEqualTo(client.guid)
         assertThat(updatedCash.client).isEqualTo(client.description)
         assertThat(popUpCalled).isTrue()
@@ -312,7 +313,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.notes).isEqualTo("Updated notes for testing")
         assertThat(updatedCash.isProcessed).isEqualTo(0)
         assertThat(updatedCash.isSent).isEqualTo(0)
@@ -337,7 +338,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val savedCash = cashRepository.getDocument(cash.guid).value
+        val savedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(savedCash.isProcessed).isEqualTo(1)
     }
 
@@ -357,7 +358,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val savedCash = cashRepository.getDocument(cash.guid).value
+        val savedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(savedCash.sum).isEqualTo(2500.75)
     }
 
@@ -567,7 +568,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val editableCash = cashRepository.getDocument(cash.guid).value
+        val editableCash = cashRepository.getDocument(cash.guid).first()
         assertThat(editableCash.isProcessed).isEqualTo(0)
         assertThat(editableCash.isSent).isEqualTo(0)
     }
@@ -633,7 +634,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val processedCash = cashRepository.getDocument(cash.guid).value
+        val processedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(processedCash.isProcessed).isEqualTo(1)
     }
 
@@ -685,7 +686,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert - should have final value
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.sum).isEqualTo(300.50)
     }
 
@@ -705,7 +706,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.companyGuid).isEqualTo(company.guid)
         assertThat(updatedCash.company).isEqualTo(company.description)
     }
@@ -723,7 +724,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val updatedCash = cashRepository.getDocument(cash.guid).value
+        val updatedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(updatedCash.notes).isEmpty()
     }
 
@@ -744,7 +745,7 @@ class CashViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        val savedCash = cashRepository.getDocument(cash.guid).value
+        val savedCash = cashRepository.getDocument(cash.guid).first()
         assertThat(savedCash.isFiscal).isEqualTo(1)
     }
 }

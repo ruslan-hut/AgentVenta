@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.widget.ImageView
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -11,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -96,7 +98,7 @@ class SharedViewModelTest {
         }
 
         // Initialize state flows for managers
-        mockOptions = MutableStateFlow(UserOptions())
+        mockOptions = MutableStateFlow(UserOptions(isEmpty = true))
         mockPriceTypes = MutableStateFlow(createTestPriceTypes())
         mockPaymentTypes = MutableStateFlow(createTestPaymentTypes())
         mockCompanies = MutableStateFlow(createTestCompanies())
@@ -128,7 +130,7 @@ class SharedViewModelTest {
             on { updateState } doReturn mockUpdateState
             on { isRefreshing } doReturn mockIsRefreshing
             on { progressMessage } doReturn mockProgressMessage
-            on { syncEvents } doReturn MutableStateFlow(null)
+            on { syncEvents } doReturn MutableStateFlow<SyncEvent?>(null) as Flow<SyncEvent>
         }
 
         viewModel = SharedViewModel(
@@ -148,23 +150,23 @@ class SharedViewModelTest {
     // ========================================
 
     private fun createTestPriceTypes() = listOf(
-        PriceType(guid = "P1", description = "Retail Price", code = "P1", db_guid = "test"),
-        PriceType(guid = "P2", description = "Wholesale Price", code = "P2", db_guid = "test")
+        PriceType(priceType = "P1", description = "Retail Price", databaseId = "test"),
+        PriceType(priceType = "P2", description = "Wholesale Price", databaseId = "test")
     )
 
     private fun createTestPaymentTypes() = listOf(
-        PaymentType(guid = "PAY1", description = "Cash", code = "CASH", db_guid = "test"),
-        PaymentType(guid = "PAY2", description = "Card", code = "CARD", db_guid = "test")
+        PaymentType(paymentType = "PAY1", description = "Cash", databaseId = "test"),
+        PaymentType(paymentType = "PAY2", description = "Card", databaseId = "test")
     )
 
     private fun createTestCompanies() = listOf(
-        Company(guid = "C1", description = "Company 1", code = "C1", db_guid = "test", isDefault = 1),
-        Company(guid = "C2", description = "Company 2", code = "C2", db_guid = "test", isDefault = 0)
+        Company(guid = "C1", description = "Company 1", databaseId = "test", isDefault = 1),
+        Company(guid = "C2", description = "Company 2", databaseId = "test", isDefault = 0)
     )
 
     private fun createTestStores() = listOf(
-        Store(guid = "S1", description = "Store 1", code = "S1", db_guid = "test", isDefault = 1),
-        Store(guid = "S2", description = "Store 2", code = "S2", db_guid = "test", isDefault = 0)
+        Store(guid = "S1", description = "Store 1", databaseId = "test", isDefault = 1),
+        Store(guid = "S2", description = "Store 2", databaseId = "test", isDefault = 0)
     )
 
     // ========================================
@@ -536,7 +538,7 @@ class SharedViewModelTest {
         val order = TestFixtures.createOrder1()
         orderRepository.addOrder(order)
         orderRepository.addOrderContent(order.guid, listOf(
-            TestFixtures.createOrderContent1(order.guid).copy(price = 100.0, quantity = 5.0)
+            TestFixtures.createOrderContent1Line1().copy(orderGuid = order.guid, price = 100.0, quantity = 5.0)
         ))
 
         // Act: Set document GUID
@@ -555,7 +557,7 @@ class SharedViewModelTest {
     @Test
     fun `selectClientAction can be set and called`() = runTest {
         // Arrange
-        val client = TestFixtures.createClient1()
+        val client = TestFixtures.createLClient1()
         var actionCalled = false
         var popUpCalled = false
 
@@ -577,7 +579,7 @@ class SharedViewModelTest {
     @Test
     fun `selectProductAction can be set and called`() = runTest {
         // Arrange
-        val product = TestFixtures.createProduct1()
+        val product = TestFixtures.createLProduct1()
         var actionCalled = false
         var popUpCalled = false
 
@@ -617,8 +619,8 @@ class SharedViewModelTest {
         // Assert: Callbacks reset (calling should do nothing)
         var clientCalled = false
         var productCalled = false
-        viewModel.selectClientAction(TestFixtures.createClient1()) { clientCalled = true }
-        viewModel.selectProductAction(TestFixtures.createProduct1()) { productCalled = true }
+        viewModel.selectClientAction(TestFixtures.createLClient1()) { clientCalled = true }
+        viewModel.selectProductAction(TestFixtures.createLProduct1()) { productCalled = true }
 
         assertThat(clientCalled).isFalse()
         assertThat(productCalled).isFalse()
@@ -644,7 +646,7 @@ class SharedViewModelTest {
     @Test
     fun `loadImage delegates to image loading manager`() {
         // Arrange
-        val product = TestFixtures.createProduct1()
+        val product = TestFixtures.createLProduct1()
         val imageView: ImageView = mock()
         val rotation = 90
 

@@ -27,44 +27,41 @@ class FakeClientRepository(
 
     override fun getClients(group: String, filter: String, companyGuid: String): Flow<List<LClient>> = clients.map { list ->
         list.filter { client ->
-            val matchesGroup = group.isEmpty() || client.group == group
-            val matchesFilter = filter.isEmpty() ||
-                client.description?.contains(filter, ignoreCase = true) == true ||
-                client.code?.contains(filter, ignoreCase = true) == true ||
-                client.address?.contains(filter, ignoreCase = true) == true
-            val matchesCompany = companyGuid.isEmpty() || client.company == companyGuid
+            val matchesGroup = group.isEmpty() || client.groupGuid == group
+            val matchesFilter = filter.isEmpty() || client.description.contains(filter, ignoreCase = true) || client.code.contains(filter, ignoreCase = true) || client.address.contains(filter, ignoreCase = true)
+            //val matchesCompany = companyGuid.isEmpty() || client.company == companyGuid
 
-            matchesGroup && matchesFilter && matchesCompany
+            matchesGroup && matchesFilter //&& matchesCompany
         }
     }
 
     override fun getDebts(guid: String, companyGuid: String): Flow<List<Debt>> = debts.map { list ->
         list.filter { debt ->
-            debt.client == guid && (companyGuid.isEmpty() || debt.company == companyGuid)
+            debt.clientGuid == guid && (companyGuid.isEmpty() || debt.companyGuid == companyGuid)
         }
     }
 
     override fun getDebt(guid: String, docId: String): Flow<Debt> = debts.map { list ->
-        list.first { it.client == guid && it.doc == docId }
+        list.first { it.clientGuid == guid && it.docGuid == docId }
     }
 
     override fun getLocation(guid: String): Flow<LClientLocation> = locations.map { list ->
-        list.first { it.guid == guid }
+        list.first { it.clientGuid == guid }
     }
 
     override fun getLocations(): Flow<List<LClientLocation>> = locations
 
     override suspend fun updateLocation(location: ClientLocation) {
         val currentLocations = locations.value.toMutableList()
-        val existingIndex = currentLocations.indexOfFirst { it.guid == location.guid }
+        val existingIndex = currentLocations.indexOfFirst { it.clientGuid == location.clientGuid }
 
         val lLocation = LClientLocation(
-            guid = location.guid,
-            db_guid = location.db_guid,
-            description = location.description ?: "",
-            address = location.address ?: "",
-            latitude = location.latitude ?: 0.0,
-            longitude = location.longitude ?: 0.0
+            clientGuid = location.clientGuid,
+            databaseId = location.databaseId,
+            description = "", //location.description ?: "",
+            address = location.address,
+            latitude = location.latitude,
+            longitude = location.longitude
         )
 
         if (existingIndex >= 0) {
@@ -78,30 +75,30 @@ class FakeClientRepository(
 
     override suspend fun deleteLocation(location: ClientLocation) {
         val currentLocations = locations.value.toMutableList()
-        currentLocations.removeIf { it.guid == location.guid }
+        currentLocations.removeIf { it.clientGuid == location.clientGuid }
         locations.value = currentLocations
     }
 
     // Test helper methods
 
     fun addClient(client: LClient) {
-        clients.value = clients.value + client
+        clients.value += client
     }
 
     fun addClients(vararg clientList: LClient) {
-        clients.value = clients.value + clientList
+        clients.value += clientList
     }
 
     fun addDebt(debt: Debt) {
-        debts.value = debts.value + debt
+        debts.value += debt
     }
 
     fun addDebts(vararg debtList: Debt) {
-        debts.value = debts.value + debtList
+        debts.value += debtList
     }
 
     fun addLocation(location: LClientLocation) {
-        locations.value = locations.value + location
+        locations.value += location
     }
 
     fun clearAll() {

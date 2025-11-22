@@ -1,7 +1,6 @@
 package ua.com.programmer.agentventa.fixtures
 
 import ua.com.programmer.agentventa.dao.entity.*
-import ua.com.programmer.agentventa.documents.DocumentTotals
 import java.util.*
 
 /**

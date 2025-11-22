@@ -258,11 +258,11 @@ suspend fun <T> Flow<T>.collectUntil(
  * }
  * ```
  */
-suspend fun testFlows(block: suspend TestScope.() -> Unit) {
-    turbineScope {
-        block()
-    }
-}
+//suspend fun testFlows(block: suspend TestScope.() -> Unit) {
+//    turbineScope {
+//        block()
+//    }
+//}
 
 /**
  * Asserts that a StateFlow has the expected value.
@@ -370,10 +370,10 @@ suspend fun <T> Flow<T>.assertHasEmission(timeout: Duration = 2.seconds): T {
  * val currentValue = stateFlow.latestValue()
  * ```
  */
-suspend fun <T> Flow<T>.latestValue(timeout: Duration = 1.seconds): T {
-    return test(timeout = timeout) {
-        awaitItem().also {
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-}
+//suspend fun <T> Flow<T>.latestValue(timeout: Duration = 1.seconds): T {
+//    return test(timeout = timeout) {
+//        awaitItem().also {
+//            cancelAndIgnoreRemainingEvents()
+//        }
+//    }
+//}

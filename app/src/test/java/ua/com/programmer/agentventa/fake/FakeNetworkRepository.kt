@@ -4,7 +4,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import ua.com.programmer.agentventa.repository.NetworkRepository
-import ua.com.programmer.agentventa.utility.Result
+import ua.com.programmer.agentventa.http.Result
 import java.io.File
 
 /**

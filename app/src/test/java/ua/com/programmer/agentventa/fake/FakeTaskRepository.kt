@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.entity.Task
-import ua.com.programmer.agentventa.documents.DocumentTotals
+import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.repository.TaskRepository
 import java.util.*
 
@@ -22,26 +22,27 @@ class FakeTaskRepository(
         list.first { it.guid == guid }
     }
 
-    override suspend fun newDocument(): Task {
+    override suspend fun newDocument(): Task? {
+        val now = Date()
         return Task(
             guid = UUID.randomUUID().toString(),
-            db_guid = currentAccountGuid,
-            date = Date(),
-            time = Date(),
-            isSent = 0,
-            isProcessed = 0,
+            databaseId = currentAccountGuid,
+            date = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
+            time = now.time,
             isDone = 0
         )
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Task>> = tasks.map { list ->
         list.filter { task ->
-            val matchesFilter = filter.isEmpty() ||
-                task.client?.contains(filter, ignoreCase = true) == true ||
-                task.description?.contains(filter, ignoreCase = true) == true ||
-                task.number?.contains(filter, ignoreCase = true) == true
+            val matchesFilter = filter.isEmpty() || task.notes.contains(filter, ignoreCase = true) || task.description.contains(filter, ignoreCase = true)
 
-            val matchesDate = listDate == null || isSameDay(task.date, listDate)
+            val matchesDate = listDate == null || try {
+                val taskDate = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(task.date)
+                taskDate != null && isSameDay(taskDate, listDate)
+            } catch (e: Exception) {
+                false
+            }
 
             matchesFilter && matchesDate
         }

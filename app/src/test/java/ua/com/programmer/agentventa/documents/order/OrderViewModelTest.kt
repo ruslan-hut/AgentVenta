@@ -198,16 +198,11 @@ class OrderViewModelTest {
     fun `adding product to order creates content line`() = runTest {
         // Arrange
         val order = TestFixtures.createOrder1()
-        val product = FakeProductRepository.createTestProduct(
+        val product = TestFixtures.createLProduct1().copy(
             guid = "test-prod",
-            price = 100.0
-        ).let { prod ->
-            productRepository.createLProduct1().copy(
-                guid = prod.guid,
-                price = 100.0,
-                quantity = 5.0
-            )
-        }
+            price = 100.0,
+            quantity = 5.0
+        )
 
         orderRepository.addOrder(order)
         viewModel.setCurrentDocument(order.guid)
@@ -231,7 +226,7 @@ class OrderViewModelTest {
     fun `updating product quantity updates order totals`() = runTest {
         // Arrange
         val order = TestFixtures.createOrder1()
-        val product = productRepository.createLProduct1().copy(quantity = 10.0)
+        val product = TestFixtures.createLProduct1().copy(quantity = 10.0)
 
         orderRepository.addOrder(order)
         viewModel.setCurrentDocument(order.guid)
@@ -697,7 +692,7 @@ class OrderViewModelTest {
     fun `adding product to processed order does not modify content`() = runTest {
         // Arrange
         val order = TestFixtures.createOrder3Sent() // Processed
-        val product = productRepository.createLProduct1()
+        val product = TestFixtures.createLProduct1()
 
         orderRepository.addOrder(order)
         viewModel.setCurrentDocument(order.guid)

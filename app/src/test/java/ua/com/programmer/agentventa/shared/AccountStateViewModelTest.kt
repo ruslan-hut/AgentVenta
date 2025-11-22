@@ -93,42 +93,43 @@ class AccountStateViewModelTest {
         guid = TestFixtures.TEST_ACCOUNT_GUID,
         isCurrent = 1,
         description = "Test Account",
-        databaseName = "test_db",
-        serverAddress = "http://test.server",
-        username = "testuser",
-        password = "testpass",
+        dbName = "test_db",
+        dbServer = "http://test.server",
+        dbUser = "testuser",
+        dbPassword = "testpass",
         options = ""
     )
 
     private fun createTestOptions() = UserOptions(
         loadImages = true,
-        useLocation = true,
-        showCompanies = true,
-        showStores = true
+        locations = true,
+        useCompanies = true,
+        useStores = true,
+        isEmpty = false,
     )
 
     private fun createTestPriceTypes() = listOf(
-        PriceType(guid = "P1", description = "Retail Price", code = "P1", db_guid = "test"),
-        PriceType(guid = "P2", description = "Wholesale Price", code = "P2", db_guid = "test"),
-        PriceType(guid = "P3", description = "VIP Price", code = "P3", db_guid = "test")
+        PriceType(priceType = "P1", description = "Retail Price", databaseId = "test"),
+        PriceType(priceType = "P2", description = "Wholesale Price", databaseId = "test"),
+        PriceType(priceType = "P3", description = "VIP Price", databaseId = "test")
     )
 
     private fun createTestPaymentTypes() = listOf(
-        PaymentType(guid = "PAY1", description = "Cash", code = "CASH", db_guid = "test"),
-        PaymentType(guid = "PAY2", description = "Card", code = "CARD", db_guid = "test"),
-        PaymentType(guid = "PAY3", description = "Transfer", code = "TRANSFER", db_guid = "test")
+        PaymentType(paymentType = "PAY1", description = "Cash", databaseId = "test"),
+        PaymentType(paymentType = "PAY2", description = "Card", databaseId = "test"),
+        PaymentType(paymentType = "PAY3", description = "Transfer", databaseId = "test")
     )
 
     private fun createTestCompanies() = listOf(
-        Company(guid = "C1", description = "Company 1", code = "C1", db_guid = "test", isDefault = 1),
-        Company(guid = "C2", description = "Company 2", code = "C2", db_guid = "test", isDefault = 0),
-        Company(guid = "C3", description = "Company 3", code = "C3", db_guid = "test", isDefault = 0)
+        Company(guid = "C1", description = "Company 1", databaseId = "test", isDefault = 1),
+        Company(guid = "C2", description = "Company 2", databaseId = "test", isDefault = 0),
+        Company(guid = "C3", description = "Company 3", databaseId = "test", isDefault = 0)
     )
 
     private fun createTestStores() = listOf(
-        Store(guid = "S1", description = "Store 1", code = "S1", db_guid = "test", isDefault = 1),
-        Store(guid = "S2", description = "Store 2", code = "S2", db_guid = "test", isDefault = 0),
-        Store(guid = "S3", description = "Store 3", code = "S3", db_guid = "test", isDefault = 0)
+        Store(guid = "S1", description = "Store 1", databaseId = "test", isDefault = 1),
+        Store(guid = "S2", description = "Store 2", databaseId = "test", isDefault = 0),
+        Store(guid = "S3", description = "Store 3", databaseId = "test", isDefault = 0)
     )
 
     // ========================================
@@ -174,9 +175,9 @@ class AccountStateViewModelTest {
         viewModel.options.test {
             val options = awaitItem()
             assertThat(options.loadImages).isTrue()
-            assertThat(options.useLocation).isTrue()
-            assertThat(options.showCompanies).isTrue()
-            assertThat(options.showStores).isTrue()
+            assertThat(options.locations).isTrue()
+            assertThat(options.useCompanies).isTrue()
+            assertThat(options.useStores).isTrue()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -191,15 +192,16 @@ class AccountStateViewModelTest {
             // Update options
             mockOptions.value = UserOptions(
                 loadImages = false,
-                useLocation = false,
-                showCompanies = false,
-                showStores = false
+                locations = false,
+                useCompanies = false,
+                useStores = false,
+                isEmpty = false
             )
 
             // Should receive updated options
             options = awaitItem()
             assertThat(options.loadImages).isFalse()
-            assertThat(options.useLocation).isFalse()
+            assertThat(options.locations).isFalse()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -226,7 +228,7 @@ class AccountStateViewModelTest {
 
             // Update price types (e.g., different account with different prices)
             val newPriceTypes = listOf(
-                PriceType(guid = "P10", description = "Special Price", code = "SP", db_guid = "test")
+                PriceType(priceType = "P10", description = "Special Price", databaseId = "test")
             )
             mockPriceTypes.value = newPriceTypes
 
@@ -260,7 +262,7 @@ class AccountStateViewModelTest {
 
             // Update payment types
             val newPaymentTypes = listOf(
-                PaymentType(guid = "PAY10", description = "Bitcoin", code = "BTC", db_guid = "test")
+                PaymentType(paymentType = "PAY10", description = "Bitcoin", databaseId = "test")
             )
             mockPaymentTypes.value = newPaymentTypes
 
@@ -294,7 +296,7 @@ class AccountStateViewModelTest {
 
             // Update companies
             val newCompanies = listOf(
-                Company(guid = "C10", description = "New Company", code = "NC", db_guid = "test", isDefault = 1)
+                Company(guid = "C10", description = "New Company", databaseId = "test", isDefault = 1)
             )
             mockCompanies.value = newCompanies
 
@@ -328,7 +330,7 @@ class AccountStateViewModelTest {
 
             // Update stores
             val newStores = listOf(
-                Store(guid = "S10", description = "New Store", code = "NS", db_guid = "test", isDefault = 1)
+                Store(guid = "S10", description = "New Store", databaseId = "test", isDefault = 1)
             )
             mockStores.value = newStores
 
@@ -434,7 +436,7 @@ class AccountStateViewModelTest {
 
         // Assert
         assertThat(paymentType.description).isEqualTo("Cash")
-        assertThat(paymentType.code).isEqualTo("CASH")
+        assertThat(paymentType.paymentType).isEqualTo("CASH")
         verify(accountStateManager).getPaymentType("Cash")
     }
 
@@ -615,10 +617,9 @@ class AccountStateViewModelTest {
         // Arrange: 100 price types
         val largePriceTypeList = (1..100).map { index ->
             PriceType(
-                guid = "P$index",
+                priceType = "P$index",
                 description = "Price Type $index",
-                code = "PT$index",
-                db_guid = "test"
+                databaseId = "test"
             )
         }
         mockPriceTypes.value = largePriceTypeList
@@ -640,10 +641,10 @@ class AccountStateViewModelTest {
             guid = "full-account",
             isCurrent = 1,
             description = "Full Account",
-            databaseName = "production_db",
-            serverAddress = "https://production.server.com",
-            username = "admin",
-            password = "securepass",
+            dbName = "production_db",
+            dbServer = "https://production.server.com",
+            dbUser = "admin",
+            dbPassword = "securepass",
             options = """{"loadImages": true, "useLocation": true}"""
         )
         mockCurrentAccount.value = fullAccount
@@ -653,9 +654,9 @@ class AccountStateViewModelTest {
             val account = awaitItem()
             assertThat(account.guid).isEqualTo("full-account")
             assertThat(account.description).isEqualTo("Full Account")
-            assertThat(account.databaseName).isEqualTo("production_db")
-            assertThat(account.serverAddress).isEqualTo("https://production.server.com")
-            assertThat(account.username).isEqualTo("admin")
+            assertThat(account.dbName).isEqualTo("production_db")
+            assertThat(account.dbServer).isEqualTo("https://production.server.com")
+            assertThat(account.dbUser).isEqualTo("admin")
             assertThat(account.options).contains("loadImages")
             cancelAndIgnoreRemainingEvents()
         }

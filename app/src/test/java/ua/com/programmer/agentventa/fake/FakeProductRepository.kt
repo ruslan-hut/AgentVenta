@@ -26,7 +26,7 @@ class FakeProductRepository(
     override fun getProduct(guid: String, orderGuid: String, priceType: String): Flow<LProduct> = products.map { list ->
         list.first { it.guid == guid }.let { product ->
             // Apply price type to the product
-            val price = prices.value[guid]?.firstOrNull { it.type == priceType }
+            val price = prices.value[guid]?.firstOrNull { it.priceType == priceType }
             product.copy(
                 price = price?.price ?: product.price,
                 priceType = priceType
@@ -36,15 +36,8 @@ class FakeProductRepository(
 
     override fun getProducts(parameters: SharedParameters): Flow<List<LProduct>> = products.map { list ->
         list.filter { product ->
-            val matchesGroup = parameters.groupGuid.isEmpty() || product.group == parameters.groupGuid
-            val matchesFilter = parameters.filter.isEmpty() ||
-                product.description?.contains(parameters.filter, ignoreCase = true) == true ||
-                product.code?.contains(parameters.filter, ignoreCase = true) == true
-            val matchesStore = parameters.storeGuid.isEmpty() || product.store == parameters.storeGuid
-            val matchesCompany = parameters.companyGuid.isEmpty() || product.company == parameters.companyGuid
-            val matchesRest = !parameters.restsOnly || (product.rest ?: 0.0) > 0.0
-
-            matchesGroup && matchesFilter && matchesStore && matchesCompany && matchesRest
+            val matchesFilter = parameters.filter.isEmpty() || product.description.contains(parameters.filter, ignoreCase = true) || product.code.contains(parameters.filter, ignoreCase = true)
+            matchesFilter
         }.let { filtered ->
             if (parameters.sortByName) {
                 filtered.sortedBy { it.description }
@@ -57,17 +50,17 @@ class FakeProductRepository(
     override fun fetchProductPrices(guid: String, currentPriceType: String): Flow<List<LPrice>> {
         return prices.map { priceMap ->
             priceMap[guid]?.map { price ->
-                price.copy(isCurrent = price.type == currentPriceType)
+                price.copy(isCurrent = price.priceType == currentPriceType)
             } ?: emptyList()
         }
     }
 
     override suspend fun getProductByBarcode(barcode: String, orderGuid: String, priceType: String): LProduct? {
         return products.value.firstOrNull { product ->
-            product.barcode == barcode || product.barcode2 == barcode || product.barcode3 == barcode
+            product.code == barcode
         }?.let { product ->
             // Apply price type to the product
-            val price = prices.value[product.guid]?.firstOrNull { it.type == priceType }
+            val price = prices.value[product.guid]?.firstOrNull { it.priceType == priceType }
             product.copy(
                 price = price?.price ?: product.price,
                 priceType = priceType
@@ -78,11 +71,11 @@ class FakeProductRepository(
     // Test helper methods
 
     fun addProduct(product: LProduct) {
-        products.value = products.value + product
+        products.value += product
     }
 
     fun addProducts(vararg productList: LProduct) {
-        products.value = products.value + productList
+        products.value += productList
     }
 
     fun addProductPrices(productGuid: String, priceList: List<LPrice>) {
@@ -110,17 +103,16 @@ class FakeProductRepository(
         ): LProduct {
             return LProduct(
                 guid = guid,
-                db_guid = FakeUserAccountRepository.TEST_ACCOUNT_GUID,
-                code = code,
+                //databaseId = FakeUserAccountRepository.TEST_ACCOUNT_GUID,
+                code = barcode,
                 description = description,
                 unit = "шт",
                 price = price,
                 rest = rest,
-                barcode = barcode,
-                group = "",
-                isGroup = 0,
+                //barcode = barcode,
+                //group = "",
+                isGroup = false,
                 weight = 0.0,
-                volume = 0.0
             )
         }
     }

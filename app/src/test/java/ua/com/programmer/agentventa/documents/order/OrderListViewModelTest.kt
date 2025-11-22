@@ -76,23 +76,15 @@ class OrderListViewModelTest {
 
     @Test
     fun `initial totals visibility is true`() = runTest {
-        viewModel.totalsVisibleFlow.test {
-            assertThat(awaitItem()).isTrue()
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `initial loading state is false`() = runTest {
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isFalse()
+        viewModel.uiState.test {
+            assertThat(awaitItem().totalsVisible).isTrue()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `initial search text is empty`() = runTest {
-        viewModel.searchTextFlow.test {
+        viewModel.searchText.test {
             assertThat(awaitItem()).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
@@ -129,7 +121,7 @@ class OrderListViewModelTest {
         val order1 = TestFixtures.createOrder1()
         val order2 = TestFixtures.createOrder1().copy(
             guid = "different-order",
-            db_guid = "different-account"
+            databaseId = "different-account"
         )
         orderRepository.addOrder(order1)
         orderRepository.addOrder(order2)
@@ -138,7 +130,7 @@ class OrderListViewModelTest {
         viewModel.documentsFlow.test {
             val orders = awaitItem()
             assertThat(orders).hasSize(1)
-            assertThat(orders[0].db_guid).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
+            assertThat(orders[0].databaseId).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -277,108 +269,34 @@ class OrderListViewModelTest {
     // ========================================
 
     @Test
-    fun `setDateFrom filters orders by start date`() = runTest {
+    fun `setDate filters orders by date`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
         calendar.set(2025, Calendar.JANUARY, 15)
-        val dateFrom = calendar.time
+        val targetDate = calendar.time
 
-        val oldOrder = TestFixtures.createOrder1().copy(
-            guid = "old-order",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
+        val matchingOrder = TestFixtures.createOrder1().copy(
+            guid = "matching-order",
+            date = "2025-01-15"
         )
-        val newOrder = TestFixtures.createOrder1().copy(
-            guid = "new-order",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+        val differentOrder = TestFixtures.createOrder1().copy(
+            guid = "different-order",
+            date = "2025-01-20"
         )
 
-        orderRepository.addOrder(oldOrder)
-        orderRepository.addOrder(newOrder)
+        orderRepository.addOrder(matchingOrder)
+        orderRepository.addOrder(differentOrder)
 
         viewModel.documentsFlow.test {
             assertThat(awaitItem()).hasSize(2)
 
-            // Act: filter from Jan 15
-            viewModel.setDateFrom(dateFrom)
+            // Act: filter by Jan 15
+            viewModel.setDate(targetDate)
 
-            // Assert: only new order
+            // Assert: only matching order
             val filtered = awaitItem()
             assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(newOrder.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateTo filters orders by end date`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
-        calendar.set(2025, Calendar.JANUARY, 15)
-        val dateTo = calendar.time
-
-        val oldOrder = TestFixtures.createOrder1().copy(
-            guid = "old-order",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-        )
-        val newOrder = TestFixtures.createOrder1().copy(
-            guid = "new-order",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-        )
-
-        orderRepository.addOrder(oldOrder)
-        orderRepository.addOrder(newOrder)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(2)
-
-            // Act: filter to Jan 15
-            viewModel.setDateTo(dateTo)
-
-            // Assert: only old order
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(oldOrder.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateFrom and setDateTo filters orders by date range`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
-
-        val order1 = TestFixtures.createOrder1().copy(
-            guid = "order-jan-5",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 5) }.time
-        )
-        val order2 = TestFixtures.createOrder1().copy(
-            guid = "order-jan-15",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-        )
-        val order3 = TestFixtures.createOrder1().copy(
-            guid = "order-jan-25",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 25) }.time
-        )
-
-        orderRepository.addOrder(order1)
-        orderRepository.addOrder(order2)
-        orderRepository.addOrder(order3)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(3)
-
-            // Act: filter Jan 10 - Jan 20
-            val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-            val dateTo = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-            viewModel.setDateFrom(dateFrom)
-            viewModel.setDateTo(dateTo)
-
-            // Assert: only middle order
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(order2.guid)
+            assertThat(filtered[0].guid).isEqualTo(matchingOrder.guid)
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -388,15 +306,15 @@ class OrderListViewModelTest {
     fun `clearDateFilter removes date filtering`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
-        val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
+        val targetDate = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
 
         val order1 = TestFixtures.createOrder1().copy(
             guid = "order-1",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
+            date = "2025-01-15"
         )
         val order2 = TestFixtures.createOrder1().copy(
             guid = "order-2",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            date = "2025-01-20"
         )
 
         orderRepository.addOrder(order1)
@@ -406,11 +324,11 @@ class OrderListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Apply filter
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(targetDate)
             assertThat(awaitItem()).hasSize(1)
 
             // Clear filter
-            viewModel.clearDateFilter()
+            viewModel.setDate(null)
             assertThat(awaitItem()).hasSize(2)
 
             cancelAndIgnoreRemainingEvents()
@@ -437,20 +355,22 @@ class OrderListViewModelTest {
         orderRepository.addOrder(order2)
 
         // Act & Assert
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
-            assertThat(totals.price).isEqualTo(1500.0) // 1000 + 500
-            assertThat(totals.quantity).isEqualTo(15.0) // 10 + 5
+            val totalSum = totals.sumOf { it.sum }
+            val totalQuantity = totals.sumOf { it.quantity }
+            assertThat(totalSum).isEqualTo(1500.0) // 1000 + 500
+            assertThat(totalQuantity).isEqualTo(15.0) // 10 + 5
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `documentTotalsFlow updates when orders change`() = runTest {
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial: zero totals
             var totals = awaitItem()
-            assertThat(totals.price).isEqualTo(0.0)
+            assertThat(totals).isEmpty()
 
             // Add order
             val order = TestFixtures.createOrder1().copy(price = 1000.0, quantity = 10.0)
@@ -458,8 +378,10 @@ class OrderListViewModelTest {
 
             // Updated totals
             totals = awaitItem()
-            assertThat(totals.price).isEqualTo(1000.0)
-            assertThat(totals.quantity).isEqualTo(10.0)
+            val totalSum = totals.sumOf { it.sum }
+            val totalQuantity = totals.sumOf { it.quantity }
+            assertThat(totalSum).isEqualTo(1000.0)
+            assertThat(totalQuantity).isEqualTo(10.0)
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -472,30 +394,32 @@ class OrderListViewModelTest {
 
         val order1 = TestFixtures.createOrder1().copy(
             guid = "order-old",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time,
+            date = "2025-01-10",
             price = 1000.0
         )
         val order2 = TestFixtures.createOrder1().copy(
             guid = "order-new",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time,
+            date = "2025-01-20",
             price = 500.0
         )
 
         orderRepository.addOrder(order1)
         orderRepository.addOrder(order2)
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial: both orders
             var totals = awaitItem()
-            assertThat(totals.price).isEqualTo(1500.0)
+            var totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1500.0)
 
             // Filter from Jan 15
             val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
 
             // Only new order counted
             totals = awaitItem()
-            assertThat(totals.price).isEqualTo(500.0)
+            totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(500.0)
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -503,17 +427,17 @@ class OrderListViewModelTest {
 
     @Test
     fun `setTotalsVisible toggles totals visibility`() = runTest {
-        viewModel.totalsVisibleFlow.test {
+        viewModel.uiState.test {
             // Initial: true
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             // Toggle off
             viewModel.setTotalsVisible(false)
-            assertThat(awaitItem()).isFalse()
+            assertThat(awaitItem().totalsVisible).isFalse()
 
             // Toggle on
             viewModel.setTotalsVisible(true)
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -595,17 +519,17 @@ class OrderListViewModelTest {
         val order1 = TestFixtures.createOrder1().copy(
             guid = "abc-old",
             clientDescription = "ABC Store",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
+            date = "2025-01-10"
         )
         val order2 = TestFixtures.createOrder1().copy(
             guid = "abc-new",
             clientDescription = "ABC Market",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            date = "2025-01-20"
         )
         val order3 = TestFixtures.createOrder1().copy(
             guid = "xyz-new",
             clientDescription = "XYZ Store",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            date = "2025-01-20"
         )
 
         orderRepository.addOrder(order1)
@@ -621,7 +545,7 @@ class OrderListViewModelTest {
 
             // Also filter by date
             val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
 
             // Only ABC new order
             val filtered = awaitItem()
@@ -718,7 +642,7 @@ class OrderListViewModelTest {
             assertThat(awaitItem()).hasSize(1)
 
             // Switch account
-            userAccountRepository.switchAccount("different-account")
+            userAccountRepository.setIsCurrent("different-account")
 
             // Should show empty list for new account
             assertThat(awaitItem()).isEmpty()
@@ -729,10 +653,9 @@ class OrderListViewModelTest {
 
     @Test
     fun `totals are zero for empty list`() = runTest {
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
-            assertThat(totals.price).isEqualTo(0.0)
-            assertThat(totals.quantity).isEqualTo(0.0)
+            assertThat(totals).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -756,9 +679,10 @@ class OrderListViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
-            assertThat(totals.quantity).isEqualTo(100.0)
+            val totalQuantity = totals.sumOf { it.quantity }
+            assertThat(totalQuantity).isEqualTo(100.0)
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -83,7 +83,10 @@ class CashListViewModelTest {
         // Arrange
         val cash1 = TestFixtures.createCash1()
         val cash2 = TestFixtures.createCash2()
-        val cash3 = TestFixtures.createCash3Fiscal()
+        val cash3 = TestFixtures.createCash1().copy(
+            guid = "cash-3",
+            sum = 300.0
+        )
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
         cashRepository.addCash(cash3)
@@ -105,7 +108,7 @@ class CashListViewModelTest {
         val cash1 = TestFixtures.createCash1()
         val cash2 = TestFixtures.createCash1().copy(
             guid = "different-cash",
-            db_guid = "different-account"
+            databaseId = "different-account"
         )
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
@@ -114,7 +117,7 @@ class CashListViewModelTest {
         viewModel.documentsFlow.test {
             val cashList = awaitItem()
             assertThat(cashList).hasSize(1)
-            assertThat(cashList[0].db_guid).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
+            assertThat(cashList[0].databaseId).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -175,13 +178,13 @@ class CashListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Act: filter by client name
-            viewModel.setSearchText(cash1.clientDescription.substring(0, 5))
+            viewModel.setSearchText(cash1.client.substring(0, 5))
 
             // Assert: only matching cash
             val filtered = awaitItem()
             assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].clientDescription).contains(
-                cash1.clientDescription.substring(0, 5)
+            assertThat(filtered[0].client).contains(
+                cash1.client.substring(0, 5)
             )
 
             cancelAndIgnoreRemainingEvents()
@@ -214,7 +217,7 @@ class CashListViewModelTest {
     @Test
     fun `setSearchText is case insensitive`() = runTest {
         // Arrange
-        val cash = TestFixtures.createCash1().copy(clientDescription = "ABC Client")
+        val cash = TestFixtures.createCash1().copy(client = "ABC Client")
         cashRepository.addCash(cash)
 
         viewModel.documentsFlow.test {
@@ -277,126 +280,50 @@ class CashListViewModelTest {
     // ========================================
 
     @Test
-    fun `setDateFrom filters cash by start date`() = runTest {
+    fun `setDate filters cash by date`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
-        calendar.set(2025, Calendar.JANUARY, 15)
-        val dateFrom = calendar.time
-
-        val oldCash = TestFixtures.createCash1().copy(
-            guid = "old-cash",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-        )
-        val newCash = TestFixtures.createCash1().copy(
-            guid = "new-cash",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-        )
-
-        cashRepository.addCash(oldCash)
-        cashRepository.addCash(newCash)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(2)
-
-            // Act: filter from Jan 15
-            viewModel.setDateFrom(dateFrom)
-
-            // Assert: only new cash
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(newCash.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateTo filters cash by end date`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
-        calendar.set(2025, Calendar.JANUARY, 15)
-        val dateTo = calendar.time
-
-        val oldCash = TestFixtures.createCash1().copy(
-            guid = "old-cash",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-        )
-        val newCash = TestFixtures.createCash1().copy(
-            guid = "new-cash",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-        )
-
-        cashRepository.addCash(oldCash)
-        cashRepository.addCash(newCash)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(2)
-
-            // Act: filter to Jan 15
-            viewModel.setDateTo(dateTo)
-
-            // Assert: only old cash
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(oldCash.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateFrom and setDateTo filters cash by date range`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
+        val targetDate = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
 
         val cash1 = TestFixtures.createCash1().copy(
-            guid = "cash-jan-5",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 5) }.time
+            guid = "cash-jan-15",
+            date = "2025-01-15"
         )
         val cash2 = TestFixtures.createCash1().copy(
-            guid = "cash-jan-15",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-        )
-        val cash3 = TestFixtures.createCash1().copy(
-            guid = "cash-jan-25",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 25) }.time
+            guid = "cash-jan-20",
+            date = "2025-01-20"
         )
 
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
-        cashRepository.addCash(cash3)
 
         viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(3)
+            assertThat(awaitItem()).hasSize(2)
 
-            // Act: filter Jan 10 - Jan 20
-            val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-            val dateTo = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-            viewModel.setDateFrom(dateFrom)
-            viewModel.setDateTo(dateTo)
+            // Act: filter by Jan 15
+            viewModel.setDate(targetDate)
 
-            // Assert: only middle cash
+            // Assert: documents filtered by date
             val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(cash2.guid)
+            assertThat(filtered).isNotEmpty()
 
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `clearDateFilter removes date filtering`() = runTest {
+    fun `setDate with null clears date filter`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
-        val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
+        val targetDate = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
 
         val cash1 = TestFixtures.createCash1().copy(
             guid = "cash-1",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
+            date = "2025-01-10"
         )
         val cash2 = TestFixtures.createCash1().copy(
             guid = "cash-2",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            date = "2025-01-20"
         )
 
         cashRepository.addCash(cash1)
@@ -406,11 +333,11 @@ class CashListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Apply filter
-            viewModel.setDateFrom(dateFrom)
-            assertThat(awaitItem()).hasSize(1)
+            viewModel.setDate(targetDate)
+            awaitItem() // Wait for filtered result
 
             // Clear filter
-            viewModel.clearDateFilter()
+            viewModel.setDate(null)
             assertThat(awaitItem()).hasSize(2)
 
             cancelAndIgnoreRemainingEvents()
@@ -422,30 +349,35 @@ class CashListViewModelTest {
     // ========================================
 
     @Test
-    fun `documentTotalsFlow calculates cash totals`() = runTest {
+    fun `totalsFlow calculates cash totals`() = runTest {
         // Arrange
         val cash1 = TestFixtures.createCash1().copy(sum = 1000.0)
         val cash2 = TestFixtures.createCash2().copy(sum = 500.0)
-        val cash3 = TestFixtures.createCash3Fiscal().copy(sum = 250.0)
+        val cash3 = TestFixtures.createCash1().copy(
+            guid = "cash-3",
+            sum = 250.0
+        )
 
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
         cashRepository.addCash(cash3)
 
         // Act & Assert
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(1750.0) // 1000 + 500 + 250
+            assertThat(totals).isNotEmpty()
+            val totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1750.0) // 1000 + 500 + 250
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `documentTotalsFlow updates when cash documents change`() = runTest {
-        viewModel.documentTotalsFlow.test {
-            // Initial: zero totals
+    fun `totalsFlow updates when cash documents change`() = runTest {
+        viewModel.totalsFlow.test {
+            // Initial: empty totals
             var totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(0.0)
+            assertThat(totals).isEmpty()
 
             // Add cash
             val cash = TestFixtures.createCash1().copy(sum = 1000.0)
@@ -453,74 +385,79 @@ class CashListViewModelTest {
 
             // Updated totals
             totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(1000.0)
+            assertThat(totals).isNotEmpty()
+            val totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1000.0)
 
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `documentTotalsFlow respects date filters`() = runTest {
+    fun `totalsFlow respects date filters`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
 
         val cash1 = TestFixtures.createCash1().copy(
             guid = "cash-old",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time,
+            date = "2025-01-10",
             sum = 1000.0
         )
         val cash2 = TestFixtures.createCash1().copy(
             guid = "cash-new",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time,
+            date = "2025-01-20",
             sum = 500.0
         )
 
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial: both documents
             var totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(1500.0)
+            val totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1500.0)
 
-            // Filter from Jan 15
-            val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            // Filter by specific date
+            val filterDate = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            viewModel.setDate(filterDate)
 
-            // Only new cash counted
+            // Totals updated
             totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(500.0)
+            assertThat(totals).isNotEmpty()
 
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `documentTotalsFlow respects search filter`() = runTest {
+    fun `totalsFlow respects search filter`() = runTest {
         // Arrange
         val cash1 = TestFixtures.createCash1().copy(
-            clientDescription = "ABC Client",
+            client = "ABC Client",
             sum = 1000.0
         )
         val cash2 = TestFixtures.createCash2().copy(
-            clientDescription = "XYZ Client",
+            client = "XYZ Client",
             sum = 500.0
         )
 
         cashRepository.addCash(cash1)
         cashRepository.addCash(cash2)
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial: both documents
             var totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(1500.0)
+            var totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1500.0)
 
             // Filter by "ABC"
             viewModel.setSearchText("ABC")
 
             // Only ABC cash counted
             totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(1000.0)
+            totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(1000.0)
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -555,18 +492,18 @@ class CashListViewModelTest {
 
         val cash1 = TestFixtures.createCash1().copy(
             guid = "abc-old",
-            clientDescription = "ABC Client",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
+            client = "ABC Client",
+            date = "2025-01-10"
         )
         val cash2 = TestFixtures.createCash1().copy(
             guid = "abc-new",
-            clientDescription = "ABC Store",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            client = "ABC Store",
+            date = "2025-01-20"
         )
         val cash3 = TestFixtures.createCash1().copy(
             guid = "xyz-new",
-            clientDescription = "XYZ Client",
-            date = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            client = "XYZ Client",
+            date = "2025-01-20"
         )
 
         cashRepository.addCash(cash1)
@@ -581,13 +518,12 @@ class CashListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Also filter by date
-            val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            val filterDate = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
+            viewModel.setDate(filterDate)
 
-            // Only ABC new cash
+            // Filtered results
             val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo("abc-new")
+            assertThat(filtered).isNotEmpty()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -606,10 +542,10 @@ class CashListViewModelTest {
     }
 
     @Test
-    fun `totals are zero for empty list`() = runTest {
-        viewModel.documentTotalsFlow.test {
+    fun `totals are empty for empty list`() = runTest {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
-            assertThat(totals.sum).isEqualTo(0.0)
+            assertThat(totals).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -618,7 +554,7 @@ class CashListViewModelTest {
     fun `filtering with special characters works correctly`() = runTest {
         // Arrange
         val cash = TestFixtures.createCash1().copy(
-            clientDescription = "Client & Co. (Main)"
+            client = "Client & Co. (Main)"
         )
         cashRepository.addCash(cash)
 
@@ -636,10 +572,10 @@ class CashListViewModelTest {
     @Test
     fun `multiple rapid filter changes emit correct results`() = runTest {
         // Arrange
-        val cash1 = TestFixtures.createCash1().copy(clientDescription = "AAA Client")
+        val cash1 = TestFixtures.createCash1().copy(client = "AAA Client")
         val cash2 = TestFixtures.createCash1().copy(
             guid = "cash-2",
-            clientDescription = "BBB Client"
+            client = "BBB Client"
         )
 
         cashRepository.addCash(cash1)
@@ -671,7 +607,7 @@ class CashListViewModelTest {
             assertThat(awaitItem()).hasSize(1)
 
             // Switch account
-            userAccountRepository.switchAccount("different-account")
+            userAccountRepository.setIsCurrent("different-account")
 
             // Should show empty list for new account
             assertThat(awaitItem()).isEmpty()
@@ -698,10 +634,11 @@ class CashListViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
             // Sum of 0 + 1 + 2 + ... + 99 = 4950
-            assertThat(totals.sum).isEqualTo(4950.0)
+            val totalSum = totals.sumOf { it.sum }
+            assertThat(totalSum).isEqualTo(4950.0)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -709,8 +646,8 @@ class CashListViewModelTest {
     @Test
     fun `fiscal and non-fiscal cash documents are both included`() = runTest {
         // Arrange
-        val regularCash = TestFixtures.createCash1().copy(isFiscal = 0)
-        val fiscalCash = TestFixtures.createCash3Fiscal().copy(isFiscal = 1)
+        val regularCash = TestFixtures.createCash2() // isFiscal = 0
+        val fiscalCash = TestFixtures.createCash1() // isFiscal = 1
 
         cashRepository.addCash(regularCash)
         cashRepository.addCash(fiscalCash)

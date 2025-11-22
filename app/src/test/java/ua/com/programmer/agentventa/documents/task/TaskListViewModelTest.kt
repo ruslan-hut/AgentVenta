@@ -61,23 +61,15 @@ class TaskListViewModelTest {
 
     @Test
     fun `initial totals visibility is true`() = runTest {
-        viewModel.totalsVisibleFlow.test {
-            assertThat(awaitItem()).isTrue()
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `initial loading state is false`() = runTest {
-        viewModel.loadingFlow.test {
-            assertThat(awaitItem()).isFalse()
+        viewModel.uiState.test {
+            assertThat(awaitItem().totalsVisible).isTrue()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `initial search text is empty`() = runTest {
-        viewModel.searchTextFlow.test {
+        viewModel.searchText.test {
             assertThat(awaitItem()).isEmpty()
             cancelAndIgnoreRemainingEvents()
         }
@@ -91,8 +83,8 @@ class TaskListViewModelTest {
     fun `tasks list loads from repository`() = runTest {
         // Arrange
         val task1 = TestFixtures.createTask1()
-        val task2 = TestFixtures.createTask2()
-        val task3 = TestFixtures.createTask3Done()
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2")
+        val task3 = TestFixtures.createTask2Completed()
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
         taskRepository.addTask(task3)
@@ -114,7 +106,7 @@ class TaskListViewModelTest {
         val task1 = TestFixtures.createTask1()
         val task2 = TestFixtures.createTask1().copy(
             guid = "different-task",
-            db_guid = "different-account"
+            databaseId = "different-account"
         )
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
@@ -123,7 +115,7 @@ class TaskListViewModelTest {
         viewModel.documentsFlow.test {
             val tasks = awaitItem()
             assertThat(tasks).hasSize(1)
-            assertThat(tasks[0].db_guid).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
+            assertThat(tasks[0].databaseId).isEqualTo(FakeUserAccountRepository.TEST_ACCOUNT_GUID)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -197,7 +189,7 @@ class TaskListViewModelTest {
     fun `setSearchText filters tasks by description`() = runTest {
         // Arrange
         val task1 = TestFixtures.createTask1().copy(description = "Call ABC client")
-        val task2 = TestFixtures.createTask2().copy(description = "Visit XYZ store")
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2").copy(description = "Visit XYZ store")
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
 
@@ -221,7 +213,7 @@ class TaskListViewModelTest {
     fun `setSearchText with empty string shows all tasks`() = runTest {
         // Arrange
         val task1 = TestFixtures.createTask1()
-        val task2 = TestFixtures.createTask2()
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2")
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
 
@@ -286,7 +278,7 @@ class TaskListViewModelTest {
             description = "Task 1",
             notes = "Meeting with client"
         )
-        val task2 = TestFixtures.createTask2().copy(
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2").copy(
             description = "Task 2",
             notes = "Prepare documents"
         )
@@ -312,7 +304,7 @@ class TaskListViewModelTest {
     // ========================================
 
     @Test
-    fun `setDateFrom filters tasks by start date`() = runTest {
+    fun `setDate filters tasks by date`() = runTest {
         // Arrange
         val calendar = Calendar.getInstance()
         calendar.set(2025, Calendar.JANUARY, 15)
@@ -334,86 +326,12 @@ class TaskListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Act: filter from Jan 15
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
 
             // Assert: only new task
             val filtered = awaitItem()
             assertThat(filtered).hasSize(1)
             assertThat(filtered[0].guid).isEqualTo(newTask.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateTo filters tasks by end date`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
-        calendar.set(2025, Calendar.JANUARY, 15)
-        val dateTo = calendar.time
-
-        val oldTask = TestFixtures.createTask1().copy(
-            guid = "old-task",
-            time = calendar.apply { set(2025, Calendar.JANUARY, 10) }.timeInMillis
-        )
-        val newTask = TestFixtures.createTask1().copy(
-            guid = "new-task",
-            time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
-        )
-
-        taskRepository.addTask(oldTask)
-        taskRepository.addTask(newTask)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(2)
-
-            // Act: filter to Jan 15
-            viewModel.setDateTo(dateTo)
-
-            // Assert: only old task
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(oldTask.guid)
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `setDateFrom and setDateTo filters tasks by date range`() = runTest {
-        // Arrange
-        val calendar = Calendar.getInstance()
-
-        val task1 = TestFixtures.createTask1().copy(
-            guid = "task-jan-5",
-            time = calendar.apply { set(2025, Calendar.JANUARY, 5) }.timeInMillis
-        )
-        val task2 = TestFixtures.createTask1().copy(
-            guid = "task-jan-15",
-            time = calendar.apply { set(2025, Calendar.JANUARY, 15) }.timeInMillis
-        )
-        val task3 = TestFixtures.createTask1().copy(
-            guid = "task-jan-25",
-            time = calendar.apply { set(2025, Calendar.JANUARY, 25) }.timeInMillis
-        )
-
-        taskRepository.addTask(task1)
-        taskRepository.addTask(task2)
-        taskRepository.addTask(task3)
-
-        viewModel.documentsFlow.test {
-            assertThat(awaitItem()).hasSize(3)
-
-            // Act: filter Jan 10 - Jan 20
-            val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 10) }.time
-            val dateTo = calendar.apply { set(2025, Calendar.JANUARY, 20) }.time
-            viewModel.setDateFrom(dateFrom)
-            viewModel.setDateTo(dateTo)
-
-            // Assert: only middle task
-            val filtered = awaitItem()
-            assertThat(filtered).hasSize(1)
-            assertThat(filtered[0].guid).isEqualTo(task2.guid)
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -441,11 +359,11 @@ class TaskListViewModelTest {
             assertThat(awaitItem()).hasSize(2)
 
             // Apply filter
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
             assertThat(awaitItem()).hasSize(1)
 
             // Clear filter
-            viewModel.clearDateFilter()
+            viewModel.setDate(null)
             assertThat(awaitItem()).hasSize(2)
 
             cancelAndIgnoreRemainingEvents()
@@ -460,7 +378,7 @@ class TaskListViewModelTest {
     fun `tasks include both done and not done by default`() = runTest {
         // Arrange
         val taskNotDone = TestFixtures.createTask1().copy(isDone = 0)
-        val taskDone = TestFixtures.createTask3Done().copy(isDone = 1)
+        val taskDone = TestFixtures.createTask2Completed().copy(isDone = 1)
 
         taskRepository.addTask(taskNotDone)
         taskRepository.addTask(taskDone)
@@ -481,11 +399,11 @@ class TaskListViewModelTest {
             description = "ABC Task",
             isDone = 0
         )
-        val task2 = TestFixtures.createTask2().copy(
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2").copy(
             description = "ABC Done",
             isDone = 1
         )
-        val task3 = TestFixtures.createTask3Done().copy(
+        val task3 = TestFixtures.createTask2Completed().copy(
             description = "XYZ Task",
             isDone = 0
         )
@@ -517,15 +435,15 @@ class TaskListViewModelTest {
     fun `documentTotalsFlow counts total tasks`() = runTest {
         // Arrange
         val task1 = TestFixtures.createTask1()
-        val task2 = TestFixtures.createTask2()
-        val task3 = TestFixtures.createTask3Done()
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2")
+        val task3 = TestFixtures.createTask2Completed()
 
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
         taskRepository.addTask(task3)
 
         // Act & Assert
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             val totals = awaitItem()
             // Task entity doesn't have price/quantity/sum, so totals might be count-based
             // or have no meaningful totals - check actual implementation
@@ -535,7 +453,7 @@ class TaskListViewModelTest {
 
     @Test
     fun `documentTotalsFlow updates when tasks change`() = runTest {
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial
             awaitItem()
 
@@ -567,13 +485,13 @@ class TaskListViewModelTest {
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)
 
-        viewModel.documentTotalsFlow.test {
+        viewModel.totalsFlow.test {
             // Initial: both tasks
             awaitItem()
 
             // Filter from Jan 15
             val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
 
             // Only new task counted
             awaitItem()
@@ -584,17 +502,17 @@ class TaskListViewModelTest {
 
     @Test
     fun `setTotalsVisible toggles totals visibility`() = runTest {
-        viewModel.totalsVisibleFlow.test {
+        viewModel.uiState.test {
             // Initial: true
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             // Toggle off
             viewModel.setTotalsVisible(false)
-            assertThat(awaitItem()).isFalse()
+            assertThat(awaitItem().totalsVisible).isFalse()
 
             // Toggle on
             viewModel.setTotalsVisible(true)
-            assertThat(awaitItem()).isTrue()
+            assertThat(awaitItem().totalsVisible).isTrue()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -638,7 +556,7 @@ class TaskListViewModelTest {
 
             // Also filter by date
             val dateFrom = calendar.apply { set(2025, Calendar.JANUARY, 15) }.time
-            viewModel.setDateFrom(dateFrom)
+            viewModel.setDate(dateFrom)
 
             // Only ABC new task
             val filtered = awaitItem()
@@ -735,7 +653,7 @@ class TaskListViewModelTest {
             assertThat(awaitItem()).hasSize(1)
 
             // Switch account
-            userAccountRepository.switchAccount("different-account")
+            userAccountRepository.setIsCurrent("different-account")
 
             // Should show empty list for new account
             assertThat(awaitItem()).isEmpty()
@@ -767,7 +685,7 @@ class TaskListViewModelTest {
     fun `tasks with empty descriptions can be filtered`() = runTest {
         // Arrange
         val task1 = TestFixtures.createTask1().copy(description = "")
-        val task2 = TestFixtures.createTask2().copy(description = "Valid task")
+        val task2 = TestFixtures.createTask1().copy(guid = "task-2", description = "Task 2").copy(description = "Valid task")
 
         taskRepository.addTask(task1)
         taskRepository.addTask(task2)

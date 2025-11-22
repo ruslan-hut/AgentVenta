@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.dao.entity.Cash
 import ua.com.programmer.agentventa.dao.entity.Client
 import ua.com.programmer.agentventa.dao.entity.Company
-import ua.com.programmer.agentventa.documents.DocumentTotals
+import ua.com.programmer.agentventa.dao.entity.DocumentTotals
 import ua.com.programmer.agentventa.repository.CashRepository
 import java.util.*
 
@@ -26,12 +26,13 @@ class FakeCashRepository(
         list.first { it.guid == guid }
     }
 
-    override suspend fun newDocument(): Cash {
+    override suspend fun newDocument(): Cash? {
+        val now = Date()
         return Cash(
             guid = UUID.randomUUID().toString(),
-            db_guid = currentAccountGuid,
-            date = Date(),
-            time = Date(),
+            databaseId = currentAccountGuid,
+            date = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
+            time = now.time,
             isSent = 0,
             isProcessed = 0,
             sum = 0.0
@@ -40,11 +41,14 @@ class FakeCashRepository(
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Cash>> = cashDocuments.map { list ->
         list.filter { cash ->
-            val matchesFilter = filter.isEmpty() ||
-                cash.client?.contains(filter, ignoreCase = true) == true ||
-                cash.number?.contains(filter, ignoreCase = true) == true
+            val matchesFilter = filter.isEmpty() || cash.client.contains(filter, ignoreCase = true) || cash.number.toString().contains(filter, ignoreCase = true)
 
-            val matchesDate = listDate == null || isSameDay(cash.date, listDate)
+            val matchesDate = listDate == null || try {
+                val cashDate = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(cash.date)
+                cashDate != null && isSameDay(cashDate, listDate)
+            } catch (e: Exception) {
+                false
+            }
 
             matchesFilter && matchesDate
         }
@@ -100,11 +104,11 @@ class FakeCashRepository(
     // Test helper methods
 
     fun addCash(cash: Cash) {
-        cashDocuments.value = cashDocuments.value + cash
+        cashDocuments.value += cash
     }
 
     fun addClient(client: Client) {
-        clients.value = clients.value + client
+        clients.value += client
     }
 
     fun addCompany(company: Company) {
@@ -119,10 +123,10 @@ class FakeCashRepository(
 
     private fun calculateTotals(cashList: List<Cash>): DocumentTotals {
         return DocumentTotals(
-            documents = cashList.count { it.isReturn == 0 },
-            returns = cashList.count { it.isReturn == 1 },
-            sum = cashList.filter { it.isReturn == 0 }.sumOf { it.sum ?: 0.0 },
-            sumReturn = cashList.filter { it.isReturn == 1 }.sumOf { it.sum ?: 0.0 }
+            documents = cashList.size,
+            returns = 0,
+            sum = cashList.sumOf { it.sum },
+            sumReturn = 0.0
         )
     }
 
