@@ -124,6 +124,20 @@ class CashFragment: Fragment(), MenuProvider {
             editNotes()
         }
         binding.docSum.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+
+        viewModel.saveResult.observe(this.viewLifecycleOwner) {
+            it ?: return@observe
+            if (it) {
+                Toast.makeText(requireContext(), getString(R.string.data_saved), Toast.LENGTH_SHORT).show()
+                view.findNavController().popBackStack()
+            } else {
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.error))
+                    .setMessage(getString(R.string.data_not_saved))
+                    .setPositiveButton(getString(R.string.OK), null)
+                    .show()
+            }
+        }
     }
 
     private fun onEditTextAction(actionId: Int): Boolean {
@@ -162,9 +176,7 @@ class CashFragment: Fragment(), MenuProvider {
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
             R.id.save_document -> {
-                val enteredSum = binding.docSum.text.toString().replace(",",".")
-                viewModel.saveDocument(enteredSum)
-                Toast.makeText(requireContext(), getString(R.string.data_saved), Toast.LENGTH_SHORT).show()
+                saveDocument()
             }
             R.id.edit_document -> viewModel.enableEdit()
             R.id.delete_document -> {
@@ -181,6 +193,43 @@ class CashFragment: Fragment(), MenuProvider {
             else -> return false
         }
         return true
+    }
+
+    private fun saveDocument() {
+        // Update sum from input field first
+        val enteredSum = binding.docSum.text.toString().replace(",",".")
+        viewModel.onEditSum(enteredSum)
+
+        // Validate document before saving
+        if (notReadyToProcess()) return
+
+        // Save document
+        viewModel.saveDocument(enteredSum)
+    }
+
+    private fun notReadyToProcess(): Boolean {
+        val cash = viewModel.document.value ?: return true
+
+        if (cash.clientGuid.isEmpty()) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.warning))
+                .setMessage(getString(R.string.error_cannot_process))
+                .setPositiveButton(getString(R.string.OK), null)
+                .show()
+            return true
+        }
+
+        val sum = binding.docSum.text.toString().replace(",",".").toDoubleOrNull() ?: 0.0
+        if (sum <= 0.0) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.warning))
+                .setMessage(getString(R.string.error_cannot_process))
+                .setPositiveButton(getString(R.string.OK), null)
+                .show()
+            return true
+        }
+
+        return false
     }
 
     private fun editNotes() {
