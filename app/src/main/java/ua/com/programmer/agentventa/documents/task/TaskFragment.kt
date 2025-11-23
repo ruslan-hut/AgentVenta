@@ -9,15 +9,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.TaskFragmentBinding
 import ua.com.programmer.agentventa.shared.SharedViewModel
@@ -91,6 +95,32 @@ class TaskFragment: Fragment(), MenuProvider {
                 isDone.isChecked = it.isDone > 0
             }
         }
+
+        // Observe save events
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is ua.com.programmer.agentventa.shared.DocumentEvent.SaveSuccess -> {
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.data_saved),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            view.findNavController().popBackStack()
+                        }
+                        is ua.com.programmer.agentventa.shared.DocumentEvent.SaveError -> {
+                            AlertDialog.Builder(requireContext())
+                                .setTitle(getString(R.string.error))
+                                .setMessage(event.message)
+                                .setPositiveButton(getString(R.string.OK), null)
+                                .show()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -106,7 +136,10 @@ class TaskFragment: Fragment(), MenuProvider {
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
-            R.id.edit_order -> viewModel.enableEdit()
+            R.id.save_document -> {
+                saveDocument()
+            }
+            R.id.edit_document -> viewModel.enableEdit()
             R.id.delete_document -> {
                 AlertDialog.Builder(requireContext())
                     .setTitle(getString(R.string.delete_data))
@@ -121,6 +154,32 @@ class TaskFragment: Fragment(), MenuProvider {
             else -> return false
         }
         return true
+    }
+
+    private fun saveDocument() {
+        // Capture current field values before saving
+        val description = binding.editDescription.text.toString()
+        val notes = binding.editNotes.text.toString()
+
+        // Update ViewModel with current values
+        viewModel.onEditDescription(description)
+        viewModel.onEditNotes(notes)
+
+        // Validate task before saving
+        lifecycleScope.launch {
+            val validationError = viewModel.validateTask()
+            if (validationError != null) {
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.warning))
+                    .setMessage(validationError)
+                    .setPositiveButton(getString(R.string.OK), null)
+                    .show()
+                return@launch
+            }
+
+            // Save document
+            viewModel.saveDocument()
+        }
     }
 
     private fun editNotes() {

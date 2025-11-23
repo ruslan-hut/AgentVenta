@@ -398,6 +398,8 @@
     <string name="open_account_settings">Open account settings</string>
     <string name="current_account_for_sync">Current sync settings</string>
     <string name="data_deleted">Data deleted</string>
+    <string name="undo">Undo</string>
+    <string name="confirm_delete_task">Delete this task?</string>
     <string name="product_image">Product image</string>
     <string name="client_menu">clientMenu</string>
     <string name="data_copied">Data copied</string>

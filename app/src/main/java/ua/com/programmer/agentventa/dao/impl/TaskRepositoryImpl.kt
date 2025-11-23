@@ -59,6 +59,10 @@ class TaskRepositoryImpl @Inject constructor(
         return dao.update(document) > 0
     }
 
+    override suspend fun insertOrUpdateDocument(document: Task): Boolean {
+        return dao.save(document)
+    }
+
     override suspend fun deleteDocument(document: Task): Boolean {
         return dao.delete(document) > 0
     }

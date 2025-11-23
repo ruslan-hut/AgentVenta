@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.documents.task
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -15,12 +16,33 @@ class TaskListAdapter(private val onDocumentClicked: (Task) -> Unit)
     class DocumentViewHolder(private var binding: ModelDocumentsListItemBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(document: Task) {
             binding.apply {
+                // Show description as the main title
+                listItemClient.text = document.description
+
+                // Show notes with max 2 lines
                 listItemNote.text = document.notes
+                listItemNote.maxLines = 2
+
+                // Show date
                 listItemDate.text = document.date
+
+                // Hide unused fields for tasks
+                listItemCompany.visibility = View.GONE
+                listItemStore.visibility = View.GONE
+                listItemNumber.visibility = View.GONE
+                listItemPrice.visibility = View.GONE
+                listItemQuantity.visibility = View.GONE
+                listItemQuantityHeader.visibility = View.GONE
+                listItemStatus.visibility = View.GONE
+
+                // Hide unused icons
+                iconFiscal.visibility = View.GONE
+                iconReturn.visibility = View.GONE
+                iconCash.visibility = View.GONE
+
+                // Show done/pending status icon
                 iconUpload.setImageResource(if (document.isDone == 1) {
                     R.drawable.baseline_cloud_done_24
-//                } else if (document.isProcessed == 1) {
-//                    R.drawable.baseline_cloud_upload_24
                 } else {
                     R.drawable.baseline_cloud_queue_24
                 })

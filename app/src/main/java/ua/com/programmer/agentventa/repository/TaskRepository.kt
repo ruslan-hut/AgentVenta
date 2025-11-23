@@ -9,4 +9,5 @@ interface TaskRepository: DocumentRepository<Task> {
     override suspend fun newDocument(): Task?
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Task>>
     override suspend fun updateDocument(document: Task): Boolean
+    suspend fun insertOrUpdateDocument(document: Task): Boolean
 }
