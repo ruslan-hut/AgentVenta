@@ -50,4 +50,22 @@ class TaskListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Mark a task as done or undone.
+     * @param task The task to update
+     * @param isDone True to mark as done, false to mark as not done
+     * @param onComplete Callback invoked after update completes
+     */
+    fun markTaskAsDone(task: Task, isDone: Boolean, onComplete: () -> Unit = {}) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val updatedTask = task.copy(isDone = if (isDone) 1 else 0)
+                taskRepository.updateDocument(updatedTask)
+            }
+            withContext(Dispatchers.Main) {
+                onComplete()
+            }
+        }
+    }
+
 }

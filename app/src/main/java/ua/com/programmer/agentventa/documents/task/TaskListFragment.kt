@@ -26,6 +26,7 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.widget.Toast
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -121,12 +122,21 @@ class TaskListFragment: Fragment(), MenuProvider {
                 val position = viewHolder.absoluteAdapterPosition
                 val task = adapter.currentList[position]
 
-                if (task.isDone == 1) {
-                    // Task is completed - delete immediately without confirmation
-                    deleteTaskWithUndo(task, adapter, position)
-                } else {
-                    // Task is not completed - show confirmation dialog
-                    showDeleteConfirmation(task, adapter, position)
+                when (direction) {
+                    ItemTouchHelper.LEFT -> {
+                        // Swipe left - Mark as completed/uncompleted
+                        toggleTaskCompletion(task, adapter, position)
+                    }
+                    ItemTouchHelper.RIGHT -> {
+                        // Swipe right - Delete
+                        if (task.isDone == 1) {
+                            // Task is completed - delete immediately without confirmation
+                            deleteTaskWithUndo(task, adapter, position)
+                        } else {
+                            // Task is not completed - show confirmation dialog
+                            showDeleteConfirmation(task, adapter, position)
+                        }
+                    }
                 }
             }
 
@@ -142,26 +152,27 @@ class TaskListFragment: Fragment(), MenuProvider {
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
 
                 val itemView = viewHolder.itemView
-                val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_delete_forever_24)
-
-                // Red background color
-                val backgroundColor = ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)
+                val position = viewHolder.absoluteAdapterPosition
+                val task = adapter.currentList.getOrNull(position) ?: return
 
                 // Corner radius to match card view (8dp)
                 val cornerRadius = 8f * resources.displayMetrics.density
 
-                // Paint for rounded background
-                val paint = Paint().apply {
-                    color = backgroundColor
-                    isAntiAlias = true
-                }
-
-                val iconMargin = (itemView.height - icon!!.intrinsicHeight) / 2
-                val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
-                val iconBottom = iconTop + icon.intrinsicHeight
-
                 if (dX > 0) {
-                    // Swiping to the right
+                    // Swiping to the right - DELETE action
+                    val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_delete_forever_24)
+                    val backgroundColor = ContextCompat.getColor(requireContext(), android.R.color.holo_red_dark)
+
+                    // Paint for rounded background
+                    val paint = Paint().apply {
+                        color = backgroundColor
+                        isAntiAlias = true
+                    }
+
+                    val iconMargin = (itemView.height - icon!!.intrinsicHeight) / 2
+                    val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                    val iconBottom = iconTop + icon.intrinsicHeight
+
                     val iconLeft = itemView.left + iconMargin
                     val iconRight = itemView.left + iconMargin + icon.intrinsicWidth
                     icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
@@ -174,8 +185,42 @@ class TaskListFragment: Fragment(), MenuProvider {
                         itemView.bottom.toFloat()
                     )
                     c.drawRoundRect(background, cornerRadius, cornerRadius, paint)
+
+                    // Tint the icon to white for better visibility
+                    icon.colorFilter = PorterDuffColorFilter(
+                        ContextCompat.getColor(requireContext(), android.R.color.white),
+                        PorterDuff.Mode.SRC_IN
+                    )
+
+                    icon.draw(c)
                 } else if (dX < 0) {
-                    // Swiping to the left
+                    // Swiping to the left - COMPLETE/UNCOMPLETE action
+                    val icon = if (task.isDone == 1) {
+                        // Task is completed - show undo icon
+                        ContextCompat.getDrawable(requireContext(), R.drawable.baseline_replay_24)
+                    } else {
+                        // Task is not completed - show check icon
+                        ContextCompat.getDrawable(requireContext(), R.drawable.baseline_cloud_done_24)
+                    }
+
+                    val backgroundColor = if (task.isDone == 1) {
+                        // Orange/amber for undo
+                        ContextCompat.getColor(requireContext(), android.R.color.holo_orange_dark)
+                    } else {
+                        // Green for complete
+                        ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark)
+                    }
+
+                    // Paint for rounded background
+                    val paint = Paint().apply {
+                        color = backgroundColor
+                        isAntiAlias = true
+                    }
+
+                    val iconMargin = (itemView.height - icon!!.intrinsicHeight) / 2
+                    val iconTop = itemView.top + (itemView.height - icon.intrinsicHeight) / 2
+                    val iconBottom = iconTop + icon.intrinsicHeight
+
                     val iconLeft = itemView.right - iconMargin - icon.intrinsicWidth
                     val iconRight = itemView.right - iconMargin
                     icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
@@ -188,21 +233,34 @@ class TaskListFragment: Fragment(), MenuProvider {
                         itemView.bottom.toFloat()
                     )
                     c.drawRoundRect(background, cornerRadius, cornerRadius, paint)
+
+                    // Tint the icon to white for better visibility
+                    icon.colorFilter = PorterDuffColorFilter(
+                        ContextCompat.getColor(requireContext(), android.R.color.white),
+                        PorterDuff.Mode.SRC_IN
+                    )
+
+                    icon.draw(c)
                 }
-
-                // Tint the icon to white for better visibility
-                icon.colorFilter = PorterDuffColorFilter(
-                    ContextCompat.getColor(requireContext(), android.R.color.white),
-                    PorterDuff.Mode.SRC_IN
-                )
-
-                icon.draw(c)
             }
 
         }
 
         val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
         itemTouchHelper.attachToRecyclerView(recyclerView)
+    }
+
+    private fun toggleTaskCompletion(task: Task, adapter: TaskListAdapter, position: Int) {
+        val newStatus = if (task.isDone == 1) 0 else 1
+        val message = if (newStatus == 1) {
+            getString(R.string.task_completed)
+        } else {
+            getString(R.string.task_reopened)
+        }
+
+        viewModel.markTaskAsDone(task, newStatus == 1) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun deleteTaskWithUndo(task: Task, adapter: TaskListAdapter, position: Int) {

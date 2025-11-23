@@ -400,6 +400,8 @@
     <string name="data_deleted">Data deleted</string>
     <string name="undo">Undo</string>
     <string name="confirm_delete_task">Delete this task?</string>
+    <string name="task_completed">Task completed</string>
+    <string name="task_reopened">Task reopened</string>
     <string name="product_image">Product image</string>
     <string name="client_menu">clientMenu</string>
     <string name="data_copied">Data copied</string>
