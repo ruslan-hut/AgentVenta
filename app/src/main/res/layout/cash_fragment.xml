@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:fillViewport="true"
-        android:background="@color/lightGray"
+        android:background="?attr/colorSurfaceVariant"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -23,7 +23,7 @@
             <LinearLayout
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:background="@color/white"
+                android:background="?attr/colorSurface"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp"
                 android:paddingRight="8dp"
@@ -31,7 +31,7 @@
 
 
                 <ImageView
-                    android:background="@color/white"
+                    android:background="?attr/colorSurface"
                     android:id="@+id/doc_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
@@ -44,14 +44,15 @@
                 <TextView
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
-                    android:text="@string/doc_number" />
+                    android:text="@string/doc_number"
+                    android:textColor="?android:attr/textColorSecondary" />
 
                 <TextView
                     android:id="@+id/doc_number"
                     android:layout_height="wrap_content"
                     android:layout_width="0dp"
                     android:layout_weight="1"
-                    android:textColor="@color/black"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:paddingStart="2dp"
                     android:paddingEnd="2dp"
                     android:text="@string/holder_text" />
@@ -59,13 +60,14 @@
                 <TextView
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
-                    android:text="@string/doc_date" />
+                    android:text="@string/doc_date"
+                    android:textColor="?android:attr/textColorSecondary" />
 
                 <TextView
                     android:id="@+id/doc_date"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
-                    android:textColor="@color/black"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:paddingStart="2dp"
                     android:paddingEnd="2dp"
                     android:text="@string/holder_text" />
@@ -153,7 +155,7 @@
                     android:id="@+id/is_fiscal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/colorPrimaryDark"
+                    android:textColor="?attr/colorPrimary"
                     android:textStyle="bold"
                     android:text="@string/holder_text" />
 
