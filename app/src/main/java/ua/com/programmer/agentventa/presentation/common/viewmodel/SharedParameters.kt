@@ -1,0 +1,18 @@
+package ua.com.programmer.agentventa.presentation.common.viewmodel
+
+data class SharedParameters(
+    val filter: String = "",
+    val groupGuid: String = "",
+    val docGuid: String = "",
+    val docType: String = "",
+    val companyGuid: String = "",
+    val company: String = "",
+    val storeGuid: String = "",
+    val store: String = "",
+    val sortByName: Boolean = false,
+    val restsOnly: Boolean = false,
+    val ignoreBarcodeReads: Boolean = false,
+    val clientProducts: Boolean = false,
+    val priceType: String = "",
+    val currentAccount: String = "",
+)

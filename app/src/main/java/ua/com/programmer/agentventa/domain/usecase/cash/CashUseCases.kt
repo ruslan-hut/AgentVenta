@@ -1,10 +1,10 @@
 package ua.com.programmer.agentventa.domain.usecase.cash
 
-import ua.com.programmer.agentventa.dao.entity.Cash
+import ua.com.programmer.agentventa.data.local.entity.Cash
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.SuspendUseCase
-import ua.com.programmer.agentventa.repository.CashRepository
+import ua.com.programmer.agentventa.domain.repository.CashRepository
 import javax.inject.Inject
 
 /**

@@ -4,7 +4,7 @@
     <data>
         <variable
             name="image"
-            type="ua.com.programmer.agentventa.dao.entity.ClientImage" />
+            type="ua.com.programmer.agentventa.data.local.entity.ClientImage" />
     </data>
 
     <FrameLayout

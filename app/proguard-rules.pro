@@ -48,12 +48,12 @@
  # is used.
  -keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
 
- -keep class ua.com.programmer.agentventa.catalogs.debt.DebtViewModel$Item { *; }
- -keep class ua.com.programmer.agentventa.catalogs.debt.DebtViewModel$Content { *; }
+ -keep class ua.com.programmer.agentventa.presentation.features.debt.DebtViewModel$Item { *; }
+ -keep class ua.com.programmer.agentventa.presentation.features.debt.DebtViewModel$Content { *; }
 
  # Keep dataclasses used for data access and api calls
- -keep class ua.com.programmer.agentventa.dao.entity.** { *; }
- -keep class ua.com.programmer.agentventa.dao.cloud.** { *; }
+ -keep class ua.com.programmer.agentventa.data.local.entity.** { *; }
+ -keep class ua.com.programmer.agentventa.data.remote.dto.** { *; }
 
  ##---------------Begin: proguard configuration for Gson  ----------
  # Gson uses generic type information stored in a class file when working with fields. Proguard

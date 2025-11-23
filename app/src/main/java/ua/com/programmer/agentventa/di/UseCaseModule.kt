@@ -24,9 +24,9 @@ import ua.com.programmer.agentventa.domain.usecase.task.DeleteTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
-import ua.com.programmer.agentventa.repository.CashRepository
-import ua.com.programmer.agentventa.repository.OrderRepository
-import ua.com.programmer.agentventa.repository.TaskRepository
+import ua.com.programmer.agentventa.domain.repository.CashRepository
+import ua.com.programmer.agentventa.domain.repository.OrderRepository
+import ua.com.programmer.agentventa.domain.repository.TaskRepository
 
 /**
  * Hilt module providing use cases.

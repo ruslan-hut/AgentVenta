@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewModel"
-            type="ua.com.programmer.agentventa.settings.UserAccountListViewModel" />
+            type="ua.com.programmer.agentventa.presentation.features.settings.UserAccountListViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

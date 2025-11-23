@@ -5,7 +5,7 @@
     <data>
         <variable
             name="viewModel"
-            type="ua.com.programmer.agentventa.documents.order.OrderListViewModel" />
+            type="ua.com.programmer.agentventa.presentation.features.order.OrderListViewModel" />
     </data>
 
     <androidx.cardview.widget.CardView

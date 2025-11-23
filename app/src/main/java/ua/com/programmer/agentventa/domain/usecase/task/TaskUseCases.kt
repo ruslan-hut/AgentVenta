@@ -1,10 +1,10 @@
 package ua.com.programmer.agentventa.domain.usecase.task
 
-import ua.com.programmer.agentventa.dao.entity.Task
+import ua.com.programmer.agentventa.data.local.entity.Task
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.SuspendUseCase
-import ua.com.programmer.agentventa.repository.TaskRepository
+import ua.com.programmer.agentventa.domain.repository.TaskRepository
 import javax.inject.Inject
 
 /**

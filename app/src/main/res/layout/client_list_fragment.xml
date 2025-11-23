@@ -5,7 +5,7 @@
     <data>
         <variable
             name="viewModel"
-            type="ua.com.programmer.agentventa.catalogs.client.ClientListViewModel" />
+            type="ua.com.programmer.agentventa.presentation.features.client.ClientListViewModel" />
     </data>
 
     <RelativeLayout

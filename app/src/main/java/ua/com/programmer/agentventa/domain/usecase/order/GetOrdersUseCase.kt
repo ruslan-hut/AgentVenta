@@ -2,9 +2,9 @@ package ua.com.programmer.agentventa.domain.usecase.order
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.domain.usecase.FlowUseCaseBase
-import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import java.util.Date
 import javax.inject.Inject
 
@@ -62,5 +62,5 @@ class GetOrderWithContentUseCase @Inject constructor(
  */
 data class OrderWithContent(
     val order: Order,
-    val content: List<ua.com.programmer.agentventa.dao.entity.LOrderContent>
+    val content: List<ua.com.programmer.agentventa.data.local.entity.LOrderContent>
 )

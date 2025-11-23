@@ -7,13 +7,13 @@ import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import ua.com.programmer.agentventa.http.HttpAuthInterceptor
-import ua.com.programmer.agentventa.http.HttpClientApi
-import ua.com.programmer.agentventa.http.TokenManager
-import ua.com.programmer.agentventa.http.TokenManagerImpl
-import ua.com.programmer.agentventa.http.TokenRefresh
-import ua.com.programmer.agentventa.logger.Logger
-import ua.com.programmer.agentventa.repository.UserAccountRepository
+import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
+import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
+import ua.com.programmer.agentventa.data.remote.TokenManager
+import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
+import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import javax.inject.Singleton
 
 @Module

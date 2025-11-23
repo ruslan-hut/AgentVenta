@@ -5,7 +5,7 @@
     <data>
         <variable
             name="viewModel"
-            type="ua.com.programmer.agentventa.settings.UserAccountViewModel" />
+            type="ua.com.programmer.agentventa.presentation.features.settings.UserAccountViewModel" />
     </data>
 
     <ScrollView

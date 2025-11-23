@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/orderListFragment"
-        android:name="ua.com.programmer.agentventa.documents.order.OrderListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.order.OrderListFragment"
         android:label="@string/header_orders_list" >
         <action
             android:id="@+id/action_orderListFragment_to_orderFragment"
@@ -14,7 +14,7 @@
     </fragment>
     <fragment
         android:id="@+id/orderFragment"
-        android:name="ua.com.programmer.agentventa.documents.order.OrderFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.order.OrderFragment"
         android:label="@string/order" >
         <argument
             android:name="orderGuid"
@@ -46,7 +46,7 @@
     </fragment>
     <fragment
         android:id="@+id/userAccountListFragment"
-        android:name="ua.com.programmer.agentventa.settings.UserAccountListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.UserAccountListFragment"
         android:label="@string/data_server" >
         <action
             android:id="@+id/action_userAccountListFragment_to_userAccountFragment"
@@ -54,7 +54,7 @@
     </fragment>
     <fragment
         android:id="@+id/userAccountFragment"
-        android:name="ua.com.programmer.agentventa.settings.UserAccountFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.UserAccountFragment"
         android:label="@string/data_server" >
         <argument
             android:name="accountGuid"
@@ -63,7 +63,7 @@
     </fragment>
     <fragment
         android:id="@+id/productListFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.product.ProductListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.product.ProductListFragment"
         android:label="@string/header_goods_list" >
         <argument
             android:name="modeSelect"
@@ -88,7 +88,7 @@
     </fragment>
     <fragment
         android:id="@+id/clientListFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.client.ClientListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.client.ClientListFragment"
         android:label="@string/header_clients_list" >
         <argument
             android:name="groupGuid"
@@ -107,7 +107,7 @@
     </fragment>
     <fragment
         android:id="@+id/pickerFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.picker.PickerFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.picker.PickerFragment"
         android:label="@string/product" >
         <argument
             android:name="productGuid"
@@ -116,7 +116,7 @@
     </fragment>
     <fragment
         android:id="@+id/productFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.product.ProductFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.product.ProductFragment"
         android:label="@string/product" >
         <argument
             android:name="productGuid"
@@ -128,11 +128,11 @@
     </fragment>
     <fragment
         android:id="@+id/logFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.logger.LogFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.logger.LogFragment"
         android:label="@string/events_log" />
     <fragment
         android:id="@+id/clientMenuFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.client.ClientFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.client.ClientFragment"
         android:label="@string/doc_client" >
         <argument
             android:name="clientGuid"
@@ -159,7 +159,7 @@
     </fragment>
     <fragment
         android:id="@+id/cashListFragment"
-        android:name="ua.com.programmer.agentventa.documents.cash.CashListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.cash.CashListFragment"
         android:label="@string/header_cash_list" >
         <action
             android:id="@+id/action_cashListFragment_to_cashFragment"
@@ -167,7 +167,7 @@
     </fragment>
     <fragment
         android:id="@+id/cashFragment"
-        android:name="ua.com.programmer.agentventa.documents.cash.CashFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.cash.CashFragment"
         android:label="CashFragment" >
         <action
             android:id="@+id/action_cashFragment_to_clientListFragment"
@@ -186,7 +186,7 @@
     </fragment>
     <fragment
         android:id="@+id/taskListFragment"
-        android:name="ua.com.programmer.agentventa.documents.task.TaskListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.task.TaskListFragment"
         android:label="@string/header_tasks_list" >
         <action
             android:id="@+id/action_taskListFragment_to_taskFragment"
@@ -194,7 +194,7 @@
     </fragment>
     <fragment
         android:id="@+id/taskFragment"
-        android:name="ua.com.programmer.agentventa.documents.task.TaskFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.task.TaskFragment"
         android:label="@string/task" >
         <argument
             android:name="taskGuid"
@@ -203,7 +203,7 @@
     </fragment>
     <fragment
         android:id="@+id/productImageFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.product.ProductImageFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.product.ProductImageFragment"
         android:label="@string/product" >
         <argument
             android:name="productGuid"
@@ -212,7 +212,7 @@
     </fragment>
     <fragment
         android:id="@+id/locationPickupFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.locations.pickup.LocationPickupFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.locations.pickup.LocationPickupFragment"
         android:label="@string/title_location_pickup" >
         <argument
             android:name="clientGuid"
@@ -221,7 +221,7 @@
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="ua.com.programmer.agentventa.settings.SettingsFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.SettingsFragment"
         android:label="@string/action_settings" >
         <action
             android:id="@+id/action_settingsFragment_to_optionsFragment"
@@ -235,11 +235,11 @@
     </fragment>
     <fragment
         android:id="@+id/optionsFragment"
-        android:name="ua.com.programmer.agentventa.settings.OptionsFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.OptionsFragment"
         android:label="@string/pref_options" />
     <fragment
         android:id="@+id/syncFragment"
-        android:name="ua.com.programmer.agentventa.settings.SyncFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.SyncFragment"
         android:label="@string/action_sync" >
         <action
             android:id="@+id/action_syncFragment_to_userAccountFragment"
@@ -250,15 +250,15 @@
     </fragment>
     <fragment
         android:id="@+id/clientsMapFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.map.clients.ClientsMapFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.map.clients.ClientsMapFragment"
         android:label="@string/title_clients_map" />
     <fragment
         android:id="@+id/locationHistoryFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.map.history.LocationHistoryFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.map.history.LocationHistoryFragment"
         android:label="@string/title_locations_history" />
     <fragment
         android:id="@+id/debtFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.debt.DebtFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.debt.DebtFragment"
         android:label="@string/header_document" >
         <argument
             android:name="clientGuid"
@@ -271,7 +271,7 @@
     </fragment>
     <fragment
         android:id="@+id/cameraFragment"
-        android:name="ua.com.programmer.agentventa.camera.CameraFragment"
+        android:name="ua.com.programmer.agentventa.infrastructure.camera.CameraFragment"
         android:label="@string/camera" >
         <argument
             android:name="clientGuid"
@@ -280,7 +280,7 @@
     </fragment>
     <fragment
         android:id="@+id/clientImageFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.client.ClientImageFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.client.ClientImageFragment"
         android:label="@string/client_image" >
         <argument
             android:name="imageGuid"
@@ -289,23 +289,23 @@
     </fragment>
     <fragment
         android:id="@+id/fiscalFragment"
-        android:name="ua.com.programmer.agentventa.fiscal.FiscalFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.fiscal.FiscalFragment"
         android:label="@string/title_fiscal_service" />
     <fragment
         android:id="@+id/printerSettingsFragment"
-        android:name="ua.com.programmer.agentventa.printer.PrinterSettingsFragment"
+        android:name="ua.com.programmer.agentventa.infrastructure.printer.PrinterSettingsFragment"
         android:label="@string/title_printer_settings" />
     <fragment
         android:id="@+id/applicationSettingsFragment"
-        android:name="ua.com.programmer.agentventa.settings.ApplicationSettingsFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.ApplicationSettingsFragment"
         android:label="@string/pref_header_general" />
     <fragment
         android:id="@+id/companyListFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.company.CompanyListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.company.CompanyListFragment"
         android:label="@string/company" />
     <fragment
         android:id="@+id/storeListFragment"
-        android:name="ua.com.programmer.agentventa.catalogs.store.StoreListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.store.StoreListFragment"
         android:label="@string/store" >
         <argument
             android:name="orderGuid"

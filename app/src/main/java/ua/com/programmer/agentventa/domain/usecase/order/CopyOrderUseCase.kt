@@ -1,10 +1,10 @@
 package ua.com.programmer.agentventa.domain.usecase.order
 
-import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.SuspendUseCase
-import ua.com.programmer.agentventa.repository.OrderRepository
+import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import javax.inject.Inject
 
 /**

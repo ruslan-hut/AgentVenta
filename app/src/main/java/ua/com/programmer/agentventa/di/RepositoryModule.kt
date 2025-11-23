@@ -4,19 +4,19 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
-import ua.com.programmer.agentventa.dao.CashDao
-import ua.com.programmer.agentventa.dao.LocationDao
-import ua.com.programmer.agentventa.dao.OrderDao
-import ua.com.programmer.agentventa.dao.TaskDao
-import ua.com.programmer.agentventa.dao.UserAccountDao
-import ua.com.programmer.agentventa.dao.entity.Cash
-import ua.com.programmer.agentventa.dao.entity.Order
-import ua.com.programmer.agentventa.dao.entity.Task
-import ua.com.programmer.agentventa.dao.impl.CashRepositoryImpl
-import ua.com.programmer.agentventa.dao.impl.OrderRepositoryImpl
-import ua.com.programmer.agentventa.dao.impl.TaskRepositoryImpl
-import ua.com.programmer.agentventa.repository.DocumentRepository
-import ua.com.programmer.agentventa.repository.UserAccountRepository
+import ua.com.programmer.agentventa.data.local.dao.CashDao
+import ua.com.programmer.agentventa.data.local.dao.LocationDao
+import ua.com.programmer.agentventa.data.local.dao.OrderDao
+import ua.com.programmer.agentventa.data.local.dao.TaskDao
+import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
+import ua.com.programmer.agentventa.data.local.entity.Cash
+import ua.com.programmer.agentventa.data.local.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Task
+import ua.com.programmer.agentventa.data.repository.CashRepositoryImpl
+import ua.com.programmer.agentventa.data.repository.OrderRepositoryImpl
+import ua.com.programmer.agentventa.data.repository.TaskRepositoryImpl
+import ua.com.programmer.agentventa.domain.repository.DocumentRepository
+import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.utility.UtilsInterface
 
 @Module

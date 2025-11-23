@@ -5,7 +5,7 @@
     <data>
         <variable
             name="viewModel"
-            type="ua.com.programmer.agentventa.catalogs.picker.PickerViewModel" />
+            type="ua.com.programmer.agentventa.presentation.features.picker.PickerViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
