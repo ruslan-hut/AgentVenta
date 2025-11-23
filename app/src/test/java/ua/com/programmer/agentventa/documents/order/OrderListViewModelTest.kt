@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.order
+package ua.com.programmer.agentventa.presentation.features.order
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -16,7 +16,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.order.CopyOrderUseCase

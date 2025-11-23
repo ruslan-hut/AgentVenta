@@ -1,6 +1,6 @@
 package ua.com.programmer.agentventa.fixtures
 
-import ua.com.programmer.agentventa.dao.entity.*
+import ua.com.programmer.agentventa.data.local.entity.*
 import java.util.*
 
 /**

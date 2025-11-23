@@ -3,10 +3,10 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import ua.com.programmer.agentventa.dao.entity.LPrice
-import ua.com.programmer.agentventa.dao.entity.LProduct
-import ua.com.programmer.agentventa.repository.ProductRepository
-import ua.com.programmer.agentventa.shared.SharedParameters
+import ua.com.programmer.agentventa.data.local.entity.LPrice
+import ua.com.programmer.agentventa.data.local.entity.LProduct
+import ua.com.programmer.agentventa.domain.repository.ProductRepository
+import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
 
 /**
  * Fake implementation of ProductRepository for testing.

@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.common
+package ua.com.programmer.agentventa.presentation.common.document
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -15,11 +15,11 @@ import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.logger.Logger
-import ua.com.programmer.agentventa.shared.DocumentEvent
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.presentation.common.viewmodel.DocumentEvent
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import java.util.*
 

@@ -3,9 +3,9 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import ua.com.programmer.agentventa.dao.entity.Task
-import ua.com.programmer.agentventa.dao.entity.DocumentTotals
-import ua.com.programmer.agentventa.repository.TaskRepository
+import ua.com.programmer.agentventa.data.local.entity.Task
+import ua.com.programmer.agentventa.data.local.entity.DocumentTotals
+import ua.com.programmer.agentventa.domain.repository.TaskRepository
 import java.util.*
 
 /**
@@ -48,7 +48,7 @@ class FakeTaskRepository(
         }
     }
 
-    override suspend fun updateDocument(document: Task): Boolean {
+    override suspend fun insertOrUpdateDocument(document: Task): Boolean {
         val currentList = tasks.value.toMutableList()
         val existingIndex = currentList.indexOfFirst { it.guid == document.guid }
 
@@ -60,6 +60,10 @@ class FakeTaskRepository(
 
         tasks.value = currentList
         return true
+    }
+
+    override suspend fun updateDocument(document: Task): Boolean {
+        return insertOrUpdateDocument(document)
     }
 
     override suspend fun deleteDocument(document: Task): Boolean {

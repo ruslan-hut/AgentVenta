@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.common
+package ua.com.programmer.agentventa.presentation.common.document
 
 import android.view.View
 import app.cash.turbine.test
@@ -13,7 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import ua.com.programmer.agentventa.dao.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fake.FakeUserAccountRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures

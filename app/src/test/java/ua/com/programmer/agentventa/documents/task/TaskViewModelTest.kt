@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.task
+package ua.com.programmer.agentventa.presentation.features.task
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -12,15 +12,15 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import ua.com.programmer.agentventa.dao.entity.Task
-import ua.com.programmer.agentventa.shared.DocumentEvent
+import ua.com.programmer.agentventa.data.local.entity.Task
+import ua.com.programmer.agentventa.presentation.common.viewmodel.DocumentEvent
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
 import ua.com.programmer.agentventa.fake.FakeTaskRepository
 import ua.com.programmer.agentventa.fake.FakeUserAccountRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.logger.Logger
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import java.util.UUID
 

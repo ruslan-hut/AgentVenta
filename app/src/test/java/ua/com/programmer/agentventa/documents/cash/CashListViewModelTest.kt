@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.cash
+package ua.com.programmer.agentventa.presentation.features.cash
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat

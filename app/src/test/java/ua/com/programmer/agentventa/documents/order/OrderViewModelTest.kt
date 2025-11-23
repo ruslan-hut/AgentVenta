@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.order
+package ua.com.programmer.agentventa.presentation.features.order
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -16,9 +16,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ua.com.programmer.agentventa.dao.entity.Client
-import ua.com.programmer.agentventa.dao.entity.Order
-import ua.com.programmer.agentventa.dao.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.Client
+import ua.com.programmer.agentventa.data.local.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.PaymentType
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
@@ -27,7 +27,7 @@ import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fake.FakeProductRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.logger.Logger
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 import java.util.*

@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.documents.cash
+package ua.com.programmer.agentventa.presentation.features.cash
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -14,15 +14,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.mockito.kotlin.mock
-import ua.com.programmer.agentventa.dao.entity.Cash
-import ua.com.programmer.agentventa.dao.entity.Client
+import ua.com.programmer.agentventa.data.local.entity.Cash
+import ua.com.programmer.agentventa.data.local.entity.Client
 import ua.com.programmer.agentventa.domain.usecase.cash.EnableCashEditUseCase
 import ua.com.programmer.agentventa.domain.usecase.cash.SaveCashUseCase
 import ua.com.programmer.agentventa.domain.usecase.cash.ValidateCashUseCase
 import ua.com.programmer.agentventa.fake.FakeCashRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.logger.Logger
-import ua.com.programmer.agentventa.shared.DocumentEvent
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.presentation.common.viewmodel.DocumentEvent
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 

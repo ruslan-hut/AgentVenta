@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.catalogs.product
+package ua.com.programmer.agentventa.presentation.features.product
 
 import android.view.View
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
@@ -15,10 +15,10 @@ import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import ua.com.programmer.agentventa.dao.entity.LProduct
+import ua.com.programmer.agentventa.data.local.entity.LProduct
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.repository.ProductRepository
-import ua.com.programmer.agentventa.shared.SharedParameters
+import ua.com.programmer.agentventa.domain.repository.ProductRepository
+import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 

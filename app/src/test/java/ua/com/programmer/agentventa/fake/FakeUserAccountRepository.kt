@@ -3,9 +3,9 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import ua.com.programmer.agentventa.dao.entity.PriceType
-import ua.com.programmer.agentventa.dao.entity.UserAccount
-import ua.com.programmer.agentventa.repository.UserAccountRepository
+import ua.com.programmer.agentventa.data.local.entity.PriceType
+import ua.com.programmer.agentventa.data.local.entity.UserAccount
+import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 
 /**
  * Fake implementation of UserAccountRepository for testing.

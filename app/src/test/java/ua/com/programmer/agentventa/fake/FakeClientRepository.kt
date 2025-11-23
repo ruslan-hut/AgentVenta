@@ -3,11 +3,11 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import ua.com.programmer.agentventa.dao.entity.ClientLocation
-import ua.com.programmer.agentventa.dao.entity.Debt
-import ua.com.programmer.agentventa.dao.entity.LClient
-import ua.com.programmer.agentventa.dao.entity.LClientLocation
-import ua.com.programmer.agentventa.repository.ClientRepository
+import ua.com.programmer.agentventa.data.local.entity.ClientLocation
+import ua.com.programmer.agentventa.data.local.entity.Debt
+import ua.com.programmer.agentventa.data.local.entity.LClient
+import ua.com.programmer.agentventa.data.local.entity.LClientLocation
+import ua.com.programmer.agentventa.domain.repository.ClientRepository
 
 /**
  * Fake implementation of ClientRepository for testing.

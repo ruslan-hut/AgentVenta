@@ -3,8 +3,8 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import ua.com.programmer.agentventa.repository.NetworkRepository
-import ua.com.programmer.agentventa.http.Result
+import ua.com.programmer.agentventa.domain.repository.NetworkRepository
+import ua.com.programmer.agentventa.data.remote.Result
 import java.io.File
 
 /**

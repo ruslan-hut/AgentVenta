@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.shared
+package ua.com.programmer.agentventa.presentation.common.viewmodel
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -14,13 +14,13 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ua.com.programmer.agentventa.dao.entity.Company
-import ua.com.programmer.agentventa.dao.entity.PaymentType
-import ua.com.programmer.agentventa.dao.entity.PriceType
-import ua.com.programmer.agentventa.dao.entity.Store
-import ua.com.programmer.agentventa.dao.entity.UserAccount
+import ua.com.programmer.agentventa.data.local.entity.Company
+import ua.com.programmer.agentventa.data.local.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.PriceType
+import ua.com.programmer.agentventa.data.local.entity.Store
+import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.settings.UserOptions
+import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 
 /**

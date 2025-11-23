@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.shared
+package ua.com.programmer.agentventa.presentation.common.viewmodel
 
 import android.content.SharedPreferences
 import android.widget.ImageView
@@ -22,23 +22,23 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import ua.com.programmer.agentventa.dao.entity.ClientImage
-import ua.com.programmer.agentventa.dao.entity.Company
-import ua.com.programmer.agentventa.dao.entity.DocumentTotals
-import ua.com.programmer.agentventa.dao.entity.LClient
-import ua.com.programmer.agentventa.dao.entity.LProduct
-import ua.com.programmer.agentventa.dao.entity.PaymentType
-import ua.com.programmer.agentventa.dao.entity.PriceType
-import ua.com.programmer.agentventa.dao.entity.Store
-import ua.com.programmer.agentventa.dao.entity.UserAccount
+import ua.com.programmer.agentventa.data.local.entity.ClientImage
+import ua.com.programmer.agentventa.data.local.entity.Company
+import ua.com.programmer.agentventa.data.local.entity.DocumentTotals
+import ua.com.programmer.agentventa.data.local.entity.LClient
+import ua.com.programmer.agentventa.data.local.entity.LProduct
+import ua.com.programmer.agentventa.data.local.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.PriceType
+import ua.com.programmer.agentventa.data.local.entity.Store
+import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fake.FakeUserAccountRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.http.Result
-import ua.com.programmer.agentventa.logger.Logger
-import ua.com.programmer.agentventa.repository.CommonRepository
-import ua.com.programmer.agentventa.repository.FilesRepository
-import ua.com.programmer.agentventa.settings.UserOptions
+import ua.com.programmer.agentventa.data.remote.Result
+import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.domain.repository.CommonRepository
+import ua.com.programmer.agentventa.domain.repository.FilesRepository
+import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import java.io.File
 

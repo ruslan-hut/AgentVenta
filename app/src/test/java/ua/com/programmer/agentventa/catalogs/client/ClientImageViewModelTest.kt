@@ -1,4 +1,4 @@
-package ua.com.programmer.agentventa.catalogs.client
+package ua.com.programmer.agentventa.presentation.features.client
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
@@ -15,9 +15,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import ua.com.programmer.agentventa.dao.entity.ClientImage
+import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.fixtures.TestFixtures
-import ua.com.programmer.agentventa.repository.FilesRepository
+import ua.com.programmer.agentventa.domain.repository.FilesRepository
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 
