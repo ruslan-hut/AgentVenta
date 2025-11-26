@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 21,
-    "identityHash": "36edfa14ea0bd50caa704f81c0f7aba3",
+    "identityHash": "60b64959688b9e495cd859c300e56a51",
     "entities": [
       {
         "tableName": "user_accounts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`guid` TEXT NOT NULL, `is_current` INTEGER NOT NULL, `extended_id` INTEGER NOT NULL, `description` TEXT NOT NULL, `license` TEXT NOT NULL, `data_format` TEXT NOT NULL, `db_server` TEXT NOT NULL, `db_name` TEXT NOT NULL, `db_user` TEXT NOT NULL, `db_password` TEXT NOT NULL, `token` TEXT NOT NULL, `options` TEXT NOT NULL, PRIMARY KEY(`guid`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`guid` TEXT NOT NULL, `is_current` INTEGER NOT NULL, `extended_id` INTEGER NOT NULL, `description` TEXT NOT NULL, `license` TEXT NOT NULL, `data_format` TEXT NOT NULL, `db_server` TEXT NOT NULL, `db_name` TEXT NOT NULL, `db_user` TEXT NOT NULL, `db_password` TEXT NOT NULL, `token` TEXT NOT NULL, `options` TEXT NOT NULL, `relay_server` TEXT NOT NULL, PRIMARY KEY(`guid`))",
         "fields": [
           {
             "fieldPath": "guid",
@@ -77,6 +77,12 @@
           {
             "fieldPath": "options",
             "columnName": "options",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "relayServer",
+            "columnName": "relay_server",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -1697,7 +1703,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '36edfa14ea0bd50caa704f81c0f7aba3')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '60b64959688b9e495cd859c300e56a51')"
     ]
   }
 }

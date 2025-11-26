@@ -18,7 +18,8 @@ data class UserAccount(
     @ColumnInfo(name = "db_user") val dbUser: String = "",
     @ColumnInfo(name = "db_password") val dbPassword: String = "",
     val token: String = "",
-    val options: String = ""
+    val options: String = "",
+    @ColumnInfo(name = "relay_server") val relayServer: String = ""
 ){
     companion object Builder {
         fun buildDemo(): UserAccount {
@@ -97,4 +98,36 @@ fun UserAccount.getLicense(): String {
 
 fun UserAccount.isDemo(): Boolean {
     return dbServer == "hoot.com.ua" && dbName == "simple" && dbUser == "Агент" && dbPassword == "112233"
+}
+
+// WebSocket connection validation
+fun UserAccount.isValidForWebSocketConnection(): Boolean {
+    return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET &&
+            relayServer.isNotEmpty() &&
+            license.isNotEmpty() &&
+            guid.isNotEmpty()
+}
+
+// Constructs WebSocket URL for connection
+// Uses UserAccount.guid as device UUID for server identification
+fun UserAccount.getWebSocketUrl(): String {
+    if (relayServer.isEmpty()) return ""
+
+    var url = relayServer
+    // Ensure proper protocol
+    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
+        url = "wss://$url"
+    }
+    // Remove trailing slash if present
+    if (url.endsWith("/")) {
+        url = url.dropLast(1)
+    }
+
+    // Construct WebSocket endpoint with device UUID (guid) and license
+    return "$url/ws/device?uuid=$guid&license=$license"
+}
+
+// Determines if this account should use WebSocket instead of HTTP
+fun UserAccount.shouldUseWebSocket(): Boolean {
+    return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET && relayServer.isNotEmpty()
 }

@@ -40,6 +40,7 @@ public final class Constants {
     public static final String SYNC_FORMAT_FTP = "FTP_server";
     public static final String SYNC_FORMAT_WEB = "Web_service";
     public static final String SYNC_FORMAT_HTTP = "HTTP_service";
+    public static final String SYNC_FORMAT_WEBSOCKET = "WebSocket_relay";
 
     /**
      * data update modes
@@ -96,4 +97,20 @@ public final class Constants {
      * fiscal providers
      */
     public static final String FISCAL_PROVIDER_CHECKBOX = "Checkbox";
+
+    /**
+     * WebSocket configuration
+     */
+    public static final int WEBSOCKET_RECONNECT_INITIAL_DELAY = 1000; // 1s
+    public static final int WEBSOCKET_RECONNECT_MAX_DELAY = 60000; // 60s
+    public static final int WEBSOCKET_PING_INTERVAL = 30000; // 30s
+
+    /**
+     * WebSocket message types
+     */
+    public static final String WEBSOCKET_MESSAGE_TYPE_DATA = "data";
+    public static final String WEBSOCKET_MESSAGE_TYPE_ACK = "ack";
+    public static final String WEBSOCKET_MESSAGE_TYPE_PING = "ping";
+    public static final String WEBSOCKET_MESSAGE_TYPE_PONG = "pong";
+    public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
 }

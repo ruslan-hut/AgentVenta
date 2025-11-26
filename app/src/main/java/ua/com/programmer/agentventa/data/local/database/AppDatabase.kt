@@ -187,6 +187,9 @@ abstract class AppDatabase: RoomDatabase() {
 
         private val MIGRATION_20_21 = object : Migration(20, 21) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Add relay_server field to user_accounts table
+                db.execSQL("ALTER TABLE user_accounts ADD COLUMN relay_server TEXT NOT NULL DEFAULT ''")
+
                 // Add indexes for Order table
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid ON orders(db_guid)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_orders_db_guid_time ON orders(db_guid, time)")
