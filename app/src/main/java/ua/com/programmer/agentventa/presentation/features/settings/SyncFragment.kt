@@ -96,6 +96,9 @@ class SyncFragment: Fragment(), MenuProvider {
                 val action = SyncFragmentDirections.actionSyncFragmentToLogFragment()
                 view?.findNavController()?.navigate(action)
             }
+            R.id.websocket_test -> {
+                view?.findNavController()?.navigate(R.id.webSocketTestFragment)
+            }
             else -> return false
         }
         return true

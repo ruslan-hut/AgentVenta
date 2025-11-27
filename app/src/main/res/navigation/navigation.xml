@@ -312,4 +312,8 @@
             app:argType="string"
             app:nullable="true" />
     </fragment>
+    <fragment
+        android:id="@+id/webSocketTestFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.websocket.WebSocketTestFragment"
+        android:label="WebSocket Test" />
 </navigation>
