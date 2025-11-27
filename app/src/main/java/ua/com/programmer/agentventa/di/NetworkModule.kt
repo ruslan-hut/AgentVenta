@@ -14,6 +14,8 @@ import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
+import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
+import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
 import javax.inject.Singleton
 
 @Module
@@ -62,6 +64,18 @@ class NetworkModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): HttpClientApi {
         return retrofit.create(HttpClientApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWebSocketRepository(
+        okHttpClient: OkHttpClient,
+        logger: Logger
+    ): WebSocketRepository {
+        return WebSocketRepositoryImpl(
+            okHttpClient = okHttpClient,
+            logger = logger
+        )
     }
 
 }
