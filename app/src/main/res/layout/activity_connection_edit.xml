@@ -114,6 +114,48 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- WebSocket Relay Server (shown only for WebSocket format) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/relay_server_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:hint="@string/relay_server"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/relay_server"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:inputType="textUri" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Account GUID (Device UUID for WebSocket) -->
+            <LinearLayout
+                android:id="@+id/account_guid_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:padding="8dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/account_guid"/>
+                <TextView
+                    android:id="@+id/account_guid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:fontFamily="monospace"
+                    android:textSize="12sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

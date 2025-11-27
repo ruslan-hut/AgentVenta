@@ -28,6 +28,7 @@ import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.data.local.entity.getLicense
 import ua.com.programmer.agentventa.data.local.entity.isDemo
 import ua.com.programmer.agentventa.databinding.ActivityConnectionEditBinding
+import ua.com.programmer.agentventa.utility.Constants
 
 @AndroidEntryPoint
 class UserAccountFragment: Fragment(), MenuProvider {
@@ -65,7 +66,9 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 binding.dbName.setText(account.dbName)
                 binding.dbUser.setText(account.dbUser)
                 binding.dbPassword.setText(account.dbPassword)
+                binding.relayServer.setText(account.relayServer)
                 binding.accountId.text = account.getGuid()
+                binding.accountGuid.text = account.guid
                 binding.license.text = account.getLicense()
                 binding.syncFormatSpinner.setSelection(viewModel.formatSpinner.value?.indexOf(account.dataFormat) ?: 0)
 
@@ -101,7 +104,24 @@ class UserAccountFragment: Fragment(), MenuProvider {
 
         setupFormatSpinner()
 
+        // Observe format changes to show/hide WebSocket-specific fields
+        viewModel.selectedFormat.observe(viewLifecycleOwner) { format ->
+            updateFieldsVisibility(format)
+        }
+
         return binding.root
+    }
+
+    private fun updateFieldsVisibility(format: String) {
+        val isWebSocket = format == Constants.SYNC_FORMAT_WEBSOCKET
+
+        // Show/hide WebSocket-specific fields
+        binding.relayServerLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
+        binding.accountGuidLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
+
+        // Show/hide HTTP-specific fields
+        binding.server.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
+        binding.dbName.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
     }
 
     private fun finish() {
@@ -125,6 +145,7 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 dbName = binding.dbName.text.toString().trim(),
                 dbUser = binding.dbUser.text.toString().trim(),
                 dbPassword = binding.dbPassword.text.toString().trim(),
+                relayServer = binding.relayServer.text.toString().trim(),
                 guid = fakeGuid.ifEmpty { it.guid }
             )
             viewModel.saveAccount(updated) {
