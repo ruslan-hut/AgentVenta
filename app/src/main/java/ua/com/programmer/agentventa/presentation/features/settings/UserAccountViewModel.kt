@@ -29,7 +29,11 @@ class UserAccountViewModel @Inject constructor(
     }
 
     init {
-        formatSpinner.value = listOf(Constants.SYNC_FORMAT_HTTP, Constants.SYNC_FORMAT_FTP)
+        formatSpinner.value = listOf(
+            Constants.SYNC_FORMAT_HTTP,
+            Constants.SYNC_FORMAT_FTP,
+            Constants.SYNC_FORMAT_WEBSOCKET
+        )
         selectedFormat.value = Constants.SYNC_FORMAT_HTTP
     }
 
