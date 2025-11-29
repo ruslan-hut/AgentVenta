@@ -19,7 +19,9 @@ data class UserAccount(
     @ColumnInfo(name = "db_password") val dbPassword: String = "",
     val token: String = "",
     val options: String = "",
-    @ColumnInfo(name = "relay_server") val relayServer: String = ""
+    @ColumnInfo(name = "relay_server") val relayServer: String = "",
+    @ColumnInfo(name = "sync_email") val syncEmail: String = "",
+    @ColumnInfo(name = "use_websocket") val useWebSocket: Boolean = true // Default to WebSocket (relay mode)
 ){
     companion object Builder {
         fun buildDemo(): UserAccount {
@@ -108,8 +110,7 @@ fun UserAccount.isDemo(): Boolean {
 // Backend host is predefined in BuildConfig (from local.properties KEY_HOST)
 // The relayServer field is kept for backward compatibility but is not required
 fun UserAccount.isValidForWebSocketConnection(): Boolean {
-    return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET &&
-            guid.isNotEmpty()
+    return useWebSocket && guid.isNotEmpty()
 }
 
 // Constructs WebSocket URL for connection using predefined backend host
@@ -177,6 +178,7 @@ fun UserAccount.getWebSocketUrl(backendHost: String): String {
 }
 
 // Determines if this account should use WebSocket instead of HTTP
+// This is now the preferred way to check connection mode throughout the app
 fun UserAccount.shouldUseWebSocket(): Boolean {
-    return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET
+    return useWebSocket
 }

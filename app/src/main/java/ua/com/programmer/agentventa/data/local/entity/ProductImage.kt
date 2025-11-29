@@ -34,3 +34,16 @@ data class ProductImage(
 fun ProductImage.isValid(): Boolean {
     return productGuid.isNotEmpty() && databaseId.isNotEmpty()
 }
+
+fun ProductImage.toMap(): Map<String, Any> {
+    return mapOf(
+        "db_guid" to databaseId,
+        "product_guid" to productGuid,
+        "image_guid" to guid,
+        "url" to url,
+        "timestamp" to timestamp,
+        "description" to description,
+        "type" to type,
+        "is_default" to isDefault
+    )
+}

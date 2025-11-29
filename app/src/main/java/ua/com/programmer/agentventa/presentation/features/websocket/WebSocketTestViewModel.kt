@@ -155,7 +155,7 @@ class WebSocketTestViewModel @Inject constructor(
 
             val options = ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder.build(account)
 
-            settingsSyncRepository.uploadSettings(email, options).collect { result ->
+            settingsSyncRepository.uploadSettings(email, account, options).collect { result ->
                 when (result) {
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
                         _settingsSyncStatus.value = "✓ Settings uploaded"

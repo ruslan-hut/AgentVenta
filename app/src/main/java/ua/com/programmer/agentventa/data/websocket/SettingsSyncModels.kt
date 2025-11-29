@@ -4,11 +4,44 @@ import com.google.gson.annotations.SerializedName
 
 /**
  * Settings data for WebSocket synchronization.
- * Matches the API specification for settings upload/download.
+ * Now includes full UserAccount data, not just options.
  */
 data class SettingsData(
     @SerializedName("user_email")
     val userEmail: String,
+
+    @SerializedName("device_uuid")
+    val deviceUuid: String,
+
+    @SerializedName("description")
+    val description: String = "",
+
+    @SerializedName("license")
+    val license: String = "",
+
+    @SerializedName("data_format")
+    val dataFormat: String = "",
+
+    @SerializedName("db_server")
+    val dbServer: String = "",
+
+    @SerializedName("db_name")
+    val dbName: String = "",
+
+    @SerializedName("db_user")
+    val dbUser: String = "",
+
+    @SerializedName("db_password")
+    val dbPassword: String = "",
+
+    @SerializedName("token")
+    val token: String = "",
+
+    @SerializedName("relay_server")
+    val relayServer: String = "",
+
+    @SerializedName("use_websocket")
+    val useWebSocket: Boolean = true,
 
     @SerializedName("options")
     val options: SettingsOptions,

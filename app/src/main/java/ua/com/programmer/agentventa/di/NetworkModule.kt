@@ -18,6 +18,7 @@ import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
 import ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository
 import ua.com.programmer.agentventa.data.repository.SettingsSyncRepositoryImpl
+import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import com.google.gson.Gson
 import javax.inject.Singleton
@@ -81,12 +82,14 @@ class NetworkModule {
     fun provideWebSocketRepository(
         okHttpClient: OkHttpClient,
         logger: Logger,
-        apiKeyProvider: ApiKeyProvider
+        apiKeyProvider: ApiKeyProvider,
+        dataExchangeRepository: DataExchangeRepository
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
             logger = logger,
-            apiKeyProvider = apiKeyProvider
+            apiKeyProvider = apiKeyProvider,
+            dataExchangeRepository = dataExchangeRepository
         )
     }
 

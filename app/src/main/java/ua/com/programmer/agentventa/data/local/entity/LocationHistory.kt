@@ -23,3 +23,20 @@ data class LocationHistory(
 fun LocationHistory.interval(currentTime: Long): Long {
     return currentTime - time / 1000
 }
+
+fun LocationHistory.toMap(): Map<String, Any> {
+    return mapOf(
+        "id" to id,
+        "time" to time,
+        "accuracy" to accuracy,
+        "altitude" to altitude,
+        "bearing" to bearing,
+        "latitude" to latitude,
+        "longitude" to longitude,
+        "provider" to provider,
+        "speed" to speed,
+        "distance" to distance,
+        "point_name" to pointName,
+        "extra" to extra
+    )
+}

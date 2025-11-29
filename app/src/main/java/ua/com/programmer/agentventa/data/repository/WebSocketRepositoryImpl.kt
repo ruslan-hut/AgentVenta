@@ -7,10 +7,13 @@ import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.getWebSocketUrl
 import ua.com.programmer.agentventa.data.local.entity.isValidForWebSocketConnection
 import ua.com.programmer.agentventa.data.websocket.*
+import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
+import ua.com.programmer.agentventa.utility.XMap
+import com.google.gson.Gson
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,7 +32,8 @@ import javax.inject.Singleton
 class WebSocketRepositoryImpl @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val logger: Logger,
-    private val apiKeyProvider: ApiKeyProvider
+    private val apiKeyProvider: ApiKeyProvider,
+    private val dataExchangeRepository: DataExchangeRepository
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -414,9 +418,127 @@ class WebSocketRepositoryImpl @Inject constructor(
                         }
                     }
                 }
+
+                Constants.WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS -> {
+                    handleCatalogUpdate(message)
+                }
             }
         } catch (e: Exception) {
             logger.e(TAG, "Message handling error: ${e.message}")
+        }
+    }
+
+    /**
+     * Handles incoming catalog update messages from the server.
+     * Parses the catalog data and saves it to the local database.
+     */
+    private fun handleCatalogUpdate(message: WebSocketMessage) {
+        scope.launch {
+            try {
+                val gson = Gson()
+                val payload = message.payload
+
+                // Parse the payload as a JSON object
+                val payloadObj = gson.fromJson(payload, Map::class.java) as? Map<*, *> ?: run {
+                    logger.e(TAG, "Invalid catalog update payload")
+                    return@launch
+                }
+
+                val catalogType = payloadObj["catalog_type"] as? String
+                val data = payloadObj["data"] as? List<*>
+                val messageId = message.messageId
+
+                if (catalogType == null || data == null) {
+                    logger.e(TAG, "Missing catalog_type or data in payload")
+                    return@launch
+                }
+
+                logger.d(TAG, "Received catalog update: $catalogType (${data.size} items)")
+
+                // Get current account guid for database operations
+                val accountGuid = currentAccount?.guid ?: run {
+                    logger.e(TAG, "No current account for catalog update")
+                    return@launch
+                }
+
+                // Get current timestamp for catalog update
+                val timestamp = System.currentTimeMillis()
+
+                // Convert data to XMap format (same as HTTP sync uses)
+                val xMapList = data.mapNotNull { item ->
+                    try {
+                        val itemMap = item as? Map<*, *> ?: return@mapNotNull null
+                        val xMap = XMap(itemMap)
+                        xMap.setDatabaseId(accountGuid)
+                        xMap.setTimestamp(timestamp)
+                        xMap
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Error converting catalog item: ${e.message}")
+                        null
+                    }
+                }
+
+                if (xMapList.isEmpty()) {
+                    logger.w(TAG, "No valid catalog items to save")
+                    // Still send ACK even if no items
+                    sendCatalogAck(messageId, catalogType, 0)
+                    return@launch
+                }
+
+                // Save catalog data using existing DataExchangeRepository
+                try {
+                    dataExchangeRepository.saveData(xMapList)
+                    logger.d(TAG, "Saved ${xMapList.size} items for catalog: $catalogType")
+
+                    // Send acknowledgment to server
+                    sendCatalogAck(messageId, catalogType, xMapList.size)
+                } catch (e: Exception) {
+                    logger.e(TAG, "Error saving catalog data: ${e.message}")
+                    sendCatalogError(messageId, catalogType, e.message ?: "Save failed")
+                }
+
+            } catch (e: Exception) {
+                logger.e(TAG, "Error handling catalog update: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Sends an acknowledgment message after successfully processing catalog data
+     */
+    private fun sendCatalogAck(messageId: String?, catalogType: String, itemCount: Int) {
+        if (messageId.isNullOrEmpty()) return
+
+        try {
+            val ackMessage = WebSocketMessageFactory.createAckMessage(messageId)
+            webSocket?.send(ackMessage)
+            logger.d(TAG, "Sent ACK for catalog $catalogType ($itemCount items)")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error sending catalog ACK: ${e.message}")
+        }
+    }
+
+    /**
+     * Sends an error message if catalog processing failed
+     */
+    private fun sendCatalogError(messageId: String?, catalogType: String, error: String) {
+        if (messageId.isNullOrEmpty()) return
+
+        try {
+            val gson = Gson()
+            val errorPayload = mapOf(
+                "catalog_type" to catalogType,
+                "error" to error
+            )
+            val errorMessage = WebSocketMessageFactory.createMessage(
+                Constants.WEBSOCKET_MESSAGE_TYPE_ERROR,
+                gson.toJson(errorPayload),
+                messageId
+            )
+            webSocket?.send(errorMessage)
+            logger.e(TAG, "Sent error for catalog $catalogType: $error")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error sending catalog error: ${e.message}")
         }
     }
 

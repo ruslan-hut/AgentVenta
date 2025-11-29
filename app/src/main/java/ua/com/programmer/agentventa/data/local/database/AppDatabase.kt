@@ -59,7 +59,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Rest::class,
     Company::class,
     Store::class,
-                     ], version = 22, exportSchema = true)
+                     ], version = 24, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -220,6 +220,21 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        private val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add sync_email field to user_accounts table for settings sync
+                db.execSQL("ALTER TABLE user_accounts ADD COLUMN sync_email TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        private val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add use_websocket field to track connection mode preference
+                // Default to 1 (true) for WebSocket/relay mode
+                db.execSQL("ALTER TABLE user_accounts ADD COLUMN use_websocket INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -236,6 +251,8 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_19_20,
                         MIGRATION_20_21,
                         MIGRATION_21_22,
+                        MIGRATION_22_23,
+                        MIGRATION_23_24,
                     )
                     .build()
                 INSTANCE = instance

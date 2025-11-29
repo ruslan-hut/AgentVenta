@@ -12,6 +12,8 @@ import ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
+import ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder
+import ua.com.programmer.agentventa.presentation.features.settings.toJson
 import ua.com.programmer.agentventa.utility.Constants
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -33,43 +35,87 @@ class SettingsSyncRepositoryImpl @Inject constructor(
 
     override suspend fun uploadSettings(
         userEmail: String,
+        userAccount: ua.com.programmer.agentventa.data.local.entity.UserAccount,
         options: UserOptions
     ): Flow<SettingsSyncResult> = flow {
+        android.util.Log.d(TAG, "=== UPLOAD SETTINGS START ===")
+        android.util.Log.d(TAG, "Email: $userEmail")
+        android.util.Log.d(TAG, "Device UUID: ${userAccount.guid}")
+        android.util.Log.d(TAG, "Description: ${userAccount.description}")
+        android.util.Log.d(TAG, "License: ${userAccount.license}")
+
         if (!webSocketRepository.isConnected()) {
             emit(SettingsSyncResult.Error("WebSocket not connected"))
             return@flow
         }
 
         try {
-            logger.d(TAG, "Uploading settings for: $userEmail")
+            logger.d(TAG, "Uploading settings for: $userEmail (device: ${userAccount.guid})")
 
             // Convert UserOptions to SettingsOptions
             val settingsOptions = options.toSettingsOptions()
 
-            // Create settings data
+            // Create settings data with full UserAccount information
             val settingsData = SettingsData(
                 userEmail = userEmail,
+                deviceUuid = userAccount.guid,
+                description = userAccount.description,
+                license = userAccount.license,
+                dataFormat = userAccount.dataFormat,
+                dbServer = userAccount.dbServer,
+                dbName = userAccount.dbName,
+                dbUser = userAccount.dbUser,
+                dbPassword = userAccount.dbPassword,
+                token = userAccount.token,
+                relayServer = userAccount.relayServer,
+                useWebSocket = userAccount.useWebSocket,
                 options = settingsOptions
             )
 
+            // Serialize to JSON
+            val jsonData = gson.toJson(settingsData)
+            logger.d(TAG, "Sending settings JSON (${jsonData.length} chars): ${jsonData.take(200)}...")
+            android.util.Log.d(TAG, "JSON length: ${jsonData.length}")
+            android.util.Log.d(TAG, "JSON preview: ${jsonData.take(500)}")
+            if (jsonData.length > 500) {
+                android.util.Log.d(TAG, "JSON continues: ${jsonData.substring(500, minOf(1000, jsonData.length))}")
+            }
+
             // Send as data message with data_type: "settings"
-            val result = webSocketRepository.sendData(
-                dataType = Constants.WEBSOCKET_DATA_TYPE_SETTINGS,
-                data = gson.toJson(settingsData)
-            ).first()
+            // Note: Backend currently queues settings for delivery instead of ACKing immediately
+            // So we wait for the first Sent or Acknowledged result with a timeout
+            val result = withTimeoutOrNull(5.seconds) {
+                webSocketRepository.sendData(
+                    dataType = Constants.WEBSOCKET_DATA_TYPE_SETTINGS,
+                    data = jsonData
+                ).first { result ->
+                    // Wait for first meaningful result (not Pending)
+                    result is SendResult.Sent ||
+                    result is SendResult.Acknowledged ||
+                    result is SendResult.Failed
+                }
+            }
 
             when (result) {
+                is SendResult.Sent -> {
+                    logger.d(TAG, "Settings sent to server")
+                    emit(SettingsSyncResult.Success(settingsData))
+                }
                 is SendResult.Acknowledged -> {
-                    logger.d(TAG, "Settings uploaded successfully")
+                    logger.d(TAG, "Settings upload acknowledged")
                     emit(SettingsSyncResult.Success(settingsData))
                 }
                 is SendResult.Failed -> {
                     logger.e(TAG, "Settings upload failed: ${result.error}")
                     emit(SettingsSyncResult.Error(result.error))
                 }
-                else -> {
-                    // Sent but not yet acknowledged
-                    logger.d(TAG, "Settings sent, waiting for ACK")
+                is SendResult.Pending -> {
+                    logger.e(TAG, "Unexpected pending result after filtering")
+                    emit(SettingsSyncResult.Error("Unexpected pending state"))
+                }
+                null -> {
+                    logger.e(TAG, "Settings upload timeout")
+                    emit(SettingsSyncResult.Error("Upload timeout"))
                 }
             }
         } catch (e: Exception) {
@@ -94,16 +140,24 @@ class SettingsSyncRepositoryImpl @Inject constructor(
                 addProperty("user_email", userEmail)
             }
 
-            val result = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_SYNC_SETTINGS,
-                payload = gson.toJson(requestData)
-            ).first()
+            // Send the request and wait for first meaningful result
+            val sendResult = withTimeoutOrNull(5.seconds) {
+                webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_SYNC_SETTINGS,
+                    payload = gson.toJson(requestData)
+                ).first { result ->
+                    // Wait for first meaningful result (not Pending)
+                    result is SendResult.Sent ||
+                    result is SendResult.Acknowledged ||
+                    result is SendResult.Failed
+                }
+            }
 
-            when (result) {
-                is SendResult.Acknowledged -> {
+            when (sendResult) {
+                is SendResult.Sent, is SendResult.Acknowledged -> {
                     logger.d(TAG, "Settings request sent, waiting for response")
 
-                    // Wait for incoming settings message with timeout
+                    // Wait for settings response from server
                     val settings = withTimeoutOrNull(10.seconds) {
                         waitForSettingsResponse(userEmail)
                     }
@@ -111,15 +165,20 @@ class SettingsSyncRepositoryImpl @Inject constructor(
                     if (settings != null) {
                         emit(settings)
                     } else {
-                        emit(SettingsSyncResult.Error("Timeout waiting for settings"))
+                        emit(SettingsSyncResult.Error("Timeout waiting for settings response"))
                     }
                 }
                 is SendResult.Failed -> {
-                    logger.e(TAG, "Settings request failed: ${result.error}")
-                    emit(SettingsSyncResult.Error(result.error))
+                    logger.e(TAG, "Settings request failed: ${sendResult.error}")
+                    emit(SettingsSyncResult.Error(sendResult.error))
                 }
-                else -> {
-                    logger.d(TAG, "Settings request sent")
+                is SendResult.Pending -> {
+                    logger.e(TAG, "Unexpected pending result after filtering")
+                    emit(SettingsSyncResult.Error("Unexpected pending state"))
+                }
+                null -> {
+                    logger.e(TAG, "Settings request timeout")
+                    emit(SettingsSyncResult.Error("Request timeout"))
                 }
             }
         } catch (e: Exception) {
@@ -236,5 +295,33 @@ fun SettingsOptions.toUserOptions(
         usePackageMark = this.usePackageMark,
         currency = this.currency,
         defaultClient = this.defaultClient
+    )
+}
+
+/**
+ * Convert SettingsData to UserAccount.
+ * Applies downloaded settings to create an updated UserAccount.
+ * Preserves the local GUID and isCurrent flag.
+ */
+fun SettingsData.toUserAccount(
+    currentAccount: ua.com.programmer.agentventa.data.local.entity.UserAccount
+): ua.com.programmer.agentventa.data.local.entity.UserAccount {
+    val updatedOptions = this.options.toUserOptions(
+        ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder.build(currentAccount)
+    )
+
+    return currentAccount.copy(
+        description = this.description,
+        license = this.license,
+        dataFormat = this.dataFormat,
+        dbServer = this.dbServer,
+        dbName = this.dbName,
+        dbUser = this.dbUser,
+        dbPassword = this.dbPassword,
+        token = this.token,
+        relayServer = this.relayServer,
+        useWebSocket = this.useWebSocket,
+        syncEmail = this.userEmail, // Update sync email to match downloaded settings
+        options = updatedOptions.toJson()
     )
 }

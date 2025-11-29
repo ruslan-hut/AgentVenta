@@ -59,27 +59,41 @@ class UserAccountFragment: Fragment(), MenuProvider {
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        viewModel.account.observe(this.viewLifecycleOwner) {account ->
+        // Setup listeners first before observing account data
+        setupManualConfigSwitch()
+        setupFormatSpinner()
+        setupWebSocketSection()
+        setupSettingsSyncObservers()
+        setupButtonListeners()
+
+        viewModel.account.observe(this.viewLifecycleOwner) { account ->
             account?.let {
                 binding.description.setText(account.description)
                 binding.server.setText(account.dbServer)
                 binding.dbName.setText(account.dbName)
                 binding.dbUser.setText(account.dbUser)
                 binding.dbPassword.setText(account.dbPassword)
-                binding.relayServer.setText(account.relayServer)
-                binding.licenseInput.setText(account.license)
+                binding.syncEmail.setText(account.syncEmail)
                 binding.accountId.text = account.getGuid()
                 binding.accountGuid.text = account.guid
                 binding.license.text = account.getLicense()
-                binding.syncFormatSpinner.setSelection(viewModel.formatSpinner.value?.indexOf(account.dataFormat) ?: 0)
+
+                // Set manual config switch based on useWebSocket field
+                val isManualConfig = !account.useWebSocket
+                binding.manualConfigSwitch.isChecked = isManualConfig
+
+                // Update visibility based on account data format
+                updateFieldsVisibility(isManualConfig)
 
                 if (account.isDemo()) {
                     binding.description.isEnabled = false
+                    binding.manualConfigSwitch.isEnabled = false
                     binding.server.isEnabled = false
                     binding.dbName.isEnabled = false
                     binding.dbUser.isEnabled = false
                     binding.dbPassword.isEnabled = false
                     binding.syncFormatSpinner.isEnabled = false
+                    binding.syncEmail.isEnabled = false
                 }
 
                 _account = account
@@ -103,28 +117,31 @@ class UserAccountFragment: Fragment(), MenuProvider {
             }
         }
 
-        setupFormatSpinner()
-
-        // Observe format changes to show/hide WebSocket-specific fields
-        viewModel.selectedFormat.observe(viewLifecycleOwner) { format ->
-            updateFieldsVisibility(format)
-        }
-
         return binding.root
     }
 
-    private fun updateFieldsVisibility(format: String) {
-        val isWebSocket = format == Constants.SYNC_FORMAT_WEBSOCKET
+    private fun setupManualConfigSwitch() {
+        binding.manualConfigSwitch.setOnCheckedChangeListener { _, isChecked ->
+            updateFieldsVisibility(isChecked)
 
-        // Show/hide WebSocket-specific fields
-        binding.relayServerLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
-        binding.accountGuidLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
-        binding.licenseLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
+            // Update selected format (manual = HTTP, relay = WebSocket)
+            viewModel.selectedFormat.value = if (isChecked) {
+                Constants.SYNC_FORMAT_HTTP
+            } else {
+                Constants.SYNC_FORMAT_WEBSOCKET
+            }
+        }
+    }
 
-        // Show/hide HTTP-specific fields
-        binding.server.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
-        binding.dbName.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
-        binding.licenseReadonlyLayout.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
+    private fun updateFieldsVisibility(isManualConfig: Boolean) {
+        // Show/hide manual configuration section
+        binding.manualConfigSection.visibility = if (isManualConfig) View.VISIBLE else View.GONE
+
+        // Show/hide WebSocket section (visible when NOT in manual mode)
+        binding.websocketSection.visibility = if (!isManualConfig) View.VISIBLE else View.GONE
+
+        // Show/hide email field for settings sync (visible when NOT in manual mode)
+        binding.syncEmailLayout.visibility = if (!isManualConfig) View.VISIBLE else View.GONE
     }
 
     private fun finish() {
@@ -139,17 +156,19 @@ class UserAccountFragment: Fragment(), MenuProvider {
         }
 
         val fakeGuid = binding.fakeGuid.text.toString().trim()
+        val isManualConfig = binding.manualConfigSwitch.isChecked
 
         _account?.let {
             val updated = it.copy(
                 description = binding.description.text.toString().trim(),
-                dataFormat = binding.syncFormatSpinner.selectedItem.toString(),
-                dbServer = binding.server.text.toString().trim(),
-                dbName = binding.dbName.text.toString().trim(),
-                dbUser = binding.dbUser.text.toString().trim(),
-                dbPassword = binding.dbPassword.text.toString().trim(),
-                relayServer = binding.relayServer.text.toString().trim(),
-                license = binding.licenseInput.text.toString().trim(),
+                useWebSocket = !isManualConfig, // Store the preference
+                dataFormat = if (isManualConfig) Constants.SYNC_FORMAT_HTTP else Constants.SYNC_FORMAT_WEBSOCKET,
+                dbServer = if (isManualConfig) binding.server.text.toString().trim() else "",
+                dbName = if (isManualConfig) binding.dbName.text.toString().trim() else "",
+                dbUser = if (isManualConfig) binding.dbUser.text.toString().trim() else "",
+                dbPassword = if (isManualConfig) binding.dbPassword.text.toString().trim() else "",
+                syncEmail = if (!isManualConfig) binding.syncEmail.text.toString().trim() else "",
+                relayServer = "", // Not used anymore
                 guid = fakeGuid.ifEmpty { it.guid }
             )
             viewModel.saveAccount(updated) {
@@ -193,20 +212,15 @@ class UserAccountFragment: Fragment(), MenuProvider {
     }
 
     private fun setupFormatSpinner() {
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, viewModel.formatSpinner.value!!)
+        // Spinner is hidden - manual mode always uses HTTP
+        // Initialize adapter for backward compatibility
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            listOf(Constants.SYNC_FORMAT_HTTP)
+        )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.syncFormatSpinner.adapter = adapter
-        binding.syncFormatSpinner.setSelection(adapter.getPosition(viewModel.selectedFormat.value))
-
-        binding.syncFormatSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                viewModel.selectedFormat.value = viewModel.formatSpinner.value!![position]
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Another interface callback
-            }
-        }
     }
 
     private fun copyToClipboard(text: String) {
@@ -215,6 +229,68 @@ class UserAccountFragment: Fragment(), MenuProvider {
         clipboard.setPrimaryClip(clip)
 
         Toast.makeText(activity, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun setupWebSocketSection() {
+        // Observe connection state text for display
+        viewModel.connectionState.observe(viewLifecycleOwner) { state ->
+            binding.connectionStatus.text = state
+        }
+
+        // Observe boolean connection states for button logic
+        viewModel.isConnected.observe(viewLifecycleOwner) { connected ->
+            binding.disconnectButton.isEnabled = connected
+            binding.uploadSettingsButton.isEnabled = connected
+            binding.downloadSettingsButton.isEnabled = connected
+
+            // Update connect button based on connected and connecting states
+            updateConnectButton()
+        }
+
+        viewModel.isConnecting.observe(viewLifecycleOwner) {
+            // Update connect button based on connected and connecting states
+            updateConnectButton()
+        }
+    }
+
+    private fun updateConnectButton() {
+        val connected = viewModel.isConnected.value ?: false
+        val connecting = viewModel.isConnecting.value ?: false
+        binding.connectButton.isEnabled = !connected && !connecting
+    }
+
+    private fun setupSettingsSyncObservers() {
+        // Observe settings sync status
+        viewModel.settingsSyncStatus.observe(viewLifecycleOwner) { status ->
+            if (status.isNotEmpty()) {
+                binding.settingsSyncStatus.text = status
+                binding.settingsSyncStatus.visibility = View.VISIBLE
+            } else {
+                binding.settingsSyncStatus.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun setupButtonListeners() {
+        // Connect button
+        binding.connectButton.setOnClickListener {
+            viewModel.connectWebSocket(_account)
+        }
+
+        // Disconnect button
+        binding.disconnectButton.setOnClickListener {
+            viewModel.disconnectWebSocket()
+        }
+
+        // Upload settings button
+        binding.uploadSettingsButton.setOnClickListener {
+            viewModel.uploadSettings(_account)
+        }
+
+        // Download settings button
+        binding.downloadSettingsButton.setOnClickListener {
+            viewModel.downloadSettings(_account)
+        }
     }
 
     override fun onDestroyView() {

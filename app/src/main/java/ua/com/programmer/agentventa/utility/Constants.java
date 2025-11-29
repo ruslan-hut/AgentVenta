@@ -115,10 +115,23 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
     public static final String WEBSOCKET_MESSAGE_TYPE_SYNC_SETTINGS = "sync_settings";
 
+    // Document sync message types
+    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER = "upload_order";
+    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH = "upload_cash";
+    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE = "upload_image";
+    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION = "upload_location";
+    public static final String WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS = "download_catalogs";
+    public static final String WEBSOCKET_MESSAGE_TYPE_SYNC_COMPLETE = "sync_complete";
+
     /**
      * WebSocket data types (for payload.data_type field)
      */
     public static final String WEBSOCKET_DATA_TYPE_SETTINGS = "settings";
+    public static final String WEBSOCKET_DATA_TYPE_ORDER = "order";
+    public static final String WEBSOCKET_DATA_TYPE_CASH = "cash";
+    public static final String WEBSOCKET_DATA_TYPE_IMAGE = "image";
+    public static final String WEBSOCKET_DATA_TYPE_LOCATION = "location";
+    public static final String WEBSOCKET_DATA_TYPE_CATALOG = "catalog";
 
     /**
      * Device status values from server
