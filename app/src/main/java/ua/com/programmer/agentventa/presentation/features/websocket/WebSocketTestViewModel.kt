@@ -191,10 +191,12 @@ class WebSocketTestViewModel @Inject constructor(
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
                         _settingsSyncStatus.value = "✓ Settings downloaded"
                         addToLog("✓ Settings received:")
-                        addToLog("  - write: ${result.settings.options.write}")
-                        addToLog("  - read: ${result.settings.options.read}")
-                        addToLog("  - loadImages: ${result.settings.options.loadImages}")
-                        addToLog("  - useCompanies: ${result.settings.options.useCompanies}")
+                        result.settings.options?.let { options ->
+                            addToLog("  - write: ${options.write}")
+                            addToLog("  - read: ${options.read}")
+                            addToLog("  - loadImages: ${options.loadImages}")
+                            addToLog("  - useCompanies: ${options.useCompanies}")
+                        } ?: addToLog("  - No options provided")
                         addToLog("  - Updated: ${result.settings.updatedAt ?: "N/A"}")
                     }
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.NotFound -> {

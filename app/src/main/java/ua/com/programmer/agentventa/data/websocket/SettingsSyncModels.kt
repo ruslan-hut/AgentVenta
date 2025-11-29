@@ -5,46 +5,47 @@ import com.google.gson.annotations.SerializedName
 /**
  * Settings data for WebSocket synchronization.
  * Now includes full UserAccount data, not just options.
+ * All fields are nullable to handle partial updates from server.
  */
 data class SettingsData(
     @SerializedName("user_email")
-    val userEmail: String,
+    val userEmail: String = "",
 
     @SerializedName("device_uuid")
-    val deviceUuid: String,
+    val deviceUuid: String = "",
 
     @SerializedName("description")
-    val description: String = "",
+    val description: String? = null,
 
     @SerializedName("license")
-    val license: String = "",
+    val license: String? = null,
 
     @SerializedName("data_format")
-    val dataFormat: String = "",
+    val dataFormat: String? = null,
 
     @SerializedName("db_server")
-    val dbServer: String = "",
+    val dbServer: String? = null,
 
     @SerializedName("db_name")
-    val dbName: String = "",
+    val dbName: String? = null,
 
     @SerializedName("db_user")
-    val dbUser: String = "",
+    val dbUser: String? = null,
 
     @SerializedName("db_password")
-    val dbPassword: String = "",
+    val dbPassword: String? = null,
 
     @SerializedName("token")
-    val token: String = "",
+    val token: String? = null,
 
     @SerializedName("relay_server")
-    val relayServer: String = "",
+    val relayServer: String? = null,
 
     @SerializedName("use_websocket")
-    val useWebSocket: Boolean = true,
+    val useWebSocket: Boolean? = null,
 
     @SerializedName("options")
-    val options: SettingsOptions,
+    val options: SettingsOptions? = null,
 
     @SerializedName("found")
     val found: Boolean? = null,  // Only in response
