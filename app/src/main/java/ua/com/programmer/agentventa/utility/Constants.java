@@ -113,6 +113,12 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_PING = "ping";
     public static final String WEBSOCKET_MESSAGE_TYPE_PONG = "pong";
     public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
+    public static final String WEBSOCKET_MESSAGE_TYPE_SYNC_SETTINGS = "sync_settings";
+
+    /**
+     * WebSocket data types (for payload.data_type field)
+     */
+    public static final String WEBSOCKET_DATA_TYPE_SETTINGS = "settings";
 
     /**
      * Device status values from server

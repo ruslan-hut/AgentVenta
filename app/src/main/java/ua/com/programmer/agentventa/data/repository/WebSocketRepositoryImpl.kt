@@ -145,6 +145,34 @@ class WebSocketRepositoryImpl @Inject constructor(
         return resultFlow.asSharedFlow()
     }
 
+    override suspend fun sendMessage(type: String, payload: String): Flow<SendResult> {
+        val messageId = "${System.currentTimeMillis()}-${(0..9999).random()}"
+        val resultFlow = MutableSharedFlow<SendResult>(replay = 1)
+        messageResults[messageId] = resultFlow
+
+        if (!isConnected()) {
+            resultFlow.emit(SendResult.Failed(messageId, "Not connected", canRetry = true))
+            return resultFlow.asSharedFlow()
+        }
+
+        try {
+            val message = WebSocketMessageFactory.createMessage(type, payload, messageId)
+
+            val sent = webSocket?.send(message) ?: false
+            if (sent) {
+                resultFlow.emit(SendResult.Sent(messageId))
+                logger.d(TAG, "Message sent: type=$type, id=$messageId")
+            } else {
+                resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
+            }
+        } catch (e: Exception) {
+            resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
+            logger.e(TAG, "Send error: ${e.message}")
+        }
+
+        return resultFlow.asSharedFlow()
+    }
+
     override suspend fun reconnect(): Boolean {
         if (isConnected()) return false
         val account = currentAccount ?: return false

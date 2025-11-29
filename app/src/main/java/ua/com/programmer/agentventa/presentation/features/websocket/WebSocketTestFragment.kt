@@ -49,6 +49,15 @@ class WebSocketTestFragment : Fragment() {
                 messages.joinToString("\n")
             }
         }
+
+        viewModel.settingsSyncStatus.observe(viewLifecycleOwner) { status ->
+            if (status.isNotEmpty()) {
+                binding.settingsSyncStatus.text = status
+                binding.settingsSyncStatus.visibility = View.VISIBLE
+            } else {
+                binding.settingsSyncStatus.visibility = View.GONE
+            }
+        }
     }
 
     private fun setupListeners() {
@@ -70,6 +79,23 @@ class WebSocketTestFragment : Fragment() {
 
         binding.copyLogButton.setOnClickListener {
             copyLogToClipboard()
+        }
+
+        // Settings sync listeners
+        binding.userEmailInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                viewModel.setUserEmail(s?.toString() ?: "")
+            }
+        })
+
+        binding.uploadSettingsButton.setOnClickListener {
+            viewModel.uploadSettings()
+        }
+
+        binding.downloadSettingsButton.setOnClickListener {
+            viewModel.downloadSettings()
         }
     }
 

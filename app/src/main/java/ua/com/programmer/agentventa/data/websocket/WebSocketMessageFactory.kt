@@ -28,6 +28,44 @@ object WebSocketMessageFactory {
         .withZone(ZoneOffset.UTC)
 
     /**
+     * Creates a generic WebSocket message.
+     * Used for non-data messages like sync_settings.
+     *
+     * API Format:
+     * {
+     *   "type": "sync_settings",
+     *   "message_id": "msg-12345",
+     *   "timestamp": "2025-01-15T10:30:00Z",
+     *   "payload": { /* JSON object */ }
+     * }
+     *
+     * @param type Message type (sync_settings, custom_command, etc.)
+     * @param payload JSON string containing the payload
+     * @param messageId Unique message identifier
+     */
+    fun createMessage(
+        type: String,
+        payload: String,
+        messageId: String = generateMessageId()
+    ): String {
+        // Parse payload string to JsonObject
+        val payloadObject = try {
+            JsonParser.parseString(payload).asJsonObject
+        } catch (e: Exception) {
+            JsonObject()
+        }
+
+        val message = WebSocketMessage(
+            type = type,
+            messageId = messageId,
+            timestamp = getCurrentTimestamp(),
+            payload = payloadObject
+        )
+
+        return gson.toJson(message)
+    }
+
+    /**
      * Creates a data message to send to the server.
      *
      * API Format:

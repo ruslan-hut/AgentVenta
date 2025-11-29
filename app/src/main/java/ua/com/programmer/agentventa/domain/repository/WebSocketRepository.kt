@@ -50,6 +50,16 @@ interface WebSocketRepository {
     suspend fun sendData(dataType: String, data: String): Flow<SendResult>
 
     /**
+     * Sends a generic WebSocket message.
+     * Used for non-data messages like sync_settings, custom commands, etc.
+     *
+     * @param type Message type (sync_settings, custom_command, etc.)
+     * @param payload JSON string containing the message payload
+     * @return Flow emitting send result status
+     */
+    suspend fun sendMessage(type: String, payload: String): Flow<SendResult>
+
+    /**
      * Manually triggers a reconnection attempt.
      * Useful for "retry" button in UI.
      *

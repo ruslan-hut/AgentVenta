@@ -60,7 +60,7 @@ class SettingsSyncRepositoryImpl @Inject constructor(
 
             when (result) {
                 is SendResult.Acknowledged -> {
-                    logger.i(TAG, "Settings uploaded successfully")
+                    logger.d(TAG, "Settings uploaded successfully")
                     emit(SettingsSyncResult.Success(settingsData))
                 }
                 is SendResult.Failed -> {
@@ -160,7 +160,7 @@ class SettingsSyncRepositoryImpl @Inject constructor(
                 logger.w(TAG, "Settings not found for: $userEmail")
                 SettingsSyncResult.NotFound(userEmail)
             } else {
-                logger.i(TAG, "Settings received for: $userEmail")
+                logger.d(TAG, "Settings received for: $userEmail")
                 SettingsSyncResult.Success(settingsData)
             }
         } catch (e: Exception) {
