@@ -172,12 +172,17 @@ The Relay Server acts as a bridge between the accounting system (ERP, 1C, etc.) 
 
 ### Connection Protocol
 
-**WebSocket URL**: `wss://{relay_server_host}/ws/device?uuid={device_uuid}&license={license_key}`
+**WebSocket URL**: `wss://{relay_server_host}/ws/device?uuid={device_uuid}`
+
+**IMPORTANT NOTE**: License number is NOT sent in the WebSocket URL. The backend maintains the mapping between device UUIDs and license numbers server-side. This allows the backend to:
+- Identify which 1C base corresponds to a device UUID
+- Route messages to the correct 1C database
+- License numbers are used on the backend to identify 1C bases, not devices
 
 **Connection Flow**:
-1. Device generates persistent UUID on first app launch (stored in SharedPreferences)
+1. Device uses UserAccount.guid as device UUID (persistent per account, not per device)
 2. When `UserAccount.dataFormat = "WebSocket_relay"`, Android connects via OkHttp WebSocket
-3. Handshake validates license key and device binding
+3. Server validates device UUID exists and is linked to a valid license
 4. Server updates `devices.connection_state = "online"`, `last_seen = now()`
 5. Connection stored in active connections map: `Map<String, WebSocket>`
 
@@ -725,16 +730,18 @@ override suspend fun updateDifferential(): Flow<Result> = flow {
 
 **`UserAccount.kt`**:
 ```kotlin
+// NOTE: License is NOT required for connection - it's stored for display only.
+// Backend identifies the 1C base by device UUID (guid), not by license number.
 fun UserAccount.isValidForWebSocketConnection(): Boolean {
     return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET &&
             relayServer.isNotEmpty() &&
-            license.isNotEmpty() &&
-            deviceUuid.isNotEmpty()
+            guid.isNotEmpty()
 }
 
+// NOTE: License number is NOT sent - backend links device UUIDs to licenses server-side
 fun UserAccount.getWebSocketUrl(): String {
     val host = if (relayServer.startsWith("ws")) relayServer else "wss://$relayServer"
-    return "$host/ws/device?uuid=$deviceUuid&license=$license"
+    return "$host/ws/device?uuid=$guid"
 }
 ```
 

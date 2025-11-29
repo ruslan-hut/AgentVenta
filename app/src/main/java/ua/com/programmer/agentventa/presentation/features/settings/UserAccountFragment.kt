@@ -67,6 +67,7 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 binding.dbUser.setText(account.dbUser)
                 binding.dbPassword.setText(account.dbPassword)
                 binding.relayServer.setText(account.relayServer)
+                binding.licenseInput.setText(account.license)
                 binding.accountId.text = account.getGuid()
                 binding.accountGuid.text = account.guid
                 binding.license.text = account.getLicense()
@@ -118,10 +119,12 @@ class UserAccountFragment: Fragment(), MenuProvider {
         // Show/hide WebSocket-specific fields
         binding.relayServerLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
         binding.accountGuidLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
+        binding.licenseLayout.visibility = if (isWebSocket) View.VISIBLE else View.GONE
 
         // Show/hide HTTP-specific fields
         binding.server.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
         binding.dbName.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
+        binding.licenseReadonlyLayout.visibility = if (!isWebSocket) View.VISIBLE else View.GONE
     }
 
     private fun finish() {
@@ -146,6 +149,7 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 dbUser = binding.dbUser.text.toString().trim(),
                 dbPassword = binding.dbPassword.text.toString().trim(),
                 relayServer = binding.relayServer.text.toString().trim(),
+                license = binding.licenseInput.text.toString().trim(),
                 guid = fakeGuid.ifEmpty { it.guid }
             )
             viewModel.saveAccount(updated) {

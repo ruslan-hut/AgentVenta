@@ -8,6 +8,7 @@ import ua.com.programmer.agentventa.data.local.entity.getWebSocketUrl
 import ua.com.programmer.agentventa.data.local.entity.isValidForWebSocketConnection
 import ua.com.programmer.agentventa.data.websocket.*
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
+import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import java.util.concurrent.ConcurrentHashMap
@@ -17,11 +18,18 @@ import javax.inject.Singleton
 /**
  * Implementation of WebSocketRepository using OkHttp WebSocket client.
  * Manages WebSocket connection lifecycle, message delivery, and reconnection logic.
+ *
+ * Authentication:
+ * - Uses API key from local.properties (shared across all app instances)
+ * - Token format: Authorization: Bearer <API_KEY>:<DEVICE_UUID>
+ * - API key validates request is from legitimate app
+ * - Device UUID (UserAccount.guid) identifies individual device/account
  */
 @Singleton
 class WebSocketRepositoryImpl @Inject constructor(
     private val okHttpClient: OkHttpClient,
-    private val logger: Logger
+    private val logger: Logger,
+    private val apiKeyProvider: ApiKeyProvider
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -41,6 +49,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     private var reconnectionJob: Job? = null
     private var pingJob: Job? = null
     private var reconnectAttempt = 0
+    private var isPendingDevice = false  // Flag to prevent reconnection for pending devices
 
     // Message tracking
     private val pendingMessages = ConcurrentHashMap<String, PendingMessage>()
@@ -60,8 +69,21 @@ class WebSocketRepositoryImpl @Inject constructor(
             return false
         }
 
+        // Validate API key is configured
+        if (!apiKeyProvider.hasWebSocketApiKey()) {
+            logger.e(TAG, "WebSocket API key not configured in local.properties")
+            _connectionState.value = WebSocketState.Error(
+                error = "API key not configured",
+                canRetry = false
+            )
+            return false
+        }
+
+        logger.d(TAG, "Connecting with API key: ${apiKeyProvider.getMaskedWebSocketApiKey()}")
+
         currentAccount = account
         reconnectAttempt = 0
+        isPendingDevice = false  // Reset pending flag on new connection attempt
         cancelReconnection()
 
         return performConnection(account)
@@ -74,6 +96,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         webSocket?.close(1000, "User disconnect")
         webSocket = null
         currentAccount = null
+        isPendingDevice = false
         _connectionState.value = WebSocketState.Disconnected
         pendingMessages.clear()
         messageResults.clear()
@@ -172,8 +195,16 @@ class WebSocketRepositoryImpl @Inject constructor(
             reconnectAttempt++
             _connectionState.value = WebSocketState.Connecting(reconnectAttempt)
 
+            // Construct authentication token: <API_KEY>:<DEVICE_UUID>
+            val apiKey = apiKeyProvider.webSocketApiKey
+            val deviceUuid = account.guid
+            val authToken = "$apiKey:$deviceUuid"
+
+            logger.d(TAG, "Connecting with device UUID: $deviceUuid")
+
             val request = Request.Builder()
                 .url(url)
+                .addHeader("Authorization", "Bearer $authToken")
                 .build()
 
             webSocket = okHttpClient.newWebSocket(request, WebSocketListener())
@@ -189,6 +220,12 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     private fun scheduleReconnection() {
         val account = currentAccount ?: return
+
+        // Don't schedule reconnection if device is pending
+        if (isPendingDevice) {
+            logger.d(TAG, "Skipping reconnection - device is pending approval")
+            return
+        }
 
         cancelReconnection()
 
@@ -247,6 +284,8 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_DATA -> {
                     val dataMessage = WebSocketMessageFactory.parseDataMessage(message)
                     if (dataMessage != null) {
+                        logger.d(TAG, "Data received: ${dataMessage.dataType} (status: ${dataMessage.status})")
+
                         // Send acknowledgment
                         val ack = WebSocketMessageFactory.createAckMessage(dataMessage.messageId)
                         webSocket?.send(ack)
@@ -255,20 +294,20 @@ class WebSocketRepositoryImpl @Inject constructor(
                         scope.launch {
                             _incomingMessages.emit(dataMessage)
                         }
-                        logger.d(TAG, "Data received: ${dataMessage.dataType}")
                     }
                 }
 
                 Constants.WEBSOCKET_MESSAGE_TYPE_ACK -> {
                     val ackMessage = WebSocketMessageFactory.parseAckMessage(message)
                     if (ackMessage != null) {
+                        logger.d(TAG, "Ack received: ${ackMessage.messageId} (status: ${ackMessage.status})")
+
                         pendingMessages.remove(ackMessage.messageId)
                         messageResults[ackMessage.messageId]?.let {
                             scope.launch {
                                 it.emit(SendResult.Acknowledged(ackMessage.messageId))
                             }
                         }
-                        logger.d(TAG, "Ack received: ${ackMessage.messageId}")
                     }
                 }
 
@@ -284,7 +323,31 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_ERROR -> {
                     val errorMessage = WebSocketMessageFactory.parseErrorMessage(message)
                     if (errorMessage != null) {
-                        logger.e(TAG, "Server error: ${errorMessage.error}")
+                        logger.e(TAG, "Server error: ${errorMessage.error} (status: ${errorMessage.status})")
+
+                        // Check if device is pending approval
+                        if (errorMessage.status == Constants.DEVICE_STATUS_PENDING) {
+                            logger.w(TAG, "Device is pending approval - stopping reconnection attempts")
+                            isPendingDevice = true  // Set flag to prevent reconnection
+                            val deviceUuid = currentAccount?.guid ?: "unknown"
+                            _connectionState.value = WebSocketState.Pending(deviceUuid)
+                            // Cancel any scheduled reconnections
+                            cancelReconnection()
+                            return
+                        }
+
+                        // Check if device is denied
+                        if (errorMessage.status == Constants.DEVICE_STATUS_DENIED) {
+                            logger.e(TAG, "Device access has been denied")
+                            _connectionState.value = WebSocketState.Error(
+                                error = "Device access denied",
+                                canRetry = false
+                            )
+                            cancelReconnection()
+                            return
+                        }
+
+                        // Handle message-specific errors
                         if (errorMessage.messageId != null) {
                             pendingMessages.remove(errorMessage.messageId)
                             messageResults[errorMessage.messageId]?.let {
@@ -292,7 +355,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                                     it.emit(SendResult.Failed(
                                         errorMessage.messageId,
                                         errorMessage.error,
-                                        canRetry = false
+                                        canRetry = true
                                     ))
                                 }
                             }
@@ -328,6 +391,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             logger.d(TAG, "Closed: $code - $reason")
             cancelPing()
 
+            // Don't reconnect if device is pending approval
+            if (isPendingDevice) {
+                logger.d(TAG, "Connection closed for pending device - no reconnection")
+                return
+            }
+
             if (code != 1000) { // Not a normal closure
                 _connectionState.value = WebSocketState.Error("Connection closed: $reason", canRetry = true)
                 scheduleReconnection()
@@ -339,6 +408,13 @@ class WebSocketRepositoryImpl @Inject constructor(
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             logger.e(TAG, "Connection failed: ${t.message}")
             cancelPing()
+
+            // Don't reconnect if device is pending approval
+            if (isPendingDevice) {
+                logger.d(TAG, "Connection failed for pending device - no reconnection")
+                return
+            }
+
             _connectionState.value = WebSocketState.Error(
                 t.message ?: "Connection failed",
                 canRetry = true

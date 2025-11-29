@@ -101,15 +101,27 @@ fun UserAccount.isDemo(): Boolean {
 }
 
 // WebSocket connection validation
+// NOTE: License is NOT required for connection - it's stored for display only.
+// Backend identifies the 1C base by device UUID (guid), not by license number.
+// The backend maintains the mapping: device_uuid -> license_number -> 1C_base
 fun UserAccount.isValidForWebSocketConnection(): Boolean {
     return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET &&
             relayServer.isNotEmpty() &&
-            license.isNotEmpty() &&
             guid.isNotEmpty()
 }
 
 // Constructs WebSocket URL for connection
 // Uses UserAccount.guid as device UUID for server identification
+//
+// Authentication Flow:
+// - API key from local.properties (shared across all app instances)
+// - Token format: Authorization: Bearer <API_KEY>:<DEVICE_UUID>
+// - API key validates request is from legitimate Android app
+// - Device UUID (guid) identifies individual device/account
+//
+// NOTE: License number is NOT sent in the URL or as authentication data.
+// The backend links device UUIDs to license numbers (and therefore to 1C bases) server-side.
+// License is only received from backend and stored locally for display/reference purposes.
 fun UserAccount.getWebSocketUrl(): String {
     if (relayServer.isEmpty()) return ""
 
@@ -123,8 +135,10 @@ fun UserAccount.getWebSocketUrl(): String {
         url = url.dropLast(1)
     }
 
-    // Construct WebSocket endpoint with device UUID (guid) and license
-    return "$url/ws/device?uuid=$guid&license=$license"
+    // Construct WebSocket endpoint with device UUID only
+    // Authentication is handled via Authorization header (see WebSocketRepositoryImpl)
+    // Backend will identify the 1C base by looking up the license linked to this UUID
+    return "$url/ws/device?uuid=$guid"
 }
 
 // Determines if this account should use WebSocket instead of HTTP

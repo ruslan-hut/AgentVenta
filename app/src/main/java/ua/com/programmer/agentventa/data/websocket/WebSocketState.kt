@@ -23,6 +23,13 @@ sealed class WebSocketState {
     data class Connected(val deviceUuid: String) : WebSocketState()
 
     /**
+     * Device is pending approval from administrator.
+     * No reconnection attempts will be made until device is approved.
+     * @param deviceUuid The device UUID awaiting approval
+     */
+    data class Pending(val deviceUuid: String) : WebSocketState()
+
+    /**
      * WebSocket connection failed.
      * @param error Error message describing the failure
      * @param canRetry Whether automatic reconnection will be attempted
@@ -55,6 +62,7 @@ fun WebSocketState.getDescription(): String = when (this) {
     is WebSocketState.Disconnected -> "Disconnected"
     is WebSocketState.Connecting -> "Connecting${if (attempt > 1) " (attempt $attempt)" else ""}"
     is WebSocketState.Connected -> "Connected"
+    is WebSocketState.Pending -> "Pending Approval"
     is WebSocketState.Error -> "Error: $error"
     is WebSocketState.Reconnecting -> "Reconnecting in ${delayMs / 1000}s (attempt $attempt)"
 }

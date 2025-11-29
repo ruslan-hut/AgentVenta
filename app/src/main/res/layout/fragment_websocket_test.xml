@@ -62,23 +62,38 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/clear_log_button"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Clear Log"
-            style="@style/Widget.MaterialComponents.Button.TextButton" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/clear_log_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear Log"
+                style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+            <Button
+                android:id="@+id/copy_log_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Copy Log"
+                style="@style/Widget.MaterialComponents.Button.TextButton" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/message_log_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="@android:color/darker_gray"
+            android:background="?attr/colorSurfaceVariant"
             android:fontFamily="monospace"
             android:padding="8dp"
             android:text="No messages"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

@@ -41,11 +41,15 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Expose WebSocket API key from local.properties
+            buildConfigField "String", "WEBSOCKET_API_KEY", "\"${project.findProperty('WEBSOCKET_API_KEY') ?: ''}\""
         }
         debug {
             debuggable true
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Expose WebSocket API key from local.properties
+            buildConfigField "String", "WEBSOCKET_API_KEY", "\"${project.findProperty('WEBSOCKET_API_KEY') ?: ''}\""
         }
     }
     compileOptions {

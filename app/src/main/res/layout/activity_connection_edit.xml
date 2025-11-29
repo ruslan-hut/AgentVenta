@@ -175,7 +175,27 @@
                     android:maxLines="1" />
             </LinearLayout>
 
+            <!-- License (editable for WebSocket) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/license_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:hint="@string/pref_title_licensed"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/license_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:inputType="textNoSuggestions" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- License (read-only for HTTP) -->
             <LinearLayout
+                android:id="@+id/license_readonly_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"

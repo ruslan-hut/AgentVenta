@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import ua.com.programmer.agentventa.data.local.entity.getWebSocketUrl
 import ua.com.programmer.agentventa.data.websocket.SendResult
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
@@ -43,6 +44,7 @@ class WebSocketTestViewModel @Inject constructor(
                 is WebSocketState.Connected -> "✓ Connected (UUID: ${state.deviceUuid.take(8)})"
                 is WebSocketState.Connecting -> "⟳ Connecting... (attempt ${state.attempt})"
                 is WebSocketState.Disconnected -> "✗ Disconnected"
+                is WebSocketState.Pending -> "⏸ Pending Approval (UUID: ${state.deviceUuid.take(8)})"
                 is WebSocketState.Error -> "✗ Error: ${state.error}"
                 is WebSocketState.Reconnecting -> "⟳ Reconnecting in ${state.delayMs}ms (attempt ${state.attempt})"
             }
@@ -59,8 +61,10 @@ class WebSocketTestViewModel @Inject constructor(
         viewModelScope.launch {
             val account = userAccountRepository.getCurrent()
             if (account != null && account.dataFormat == Constants.SYNC_FORMAT_WEBSOCKET) {
+                val wsUrl = account.getWebSocketUrl()
                 addToLog("→ Connecting to: ${account.relayServer}")
                 addToLog("  Device UUID: ${account.guid}")
+                addToLog("  URL: $wsUrl")
                 val success = webSocketRepository.connect(account)
                 if (!success) {
                     addToLog("✗ Connection failed - check account settings")

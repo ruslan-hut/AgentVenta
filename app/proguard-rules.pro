@@ -91,3 +91,15 @@
  -keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
 
  ##---------------End: proguard configuration for Gson  ----------
+
+##---------------Begin: API Key protection  ----------
+# Keep BuildConfig fields (API keys from local.properties)
+# Note: This provides minimal obfuscation - API keys can still be extracted from APK
+# Additional security: Device registration required, rate limiting, API key rotation
+-keepclassmembers class ua.com.programmer.agentventa.BuildConfig {
+    public static final java.lang.String WEBSOCKET_API_KEY;
+}
+
+# Keep ApiKeyProvider class and methods
+-keep class ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider { *; }
+##---------------End: API Key protection  ----------

@@ -79,9 +79,11 @@ fun UserAccount.getWebSocketUrl(): String {
 
 **After**:
 ```kotlin
+// NOTE: License is NOT sent - backend links device UUIDs to licenses server-side
 fun UserAccount.getWebSocketUrl(): String {
-    return "$host/ws/device?uuid=$guid&license=$license"
+    return "$host/ws/device?uuid=$guid"
     // Use existing guid as device UUID
+    // License number is NOT used for authorization - only for display
 }
 ```
 

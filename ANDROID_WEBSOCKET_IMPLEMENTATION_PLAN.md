@@ -155,13 +155,18 @@ private val MIGRATION_20_21 = object : Migration(20, 21) {
 ```kotlin
 // Add after existing extension functions (after isDemo())
 
+// NOTE: License is NOT required for connection - it's stored for display only.
+// Backend identifies the 1C base by device UUID (guid), not by license number.
+// The backend maintains the mapping: device_uuid -> license_number -> 1C_base
 fun UserAccount.isValidForWebSocketConnection(): Boolean {
     return dataFormat == Constants.SYNC_FORMAT_WEBSOCKET &&
             relayServer.isNotEmpty() &&
-            license.isNotEmpty() &&
             guid.isNotEmpty()  // guid is the device UUID
 }
 
+// NOTE: License number is NOT sent in the URL - it's not used for authorization.
+// The backend links device UUIDs to license numbers (and therefore to 1C bases) server-side.
+// License is only received from backend and stored locally for display/reference purposes.
 fun UserAccount.getWebSocketUrl(): String {
     if (relayServer.isEmpty() || guid.isEmpty()) return ""
 
@@ -171,14 +176,14 @@ fun UserAccount.getWebSocketUrl(): String {
     }
 
     val cleanHost = if (host.endsWith("/")) host.dropLast(1) else host
-    // Use guid as device_uuid for WebSocket connection
-    return "$cleanHost/ws/device?uuid=$guid&license=$license"
+    // Use guid as device_uuid for WebSocket connection only
+    // Backend will identify the 1C base by looking up the license linked to this UUID
+    return "$cleanHost/ws/device?uuid=$guid"
 }
 
 fun UserAccount.connectionSettingsChangedForWebSocket(account: UserAccount): Boolean {
     return this.guid != account.guid ||
-            this.relayServer != account.relayServer ||
-            this.license != account.license
+            this.relayServer != account.relayServer
 }
 ```
 

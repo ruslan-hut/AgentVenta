@@ -164,6 +164,28 @@ Manual migrations defined (MIGRATION_13_14, etc.). Schema location: `app/schemas
 #### Multi-Account System
 Each UserAccount represents a connection to a 1C database with its own data partition. Switch accounts via `is_current=1` flag. All DAOs filter by current account automatically.
 
+#### License Number Usage (IMPORTANT)
+**License numbers are used on the backend to identify 1C bases, NOT for device authorization.**
+
+**Architecture:**
+- Backend Server: Maintains mapping `device_uuid → license_number → 1C_base`
+- License numbers identify which 1C accounting database to use
+- Device UUIDs (UserAccount.guid) identify individual devices/accounts
+
+**Android App Behavior:**
+- **Receives** license number from backend in UserAccount.options
+- **Stores** license in `UserAccount.license` field (for display/reference only)
+- **Displays** license number in settings UI (read-only)
+- **Does NOT send** license number for authentication/authorization
+- **WebSocket connections**: Use only device UUID (`?uuid={guid}`), NOT license
+
+**Backend Behavior:**
+- Links device UUIDs to license numbers server-side
+- Uses license numbers to route data to/from correct 1C database
+- Validates device access by checking if device UUID is linked to valid license
+
+**Key Point:** Never use `UserAccount.license` for authorization. It's metadata received from backend for display purposes only.
+
 #### Offline-First Sync
 All data stored locally in Room. Documents created offline marked with `isSent=0`. Sync uploads unsent documents and downloads catalog updates. Timestamp-based change tracking ensures data consistency.
 

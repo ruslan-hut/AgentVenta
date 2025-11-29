@@ -113,4 +113,11 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_PING = "ping";
     public static final String WEBSOCKET_MESSAGE_TYPE_PONG = "pong";
     public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
+
+    /**
+     * Device status values from server
+     */
+    public static final String DEVICE_STATUS_PENDING = "pending";
+    public static final String DEVICE_STATUS_APPROVED = "approved";
+    public static final String DEVICE_STATUS_DENIED = "denied";
 }

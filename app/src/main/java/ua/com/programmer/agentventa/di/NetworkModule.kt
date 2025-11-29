@@ -16,6 +16,7 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
+import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import javax.inject.Singleton
 
 @Module
@@ -68,13 +69,21 @@ class NetworkModule {
 
     @Provides
     @Singleton
+    fun provideApiKeyProvider(): ApiKeyProvider {
+        return ApiKeyProvider()
+    }
+
+    @Provides
+    @Singleton
     fun provideWebSocketRepository(
         okHttpClient: OkHttpClient,
-        logger: Logger
+        logger: Logger,
+        apiKeyProvider: ApiKeyProvider
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
-            logger = logger
+            logger = logger,
+            apiKeyProvider = apiKeyProvider
         )
     }
 
