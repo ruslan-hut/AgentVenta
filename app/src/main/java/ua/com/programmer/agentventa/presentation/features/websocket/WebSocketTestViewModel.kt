@@ -24,7 +24,8 @@ import javax.inject.Inject
 class WebSocketTestViewModel @Inject constructor(
     private val webSocketRepository: WebSocketRepository,
     private val userAccountRepository: UserAccountRepository,
-    private val logger: Logger
+    private val logger: Logger,
+    private val apiKeyProvider: ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 ) : ViewModel() {
 
     private val TAG = "WSTestViewModel"
@@ -61,13 +62,17 @@ class WebSocketTestViewModel @Inject constructor(
         viewModelScope.launch {
             val account = userAccountRepository.getCurrent()
             if (account != null && account.dataFormat == Constants.SYNC_FORMAT_WEBSOCKET) {
-                val wsUrl = account.getWebSocketUrl()
-                addToLog("→ Connecting to: ${account.relayServer}")
+                val backendHost = apiKeyProvider.backendHost
+                val wsUrl = account.getWebSocketUrl(backendHost)
+
+                addToLog("→ Connecting...")
+                addToLog("  Backend: $backendHost")
                 addToLog("  Device UUID: ${account.guid}")
                 addToLog("  URL: $wsUrl")
+
                 val success = webSocketRepository.connect(account)
                 if (!success) {
-                    addToLog("✗ Connection failed - check account settings")
+                    addToLog("✗ Connection failed - check configuration")
                 }
             } else {
                 addToLog("✗ Error: No WebSocket account configured")

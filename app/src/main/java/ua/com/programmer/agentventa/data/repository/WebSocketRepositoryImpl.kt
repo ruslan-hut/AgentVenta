@@ -71,7 +71,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
         // Validate API key is configured
         if (!apiKeyProvider.hasWebSocketApiKey()) {
-            logger.e(TAG, "WebSocket API key not configured in local.properties")
+            logger.e(TAG, "WebSocket API key not configured in local.properties (WEBSOCKET_API_KEY)")
             _connectionState.value = WebSocketState.Error(
                 error = "API key not configured",
                 canRetry = false
@@ -79,7 +79,18 @@ class WebSocketRepositoryImpl @Inject constructor(
             return false
         }
 
-        logger.d(TAG, "Connecting with API key: ${apiKeyProvider.getMaskedWebSocketApiKey()}")
+        // Validate backend host is configured
+        if (!apiKeyProvider.hasBackendHost()) {
+            logger.e(TAG, "Backend host not configured in local.properties (KEY_HOST)")
+            _connectionState.value = WebSocketState.Error(
+                error = "Backend host not configured",
+                canRetry = false
+            )
+            return false
+        }
+
+        logger.d(TAG, "Backend host: ${apiKeyProvider.backendHost}")
+        logger.d(TAG, "API key: ${apiKeyProvider.getMaskedWebSocketApiKey()}")
 
         currentAccount = account
         reconnectAttempt = 0
@@ -186,7 +197,19 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     private fun performConnection(account: UserAccount): Boolean {
         try {
-            val url = account.getWebSocketUrl()
+            // Get backend host from ApiKeyProvider (predefined in local.properties)
+            val backendHost = apiKeyProvider.backendHost
+            if (backendHost.isEmpty()) {
+                logger.e(TAG, "Backend host not configured in local.properties (KEY_HOST)")
+                _connectionState.value = WebSocketState.Error(
+                    "Backend host not configured",
+                    canRetry = false
+                )
+                return false
+            }
+
+            // Build WebSocket URL using predefined backend host
+            val url = account.getWebSocketUrl(backendHost)
             if (url.isEmpty()) {
                 _connectionState.value = WebSocketState.Error("Invalid WebSocket URL", canRetry = false)
                 return false
@@ -200,7 +223,8 @@ class WebSocketRepositoryImpl @Inject constructor(
             val deviceUuid = account.guid
             val authToken = "$apiKey:$deviceUuid"
 
-            logger.d(TAG, "Connecting with device UUID: $deviceUuid")
+            logger.d(TAG, "Connecting to: $backendHost")
+            logger.d(TAG, "Device UUID: $deviceUuid")
 
             val request = Request.Builder()
                 .url(url)

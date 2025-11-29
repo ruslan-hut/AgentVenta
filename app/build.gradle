@@ -43,6 +43,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Expose WebSocket API key from local.properties
             buildConfigField "String", "WEBSOCKET_API_KEY", "\"${project.findProperty('WEBSOCKET_API_KEY') ?: ''}\""
+            // Note: KEY_HOST is automatically exposed by secrets-gradle-plugin
         }
         debug {
             debuggable true
@@ -50,6 +51,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             // Expose WebSocket API key from local.properties
             buildConfigField "String", "WEBSOCKET_API_KEY", "\"${project.findProperty('WEBSOCKET_API_KEY') ?: ''}\""
+            // Note: KEY_HOST is automatically exposed by secrets-gradle-plugin
         }
     }
     compileOptions {
