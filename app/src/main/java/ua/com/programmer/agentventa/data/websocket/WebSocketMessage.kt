@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.data.websocket
 
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.annotations.SerializedName
 
@@ -13,10 +14,13 @@ import com.google.gson.annotations.SerializedName
  *   "message_id": "msg-12345",
  *   "timestamp": "2025-01-15T10:30:00Z",
  *   "status": "pending|approved|denied",  // Server-to-device only
- *   "payload": {
- *     // Message-specific payload
- *   }
+ *   "payload": {} or []  // Can be JsonObject or JsonArray
  * }
+ *
+ * Note: payload is JsonElement to support both JsonObject and JsonArray formats.
+ * The server can send either:
+ * - JsonObject: legacy format {"data_type": "...", "data": {...}}
+ * - JsonArray: simplified format [{...}, {...}] with value_id in each item
  */
 data class WebSocketMessage(
     @SerializedName("type")
@@ -32,7 +36,7 @@ data class WebSocketMessage(
     val status: String? = null,  // Device status: pending, approved, denied
 
     @SerializedName("payload")
-    val payload: JsonObject? = null
+    val payload: JsonElement? = null  // Can be JsonObject or JsonArray
 )
 
 /**

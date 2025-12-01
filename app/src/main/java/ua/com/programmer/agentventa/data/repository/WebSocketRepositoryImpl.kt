@@ -33,7 +33,8 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val logger: Logger,
     private val apiKeyProvider: ApiKeyProvider,
-    private val dataExchangeRepository: DataExchangeRepository
+    private val dataExchangeRepository: DataExchangeRepository,
+    private val userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -332,7 +333,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     private fun handleIncomingMessage(text: String) {
         try {
             val message = WebSocketMessageFactory.parseMessage(text) ?: run {
-                logger.w(TAG, "Failed to parse message")
+                logger.e(TAG, "Failed to parse WebSocket message")
                 return
             }
 
@@ -342,14 +343,26 @@ class WebSocketRepositoryImpl @Inject constructor(
                     if (dataMessage != null) {
                         logger.d(TAG, "Data received: ${dataMessage.dataType} (status: ${dataMessage.status})")
 
-                        // Send acknowledgment
-                        val ack = WebSocketMessageFactory.createAckMessage(dataMessage.messageId)
-                        webSocket?.send(ack)
+                        // Handle unified array payload - route by examining value_id in items
+                        when (dataMessage.dataType) {
+                            Constants.WEBSOCKET_DATA_TYPE_CATALOG -> {
+                                // Simplified format: process array and route based on value_id
+                                handleUnifiedPayload(dataMessage)
+                            }
+                            else -> {
+                                // Legacy format or specific handlers (settings, etc.)
+                                // Send acknowledgment
+                                val ack = WebSocketMessageFactory.createAckMessage(dataMessage.messageId)
+                                webSocket?.send(ack)
 
-                        // Emit to subscribers
-                        scope.launch {
-                            _incomingMessages.emit(dataMessage)
+                                // Emit to subscribers
+                                scope.launch {
+                                    _incomingMessages.emit(dataMessage)
+                                }
+                            }
                         }
+                    } else {
+                        logger.e(TAG, "Failed to parse data message")
                     }
                 }
 
@@ -539,6 +552,350 @@ class WebSocketRepositoryImpl @Inject constructor(
             logger.e(TAG, "Sent error for catalog $catalogType: $error")
         } catch (e: Exception) {
             logger.e(TAG, "Error sending catalog error: ${e.message}")
+        }
+    }
+
+    /**
+     * Handles unified payload with simplified array format.
+     * Processes array where each item has a value_id to identify its type.
+     * Routes items to appropriate handlers based on value_id.
+     *
+     * Expected format:
+     * {
+     *   "type": "data",
+     *   "payload": [
+     *     { "value_id": "options", ... },
+     *     { "value_id": "clients", ... },
+     *     { "value_id": "goods", ... }
+     *   ]
+     * }
+     */
+    private fun handleUnifiedPayload(dataMessage: IncomingDataMessage) {
+        scope.launch {
+            try {
+                // Extract data array from the message
+                val dataArray = dataMessage.data.getAsJsonArray("data")
+                if (dataArray == null || dataArray.size() == 0) {
+                    logger.w(TAG, "Empty data array in unified payload")
+                    sendAck(dataMessage.messageId, "unified", 0)
+                    return@launch
+                }
+
+                // Get current account guid for database operations
+                val accountGuid = currentAccount?.guid ?: run {
+                    logger.e(TAG, "No current account for unified payload")
+                    return@launch
+                }
+
+                // Separate items by value_id
+                val optionsItems = mutableListOf<com.google.gson.JsonObject>()
+                val catalogItems = mutableListOf<XMap>()
+                val counters = mutableMapOf<String, Int>()
+                val timestamp = System.currentTimeMillis()
+
+                for (i in 0 until dataArray.size()) {
+                    try {
+                        val item = dataArray.get(i).asJsonObject
+                        val valueId = item.get("value_id")?.asString
+
+                        if (valueId.isNullOrEmpty()) {
+                            logger.w(TAG, "Item $i missing value_id, skipping")
+                            continue
+                        }
+
+                        when (valueId) {
+                            Constants.VALUE_ID_OPTIONS -> {
+                                // Collect options items for processing
+                                optionsItems.add(item)
+                            }
+                            else -> {
+                                // Catalog items (clients, goods, debts, etc.)
+                                val gson = Gson()
+                                val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
+                                val xMap = XMap(itemMap)
+                                xMap.setDatabaseId(accountGuid)
+                                xMap.setTimestamp(timestamp)
+                                catalogItems.add(xMap)
+                            }
+                        }
+
+                        counters[valueId] = counters.getOrDefault(valueId, 0) + 1
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Error processing item $i: ${e.message}")
+                    }
+                }
+
+                // Process options items
+                if (optionsItems.isNotEmpty()) {
+                    processOptionsItems(optionsItems, dataMessage.messageId)
+                }
+
+                // Process catalog items
+                if (catalogItems.isNotEmpty()) {
+                    processCatalogItems(catalogItems, counters, dataMessage.messageId)
+                }
+
+                // If nothing to process
+                if (optionsItems.isEmpty() && catalogItems.isEmpty()) {
+                    logger.w(TAG, "No valid items in unified payload")
+                    sendAck(dataMessage.messageId, "unified", 0)
+                }
+
+            } catch (e: Exception) {
+                logger.e(TAG, "Error handling unified payload: ${e.message}")
+                sendError(dataMessage.messageId, "unified", e.message ?: "Processing failed")
+            }
+        }
+    }
+
+    /**
+     * Processes options items from unified payload.
+     */
+    private suspend fun processOptionsItems(
+        optionsItems: List<com.google.gson.JsonObject>,
+        messageId: String
+    ) {
+        try {
+            val account = currentAccount ?: run {
+                logger.e(TAG, "No current account for options update")
+                sendError(messageId, "options", "No current account")
+                return
+            }
+
+            // Use first options item (should only be one)
+            val optionsObject = optionsItems.first().deepCopy()
+            optionsObject.remove("value_id")
+
+            val gson = Gson()
+            val optionsJson = gson.toJson(optionsObject)
+
+            logger.d(TAG, "Updating options for account ${account.guid} (${optionsJson.length} chars)")
+
+            val updatedAccount = account.copy(options = optionsJson)
+
+            try {
+                userAccountRepository.saveAccount(updatedAccount)
+                logger.d(TAG, "Options saved successfully")
+                sendAck(messageId, "options", 1)
+            } catch (e: Exception) {
+                logger.e(TAG, "Failed to save options: ${e.message}")
+                sendError(messageId, "options", "Failed to save: ${e.message}")
+            }
+        } catch (e: Exception) {
+            logger.e(TAG, "Error processing options: ${e.message}")
+            sendError(messageId, "options", e.message ?: "Failed to process")
+        }
+    }
+
+    /**
+     * Processes catalog items from unified payload.
+     */
+    private suspend fun processCatalogItems(
+        catalogItems: List<XMap>,
+        counters: Map<String, Int>,
+        messageId: String
+    ) {
+        try {
+            dataExchangeRepository.saveData(catalogItems)
+            logger.d(TAG, "Saved ${catalogItems.size} catalog items: $counters")
+            sendAck(messageId, "catalog", catalogItems.size)
+        } catch (e: Exception) {
+            logger.e(TAG, "Error saving catalog data: ${e.message}")
+            sendError(messageId, "catalog", e.message ?: "Save failed")
+        }
+    }
+
+    /**
+     * Legacy handler for catalog update (kept for backwards compatibility).
+     * @deprecated Use handleUnifiedPayload instead
+     */
+    @Deprecated("Use handleUnifiedPayload instead")
+    private fun handleUnifiedCatalogUpdate(dataMessage: IncomingDataMessage) {
+        scope.launch {
+            try {
+                // Extract data array from the message
+                val dataArray = dataMessage.data.getAsJsonArray("data")
+                if (dataArray == null || dataArray.size() == 0) {
+                    logger.w(TAG, "Empty data array in unified catalog update")
+                    sendAck(dataMessage.messageId, "catalog", 0)
+                    return@launch
+                }
+
+                // Get current account guid for database operations
+                val accountGuid = currentAccount?.guid ?: run {
+                    logger.e(TAG, "No current account for unified catalog update")
+                    return@launch
+                }
+
+                // Get current timestamp for catalog update
+                val timestamp = System.currentTimeMillis()
+
+                // Convert data array to XMap format
+                val xMapList = mutableListOf<XMap>()
+                val counters = mutableMapOf<String, Int>()
+
+                for (i in 0 until dataArray.size()) {
+                    try {
+                        val item = dataArray.get(i).asJsonObject
+                        val gson = Gson()
+                        val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
+
+                        val xMap = XMap(itemMap)
+                        xMap.setDatabaseId(accountGuid)
+                        xMap.setTimestamp(timestamp)
+                        xMapList.add(xMap)
+
+                        // Count by value_id
+                        val valueId = xMap.getValueId()
+                        counters[valueId] = counters.getOrDefault(valueId, 0) + 1
+                    } catch (e: Exception) {
+                        logger.e(TAG, "Error converting catalog item: ${e.message}")
+                    }
+                }
+
+                if (xMapList.isEmpty()) {
+                    logger.w(TAG, "No valid items in unified catalog update")
+                    sendAck(dataMessage.messageId, "catalog", 0)
+                    return@launch
+                }
+
+                // Save catalog data using existing DataExchangeRepository
+                try {
+                    dataExchangeRepository.saveData(xMapList)
+                    logger.d(TAG, "Saved ${xMapList.size} unified catalog items: $counters")
+
+                    // Send acknowledgment to server
+                    sendAck(dataMessage.messageId, "catalog", xMapList.size)
+                } catch (e: Exception) {
+                    logger.e(TAG, "Error saving unified catalog data: ${e.message}")
+                    sendError(dataMessage.messageId, "catalog", e.message ?: "Save failed")
+                }
+
+            } catch (e: Exception) {
+                logger.e(TAG, "Error handling unified catalog update: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Handles options update from the server.
+     * Updates the current UserAccount's options field.
+     *
+     * Expected format:
+     * {
+     *   "data_type": "options",
+     *   "data": [
+     *     {
+     *       "value_id": "options",
+     *       "allowPriceTypeChoose": false,
+     *       "write": true,
+     *       ...
+     *     }
+     *   ]
+     * }
+     */
+    private fun handleOptionsUpdate(dataMessage: IncomingDataMessage) {
+        scope.launch {
+            try {
+                // Extract data array from the message
+                val dataArray = dataMessage.data.getAsJsonArray("data")
+                if (dataArray == null || dataArray.size() == 0) {
+                    logger.w(TAG, "Empty data array in options update")
+                    sendAck(dataMessage.messageId, "options", 0)
+                    return@launch
+                }
+
+                // Get current account
+                val account = currentAccount ?: run {
+                    logger.e(TAG, "No current account for options update")
+                    sendError(dataMessage.messageId, "options", "No current account")
+                    return@launch
+                }
+
+                // Find the options object (first item with value_id = "options")
+                var optionsObject: com.google.gson.JsonObject? = null
+                for (i in 0 until dataArray.size()) {
+                    val item = dataArray.get(i).asJsonObject
+                    val valueId = item.get("value_id")?.asString
+                    if (valueId == Constants.VALUE_ID_OPTIONS) {
+                        optionsObject = item
+                        break
+                    }
+                }
+
+                if (optionsObject == null) {
+                    logger.w(TAG, "No options object found in data array")
+                    sendAck(dataMessage.messageId, "options", 0)
+                    return@launch
+                }
+
+                // Remove value_id field from options before saving
+                optionsObject.remove("value_id")
+
+                // Convert to JSON string
+                val gson = Gson()
+                val optionsJson = gson.toJson(optionsObject)
+
+                logger.d(TAG, "Updating options for account ${account.guid}: ${optionsJson.take(200)}")
+
+                // Update the current account's options
+                val updatedAccount = account.copy(options = optionsJson)
+
+                // Save to database using UserAccountRepository
+                try {
+                    userAccountRepository.saveAccount(updatedAccount)
+                    logger.d(TAG, "Options saved to database successfully (${optionsJson.length} chars)")
+
+                    // Send acknowledgment
+                    sendAck(dataMessage.messageId, "options", 1)
+                } catch (e: Exception) {
+                    logger.e(TAG, "Failed to save options to database: ${e.message}")
+                    sendError(dataMessage.messageId, "options", "Failed to save: ${e.message}")
+                }
+
+            } catch (e: Exception) {
+                logger.e(TAG, "Error handling options update: ${e.message}")
+                sendError(dataMessage.messageId, "options", e.message ?: "Failed to update options")
+            }
+        }
+    }
+
+    /**
+     * Sends a generic acknowledgment message
+     */
+    private fun sendAck(messageId: String?, dataType: String, itemCount: Int) {
+        if (messageId.isNullOrEmpty()) return
+
+        try {
+            val ackMessage = WebSocketMessageFactory.createAckMessage(messageId)
+            webSocket?.send(ackMessage)
+            logger.d(TAG, "Sent ACK for $dataType ($itemCount items)")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error sending ACK: ${e.message}")
+        }
+    }
+
+    /**
+     * Sends a generic error message
+     */
+    private fun sendError(messageId: String?, dataType: String, error: String) {
+        if (messageId.isNullOrEmpty()) return
+
+        try {
+            val gson = Gson()
+            val errorPayload = mapOf(
+                "data_type" to dataType,
+                "error" to error
+            )
+            val errorMessage = WebSocketMessageFactory.createMessage(
+                Constants.WEBSOCKET_MESSAGE_TYPE_ERROR,
+                gson.toJson(errorPayload),
+                messageId
+            )
+            webSocket?.send(errorMessage)
+            logger.e(TAG, "Sent error for $dataType: $error")
+        } catch (e: Exception) {
+            logger.e(TAG, "Error sending error message: ${e.message}")
         }
     }
 

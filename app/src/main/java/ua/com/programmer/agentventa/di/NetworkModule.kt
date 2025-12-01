@@ -83,13 +83,15 @@ class NetworkModule {
         okHttpClient: OkHttpClient,
         logger: Logger,
         apiKeyProvider: ApiKeyProvider,
-        dataExchangeRepository: DataExchangeRepository
+        dataExchangeRepository: DataExchangeRepository,
+        userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
             logger = logger,
             apiKeyProvider = apiKeyProvider,
-            dataExchangeRepository = dataExchangeRepository
+            dataExchangeRepository = dataExchangeRepository,
+            userAccountRepository = userAccountRepository
         )
     }
 

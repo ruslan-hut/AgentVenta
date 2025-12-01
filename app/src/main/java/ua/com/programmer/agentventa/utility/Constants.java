@@ -127,11 +127,29 @@ public final class Constants {
      * WebSocket data types (for payload.data_type field)
      */
     public static final String WEBSOCKET_DATA_TYPE_SETTINGS = "settings";
+    public static final String WEBSOCKET_DATA_TYPE_OPTIONS = "options";
     public static final String WEBSOCKET_DATA_TYPE_ORDER = "order";
     public static final String WEBSOCKET_DATA_TYPE_CASH = "cash";
     public static final String WEBSOCKET_DATA_TYPE_IMAGE = "image";
     public static final String WEBSOCKET_DATA_TYPE_LOCATION = "location";
     public static final String WEBSOCKET_DATA_TYPE_CATALOG = "catalog";
+
+    /**
+     * Value IDs for data objects (value_id field in payload items)
+     * Used to identify object type in unified array payloads
+     */
+    public static final String VALUE_ID_OPTIONS = "options";
+    public static final String VALUE_ID_CLIENTS = "clients";
+    public static final String VALUE_ID_GOODS = "goods";
+    public static final String VALUE_ID_DEBTS = "debts";
+    public static final String VALUE_ID_PAYMENT_TYPES = "payment_types";
+    public static final String VALUE_ID_COMPANIES = "companies";
+    public static final String VALUE_ID_STORES = "stores";
+    public static final String VALUE_ID_RESTS = "rests";
+    public static final String VALUE_ID_CLIENTS_LOCATIONS = "clients_locations";
+    public static final String VALUE_ID_CLIENTS_DIRECTIONS = "clients_directions";
+    public static final String VALUE_ID_CLIENTS_GOODS = "clients_goods";
+    public static final String VALUE_ID_IMAGES = "images";
 
     /**
      * Device status values from server

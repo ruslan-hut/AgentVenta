@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.data.websocket
 
 import com.google.gson.Gson
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
@@ -192,6 +193,10 @@ object WebSocketMessageFactory {
         return try {
             gson.fromJson(text, WebSocketMessage::class.java)
         } catch (e: JsonSyntaxException) {
+            android.util.Log.e("WSMessageFactory", "JSON parse error: ${e.message}")
+            null
+        } catch (e: Exception) {
+            android.util.Log.e("WSMessageFactory", "Parse error: ${e.message}")
             null
         }
     }
@@ -199,12 +204,22 @@ object WebSocketMessageFactory {
     /**
      * Parses incoming data message.
      *
-     * Expected format from server:
+     * Simplified unified format from server:
      * {
      *   "type": "data",
      *   "message_id": "msg-12345",
      *   "timestamp": "2025-01-15T10:30:00Z",
      *   "status": "approved",
+     *   "payload": [
+     *     {
+     *       "value_id": "clients|goods|options|...",
+     *       // ... object fields
+     *     }
+     *   ]
+     * }
+     *
+     * Legacy format (still supported):
+     * {
      *   "payload": {
      *     "data_type": "settings",
      *     "data": { /* JSON object */ }
@@ -213,20 +228,51 @@ object WebSocketMessageFactory {
      */
     fun parseDataMessage(message: WebSocketMessage): IncomingDataMessage? {
         if (message.type != Constants.WEBSOCKET_MESSAGE_TYPE_DATA) return null
-        if (message.messageId == null || message.payload == null) return null
+        if (message.messageId == null) return null
+        if (message.payload == null) return null
 
         return try {
-            val dataType = message.payload.get("data_type")?.asString ?: return null
-            val data = message.payload.get("data")?.asJsonObject ?: return null
+            // Check if payload is direct array (new format)
+            if (message.payload.isJsonArray) {
+                // New simplified format: payload is array directly
+                IncomingDataMessage(
+                    messageId = message.messageId,
+                    dataType = Constants.WEBSOCKET_DATA_TYPE_CATALOG, // Default to catalog for array format
+                    data = JsonObject().apply {
+                        add("data", message.payload.asJsonArray)
+                    },
+                    timestamp = message.timestamp ?: getCurrentTimestamp(),
+                    status = message.status
+                )
+            } else if (message.payload.isJsonObject) {
+                val payloadObject = message.payload.asJsonObject
 
-            IncomingDataMessage(
-                messageId = message.messageId,
-                dataType = dataType,
-                data = data,
-                timestamp = message.timestamp ?: getCurrentTimestamp(),
-                status = message.status
-            )
+                // Legacy object format with data_type field
+                val dataType = payloadObject.get("data_type")?.asString ?: return null
+                val dataElement = payloadObject.get("data") ?: return null
+
+                val data = when {
+                    dataElement.isJsonArray -> {
+                        JsonObject().apply {
+                            add("data", dataElement.asJsonArray)
+                        }
+                    }
+                    dataElement.isJsonObject -> dataElement.asJsonObject
+                    else -> return null
+                }
+
+                IncomingDataMessage(
+                    messageId = message.messageId,
+                    dataType = dataType,
+                    data = data,
+                    timestamp = message.timestamp ?: getCurrentTimestamp(),
+                    status = message.status
+                )
+            } else {
+                null
+            }
         } catch (e: Exception) {
+            android.util.Log.e("WSMessageFactory", "Error parsing data message: ${e.message}")
             null
         }
     }
@@ -274,7 +320,10 @@ object WebSocketMessageFactory {
         if (message.payload == null) return null
 
         return try {
-            val error = message.payload.get("error")?.asString ?: return null
+            if (!message.payload.isJsonObject) return null
+
+            val payloadObject = message.payload.asJsonObject
+            val error = payloadObject.get("error")?.asString ?: return null
 
             ErrorMessage(
                 error = error,
