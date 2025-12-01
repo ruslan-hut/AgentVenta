@@ -1,0 +1,234 @@
+{
+  "unified_payload_format": {
+    "description": "All WebSocket messages use array-based payload with value_id field",
+
+    "options_update": {
+      "type": "data",
+      "message_id": "692ca6d0fbcb25cda2220848",
+      "timestamp": "2025-11-30T20:19:28.566Z",
+      "status": "approved",
+      "payload": {
+        "data_type": "options",
+        "data": [
+          {
+            "value_id": "options",
+            "allowPriceTypeChoose": false,
+            "showClientPriceOnly": false,
+            "token": "",
+            "editLocations": false,
+            "setClientPrice": true,
+            "useCompanies": false,
+            "useStores": false,
+            "fiscalProvider": "",
+            "write": false,
+            "allowReturn": true,
+            "checkOrderLocation": false,
+            "defaultClient": "",
+            "fiscalCashier": "",
+            "locations": false,
+            "loadImages": true,
+            "license": "",
+            "differentialUpdates": false,
+            "requireDeliveryDate": false,
+            "fiscalNumber": "",
+            "fiscalDeviceId": "",
+            "read": false,
+            "currency": "грн.",
+            "clientsLocations": true,
+            "lastLocationTime": 0,
+            "printingEnabled": true,
+            "sendPushToken": false,
+            "watchList": "",
+            "clientsDirections": false,
+            "clientsProducts": false,
+            "useDemands": false,
+            "usePackageMark": false
+          }
+        ]
+      }
+    },
+
+    "catalog_clients": {
+      "type": "data",
+      "message_id": "cat-clients-001",
+      "timestamp": "2025-11-30T20:20:00Z",
+      "status": "approved",
+      "payload": {
+        "data_type": "catalog",
+        "data": [
+          {
+            "value_id": "clients",
+            "guid": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "ТОВ \"Продукти Україна\"",
+            "code1": "00001234",
+            "code2": "CLIENT-001",
+            "notes": "Важливий клієнт",
+            "phone": "+380501234567",
+            "address": "вул. Хрещатик, 1, Київ, 01001",
+            "discount": 5.5,
+            "bonus": 100.0,
+            "price_type": "wholesale",
+            "is_banned": 0,
+            "ban_message": "",
+            "group_guid": "group-retail",
+            "is_active": 1,
+            "is_group": 0
+          }
+        ]
+      }
+    },
+
+    "catalog_products": {
+      "type": "data",
+      "message_id": "cat-products-001",
+      "timestamp": "2025-11-30T20:21:00Z",
+      "status": "approved",
+      "payload": {
+        "data_type": "catalog",
+        "data": [
+          {
+            "value_id": "goods",
+            "guid": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+            "description": "Молоко 2.5% 1л",
+            "code1": "P00123",
+            "code2": "PROD-0123",
+            "barcode": "4820000001234",
+            "vendor_code": "VND-123",
+            "vendor_status": "available",
+            "status": "active",
+            "sorting": 10,
+            "price": 45.50,
+            "min_price": 40.00,
+            "base_price": 50.00,
+            "quantity": 150.0,
+            "package_only": 0,
+            "package_value": 12.0,
+            "weight": 1.05,
+            "unit": "шт",
+            "rest_type": "normal",
+            "indivisible": 1,
+            "group_guid": "group-dairy",
+            "is_active": 1,
+            "is_group": 0
+          }
+        ]
+      }
+    },
+
+    "catalog_mixed": {
+      "description": "Single message with multiple catalog types",
+      "type": "data",
+      "message_id": "cat-mixed-001",
+      "timestamp": "2025-11-30T20:25:00Z",
+      "status": "approved",
+      "payload": {
+        "data_type": "catalog",
+        "data": [
+          {
+            "value_id": "clients",
+            "guid": "client-001",
+            "description": "Клієнт 1",
+            "code1": "C001",
+            "is_active": 1,
+            "is_group": 0
+          },
+          {
+            "value_id": "goods",
+            "guid": "prod-001",
+            "description": "Товар 1",
+            "code1": "P001",
+            "price": 100.00,
+            "is_active": 1,
+            "is_group": 0
+          },
+          {
+            "value_id": "debts",
+            "company_guid": "comp-001",
+            "client_guid": "client-001",
+            "doc_guid": "doc-001",
+            "doc_id": "ЗАМ-001",
+            "doc_type": "order",
+            "has_content": 1,
+            "content": "",
+            "sum": 1250.75,
+            "sum_in": 500.00,
+            "sum_out": 1750.75,
+            "sorting": 1
+          },
+          {
+            "value_id": "payment_types",
+            "payment_type": "cash",
+            "is_fiscal": 1,
+            "is_default": 1,
+            "description": "Готівка"
+          },
+          {
+            "value_id": "companies",
+            "guid": "comp-001",
+            "description": "ТОВ \"АгентВента\"",
+            "is_default": 1
+          },
+          {
+            "value_id": "stores",
+            "guid": "store-main",
+            "description": "Основний склад",
+            "is_default": 1
+          },
+          {
+            "value_id": "rests",
+            "company_guid": "comp-001",
+            "store_guid": "store-main",
+            "product_guid": "prod-001",
+            "quantity": 150.0
+          }
+        ]
+      }
+    },
+
+    "acknowledgment": {
+      "description": "Android sends ACK after processing",
+      "type": "ack",
+      "message_id": "692ca6d0fbcb25cda2220848",
+      "timestamp": "2025-11-30T20:19:29Z",
+      "payload": {
+        "status": "received"
+      }
+    },
+
+    "error_response": {
+      "description": "Android sends error if processing fails",
+      "type": "error",
+      "message_id": "692ca6d0fbcb25cda2220848",
+      "timestamp": "2025-11-30T20:19:29Z",
+      "payload": {
+        "data_type": "options",
+        "error": "Failed to save: Database is locked"
+      }
+    }
+  },
+
+  "supported_value_ids": [
+    "options",
+    "clients",
+    "goods",
+    "debts",
+    "payment_types",
+    "companies",
+    "stores",
+    "rests",
+    "clients_locations",
+    "clients_directions",
+    "clients_goods",
+    "images"
+  ],
+
+  "implementation_notes": {
+    "data_field": "Always an array, even for single items",
+    "value_id": "Required field in each array element to identify type",
+    "mixed_types": "Single message can contain multiple value_id types",
+    "backwards_compatibility": "Legacy single-object format still supported",
+    "processing": "Android extracts array, processes each item based on value_id",
+    "database": "Options saved to UserAccount.options, catalogs saved via DataExchangeRepository",
+    "acknowledgment": "Android sends ACK after successful processing"
+  }
+}

@@ -1,0 +1,195 @@
+{
+  "description": "WebSocket Simplified Payload Format Examples",
+  "note": "payload is always a direct array, each item has value_id",
+
+  "example_1_options_only": {
+    "type": "data",
+    "message_id": "msg-001",
+    "timestamp": "2025-11-30T20:00:00Z",
+    "status": "approved",
+    "payload": [
+      {
+        "value_id": "options",
+        "write": false,
+        "read": false,
+        "loadImages": true,
+        "useCompanies": false,
+        "useStores": false,
+        "fiscalProvider": "",
+        "fiscalNumber": "",
+        "fiscalDeviceId": "",
+        "fiscalCashier": "",
+        "allowReturn": true,
+        "checkOrderLocation": false,
+        "defaultClient": "",
+        "locations": false,
+        "license": "",
+        "differentialUpdates": false,
+        "requireDeliveryDate": false,
+        "currency": "грн.",
+        "clientsLocations": true,
+        "clientsDirections": false,
+        "clientsProducts": false,
+        "useDemands": false,
+        "usePackageMark": false,
+        "lastLocationTime": 0,
+        "printingEnabled": true,
+        "sendPushToken": false,
+        "watchList": "",
+        "allowPriceTypeChoose": false,
+        "showClientPriceOnly": false,
+        "editLocations": false,
+        "setClientPrice": true
+      }
+    ]
+  },
+
+  "example_2_clients_only": {
+    "type": "data",
+    "message_id": "msg-002",
+    "timestamp": "2025-11-30T20:01:00Z",
+    "status": "approved",
+    "payload": [
+      {
+        "value_id": "clients",
+        "guid": "client-001",
+        "description": "ТОВ \"Продукти\"",
+        "code1": "C001",
+        "code2": "CLIENT-001",
+        "phone": "+380501234567",
+        "address": "Київ, вул. Хрещатик, 1",
+        "discount": 5.5,
+        "bonus": 100.0,
+        "price_type": "wholesale",
+        "is_active": 1,
+        "is_group": 0
+      },
+      {
+        "value_id": "clients",
+        "guid": "client-002",
+        "description": "Магазин №1",
+        "code1": "C002",
+        "code2": "CLIENT-002",
+        "phone": "+380509876543",
+        "address": "Київ, вул. Шевченка, 10",
+        "discount": 3.0,
+        "bonus": 50.0,
+        "price_type": "retail",
+        "is_active": 1,
+        "is_group": 0
+      }
+    ]
+  },
+
+  "example_3_mixed_types": {
+    "type": "data",
+    "message_id": "msg-003",
+    "timestamp": "2025-11-30T20:02:00Z",
+    "status": "approved",
+    "payload": [
+      {
+        "value_id": "options",
+        "write": true,
+        "read": true,
+        "loadImages": true
+      },
+      {
+        "value_id": "clients",
+        "guid": "client-001",
+        "description": "Клієнт 1",
+        "code1": "C001",
+        "is_active": 1,
+        "is_group": 0
+      },
+      {
+        "value_id": "goods",
+        "guid": "prod-001",
+        "description": "Молоко",
+        "code1": "P001",
+        "price": 45.50,
+        "is_active": 1,
+        "is_group": 0
+      },
+      {
+        "value_id": "debts",
+        "company_guid": "comp-001",
+        "client_guid": "client-001",
+        "doc_guid": "doc-001",
+        "doc_id": "ЗАМ-001",
+        "doc_type": "order",
+        "sum": 1250.75
+      }
+    ]
+  },
+
+  "example_4_full_catalog": {
+    "type": "data",
+    "message_id": "msg-004",
+    "timestamp": "2025-11-30T20:03:00Z",
+    "status": "approved",
+    "payload": [
+      {
+        "value_id": "clients",
+        "guid": "client-001",
+        "description": "Клієнт",
+        "code1": "C001",
+        "is_active": 1,
+        "is_group": 0
+      },
+      {
+        "value_id": "goods",
+        "guid": "prod-001",
+        "description": "Товар",
+        "code1": "P001",
+        "price": 100.00,
+        "is_active": 1,
+        "is_group": 0
+      },
+      {
+        "value_id": "payment_types",
+        "payment_type": "cash",
+        "is_fiscal": 1,
+        "is_default": 1,
+        "description": "Готівка"
+      },
+      {
+        "value_id": "companies",
+        "guid": "comp-001",
+        "description": "ТОВ \"АгентВента\"",
+        "is_default": 1
+      },
+      {
+        "value_id": "stores",
+        "guid": "store-001",
+        "description": "Склад №1",
+        "is_default": 1
+      },
+      {
+        "value_id": "rests",
+        "company_guid": "comp-001",
+        "store_guid": "store-001",
+        "product_guid": "prod-001",
+        "quantity": 150.0
+      }
+    ]
+  },
+
+  "android_ack_response": {
+    "type": "ack",
+    "message_id": "msg-001",
+    "timestamp": "2025-11-30T20:00:01Z",
+    "payload": {
+      "status": "received"
+    }
+  },
+
+  "android_error_response": {
+    "type": "error",
+    "message_id": "msg-001",
+    "timestamp": "2025-11-30T20:00:01Z",
+    "payload": {
+      "data_type": "options",
+      "error": "Failed to save: Database is locked"
+    }
+  }
+}
