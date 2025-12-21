@@ -97,6 +97,16 @@ data class ErrorMessage(
 )
 
 /**
+ * Document acknowledgment from server after successful upload.
+ * Used to mark documents as sent in the local database.
+ */
+data class DocumentAck(
+    val documentType: String,  // "order", "cash", "image", "location"
+    val documentGuid: String,
+    val messageId: String? = null
+)
+
+/**
  * Generates unique message ID for outgoing messages.
  */
 private fun generateMessageId(): String {

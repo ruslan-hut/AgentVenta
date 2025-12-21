@@ -1,8 +1,10 @@
 package ua.com.programmer.agentventa.domain.repository
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
+import ua.com.programmer.agentventa.data.websocket.DocumentAck
 import ua.com.programmer.agentventa.data.websocket.IncomingDataMessage
 import ua.com.programmer.agentventa.data.websocket.SendResult
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
@@ -24,6 +26,13 @@ interface WebSocketRepository {
      * Emits when new data arrives from accounting system.
      */
     val incomingMessages: Flow<IncomingDataMessage>
+
+    /**
+     * Flow of document acknowledgments from the server.
+     * Emits when server confirms receipt of uploaded documents.
+     * Subscribe to this to mark documents as sent in local database.
+     */
+    val documentAcks: SharedFlow<DocumentAck>
 
     /**
      * Connects to the relay server using the provided user account.

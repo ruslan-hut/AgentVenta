@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.data.remote.Result
+import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
+import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,8 +30,14 @@ sealed class SyncEvent {
  */
 @Singleton
 class SyncManager @Inject constructor(
-    private val networkRepository: NetworkRepository
+    private val networkRepository: NetworkRepository,
+    private val webSocketRepository: WebSocketRepository
 ) {
+    /**
+     * WebSocket connection state for UI feedback.
+     * Observe this to show connection status indicators.
+     */
+    val webSocketState: StateFlow<WebSocketState> = webSocketRepository.connectionState
     private val _updateState = MutableStateFlow<Result?>(null)
     val updateState: StateFlow<Result?> = _updateState.asStateFlow()
 

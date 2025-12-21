@@ -3,6 +3,11 @@ package ua.com.programmer.agentventa.fake
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import ua.com.programmer.agentventa.data.local.entity.Cash
+import ua.com.programmer.agentventa.data.local.entity.LOrderContent
+import ua.com.programmer.agentventa.data.local.entity.LocationHistory
+import ua.com.programmer.agentventa.data.local.entity.Order
+import ua.com.programmer.agentventa.data.local.entity.ProductImage
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
 import ua.com.programmer.agentventa.data.remote.Result
 import java.io.File
@@ -138,5 +143,55 @@ class FakeNetworkRepository : NetworkRepository {
         delayMillis = 100L
         progressSteps = emptyList()
         errorMessage = "Network error occurred"
+    }
+
+    // WebSocket methods - stub implementations for testing
+
+    override suspend fun uploadOrderViaWebSocket(order: Order, orderContent: List<LOrderContent>): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("Order uploaded via WebSocket"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
+    }
+
+    override suspend fun uploadCashViaWebSocket(cash: Cash): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("Cash uploaded via WebSocket"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
+    }
+
+    override suspend fun uploadImagesViaWebSocket(images: List<ProductImage>): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("Images uploaded via WebSocket"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
+    }
+
+    override suspend fun uploadLocationsViaWebSocket(locations: List<LocationHistory>): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("Locations uploaded via WebSocket"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
+    }
+
+    override suspend fun downloadCatalogsViaWebSocket(fullSync: Boolean): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("Catalogs downloaded via WebSocket"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
+    }
+
+    override suspend fun syncViaWebSocket(): Flow<Result> = flow {
+        if (shouldSucceed) {
+            emit(Result.Success("WebSocket sync completed"))
+        } else {
+            emit(Result.Error(errorMessage))
+        }
     }
 }

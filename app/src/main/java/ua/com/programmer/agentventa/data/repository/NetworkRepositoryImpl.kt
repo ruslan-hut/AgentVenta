@@ -22,10 +22,11 @@ import ua.com.programmer.agentventa.data.local.entity.toMap
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
 import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
-import ua.com.programmer.agentventa.extensions.trimForLog
 import ua.com.programmer.agentventa.data.remote.Result
 import ua.com.programmer.agentventa.data.remote.SendResult
 import ua.com.programmer.agentventa.data.remote.TokenManager
+import ua.com.programmer.agentventa.data.websocket.SendResult as WebSocketSendResult
+import kotlinx.coroutines.flow.first
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
@@ -109,6 +110,37 @@ class NetworkRepositoryImpl @Inject constructor(
                 //logger.d("NetworkRepositoryImpl", "set connection: ${it.dbServer}: ${it.dbUser}")
             }
 
+        }.launchIn(CoroutineScope(Dispatchers.IO))
+
+        // Subscribe to WebSocket document acknowledgments to mark documents as sent
+        webSocketRepository.documentAcks.onEach { ack ->
+            val accountGuid = currentSystemAccount?.guid ?: return@onEach
+            try {
+                when (ack.documentType) {
+                    "order" -> {
+                        val updated = dataRepository.markOrderSentViaWebSocket(accountGuid, ack.documentGuid)
+                        logger.d(logTag, "Order marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
+                    }
+                    "cash" -> {
+                        val updated = dataRepository.markCashSentViaWebSocket(accountGuid, ack.documentGuid)
+                        logger.d(logTag, "Cash marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
+                    }
+                    "image" -> {
+                        val updated = dataRepository.markImageSentViaWebSocket(accountGuid, ack.documentGuid)
+                        logger.d(logTag, "Image marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
+                    }
+                    "location" -> {
+                        // For locations, the documentGuid is client_guid
+                        val updated = dataRepository.markLocationSentViaWebSocket(accountGuid, ack.documentGuid)
+                        logger.d(logTag, "Location marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
+                    }
+                    else -> {
+                        logger.w(logTag, "Unknown document type in ACK: ${ack.documentType}")
+                    }
+                }
+            } catch (e: Exception) {
+                logger.e(logTag, "Error marking document as sent: ${e.message}")
+            }
         }.launchIn(CoroutineScope(Dispatchers.IO))
     }
 
@@ -447,6 +479,24 @@ class NetworkRepositoryImpl @Inject constructor(
      * Send documents via WebSocket
      */
     private fun sendDocumentsViaWebSocket(account: String): Flow<Result> = flow {
+        // Check WebSocket connection before starting sync
+        if (!webSocketRepository.isConnected()) {
+            emit(Result.Progress("Connecting to WebSocket..."))
+            val currentAccount = this@NetworkRepositoryImpl.account
+            if (currentAccount != null) {
+                val connected = webSocketRepository.connect(currentAccount)
+                if (!connected && !webSocketRepository.isConnected()) {
+                    emit(Result.Error("Failed to connect to WebSocket relay server"))
+                    return@flow
+                }
+                // Wait a moment for connection to stabilize
+                kotlinx.coroutines.delay(500)
+            } else {
+                emit(Result.Error("No account configured for WebSocket"))
+                return@flow
+            }
+        }
+
         var totalDocuments = 0
 
         // Upload orders
@@ -488,32 +538,65 @@ class NetworkRepositoryImpl @Inject constructor(
         val images = dataRepository.getClientImages(account)
         if (images.isNotEmpty()) {
             emit(Result.Progress("Uploading ${images.size} images via WebSocket..."))
-            // Convert ClientImage to ProductImage for WebSocket upload
-            // Note: This may need adjustment based on actual data model requirements
-            uploadImagesViaWebSocket(emptyList()).collect { result ->
-                when (result) {
-                    is Result.Progress -> emit(result)
-                    is Result.Error -> logger.e(logTag, "Image upload failed: ${result.message}")
-                    else -> {}
+            var imageCount = 0
+            for (image in images) {
+                val payloadMap = mapOf(
+                    "image" to image.toMap(),
+                    "document_guid" to image.guid
+                )
+                val payloadJson = gson.toJson(payloadMap)
+
+                val sendResult = webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
+                    payload = payloadJson
+                ).first()
+
+                when (sendResult) {
+                    is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                        imageCount++
+                        logger.d(logTag, "Image ${image.guid} uploaded successfully")
+                    }
+                    is WebSocketSendResult.Failed -> {
+                        logger.e(logTag, "Image upload failed: ${sendResult.error}")
+                    }
+                    is WebSocketSendResult.Pending -> {
+                        logger.d(logTag, "Image ${image.guid} queued for upload")
+                    }
                 }
             }
-            emit(Result.Progress("${Constants.DATA_CLIENT_IMAGE}: ${images.size}"))
+            emit(Result.Progress("${Constants.DATA_CLIENT_IMAGE}: $imageCount"))
         }
 
         // Upload client locations
         val locations = dataRepository.getClientLocations(account)
         if (locations.isNotEmpty()) {
             emit(Result.Progress("Uploading ${locations.size} locations via WebSocket..."))
-            // Convert ClientLocation to LocationHistory for WebSocket upload
-            // Note: This may need adjustment based on actual data model requirements
-            uploadLocationsViaWebSocket(emptyList()).collect { result ->
-                when (result) {
-                    is Result.Progress -> emit(result)
-                    is Result.Error -> logger.e(logTag, "Location upload failed: ${result.message}")
-                    else -> {}
+            val locationMaps = locations.map { it.toMap() }
+            val payloadMap = mapOf(
+                "locations" to locationMaps,
+                "count" to locations.size
+            )
+            val payloadJson = gson.toJson(payloadMap)
+
+            val sendResult = webSocketRepository.sendMessage(
+                type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
+                payload = payloadJson
+            ).first()
+
+            when (sendResult) {
+                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                    logger.d(logTag, "${locations.size} locations uploaded successfully")
+                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size}"))
+                }
+                is WebSocketSendResult.Failed -> {
+                    logger.e(logTag, "Location upload failed: ${sendResult.error}")
+                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: 0 (failed)"))
+                }
+                is WebSocketSendResult.Pending -> {
+                    logger.d(logTag, "${locations.size} locations queued for upload")
+                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size} (queued)"))
                 }
             }
-            emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size}"))
         }
     }
 
@@ -638,23 +721,24 @@ class NetworkRepositoryImpl @Inject constructor(
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket
-            val result = webSocketRepository.sendMessage(
+            // Send via WebSocket and collect the result
+            val sendResult = webSocketRepository.sendMessage(
                 type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER,
                 payload = payloadJson
-            )
+            ).first()
 
-            when (result) {
-                is Result.Success -> {
+            when (sendResult) {
+                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "Order ${order.number} uploaded successfully via WebSocket")
                     emit(Result.Success("Order ${order.number} uploaded"))
                 }
-                is Result.Error -> {
-                    logger.e(logTag, "Failed to upload order via WebSocket: ${result.message}")
-                    emit(Result.Error(result.message))
+                is WebSocketSendResult.Failed -> {
+                    logger.e(logTag, "Failed to upload order via WebSocket: ${sendResult.error}")
+                    emit(Result.Error(sendResult.error))
                 }
-                else -> {
-                    emit(Result.Error("Unexpected result type"))
+                is WebSocketSendResult.Pending -> {
+                    logger.d(logTag, "Order ${order.number} queued for upload")
+                    emit(Result.Progress("Order ${order.number} queued"))
                 }
             }
         } catch (e: Exception) {
@@ -689,23 +773,24 @@ class NetworkRepositoryImpl @Inject constructor(
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket
-            val result = webSocketRepository.sendMessage(
+            // Send via WebSocket and collect the result
+            val sendResult = webSocketRepository.sendMessage(
                 type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH,
                 payload = payloadJson
-            )
+            ).first()
 
-            when (result) {
-                is Result.Success -> {
+            when (sendResult) {
+                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "Cash ${cash.number} uploaded successfully via WebSocket")
                     emit(Result.Success("Cash ${cash.number} uploaded"))
                 }
-                is Result.Error -> {
-                    logger.e(logTag, "Failed to upload cash via WebSocket: ${result.message}")
-                    emit(Result.Error(result.message))
+                is WebSocketSendResult.Failed -> {
+                    logger.e(logTag, "Failed to upload cash via WebSocket: ${sendResult.error}")
+                    emit(Result.Error(sendResult.error))
                 }
-                else -> {
-                    emit(Result.Error("Unexpected result type"))
+                is WebSocketSendResult.Pending -> {
+                    logger.d(logTag, "Cash ${cash.number} queued for upload")
+                    emit(Result.Progress("Cash ${cash.number} queued"))
                 }
             }
         } catch (e: Exception) {
@@ -721,6 +806,11 @@ class NetworkRepositoryImpl @Inject constructor(
         images: List<ua.com.programmer.agentventa.data.local.entity.ProductImage>
     ): Flow<Result> = flow {
         try {
+            if (images.isEmpty()) {
+                emit(Result.Success("No images to upload"))
+                return@flow
+            }
+
             emit(Result.Progress("Uploading ${images.size} images via WebSocket..."))
 
             val gson = Gson()
@@ -737,23 +827,25 @@ class NetworkRepositoryImpl @Inject constructor(
                 )
                 val payloadJson = gson.toJson(payloadMap)
 
-                // Send via WebSocket
-                val result = webSocketRepository.sendMessage(
+                // Send via WebSocket and collect the result
+                val sendResult = webSocketRepository.sendMessage(
                     type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
                     payload = payloadJson
-                )
+                ).first()
 
-                when (result) {
-                    is Result.Success -> {
+                when (sendResult) {
+                    is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
                         uploadedCount++
                         logger.d(logTag, "Image ${image.guid} uploaded successfully")
                         emit(Result.Progress("Uploaded $uploadedCount of ${images.size} images"))
                     }
-                    is Result.Error -> {
-                        logger.e(logTag, "Failed to upload image: ${result.message}")
+                    is WebSocketSendResult.Failed -> {
+                        logger.e(logTag, "Failed to upload image: ${sendResult.error}")
                         // Continue with other images
                     }
-                    else -> {}
+                    is WebSocketSendResult.Pending -> {
+                        logger.d(logTag, "Image ${image.guid} queued for upload")
+                    }
                 }
             }
 
@@ -771,6 +863,11 @@ class NetworkRepositoryImpl @Inject constructor(
         locations: List<ua.com.programmer.agentventa.data.local.entity.LocationHistory>
     ): Flow<Result> = flow {
         try {
+            if (locations.isEmpty()) {
+                emit(Result.Success("No locations to upload"))
+                return@flow
+            }
+
             emit(Result.Progress("Uploading ${locations.size} location records via WebSocket..."))
 
             val gson = Gson()
@@ -785,23 +882,24 @@ class NetworkRepositoryImpl @Inject constructor(
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket (batch upload)
-            val result = webSocketRepository.sendMessage(
+            // Send via WebSocket (batch upload) and collect the result
+            val sendResult = webSocketRepository.sendMessage(
                 type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
                 payload = payloadJson
-            )
+            ).first()
 
-            when (result) {
-                is Result.Success -> {
+            when (sendResult) {
+                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "${locations.size} locations uploaded successfully via WebSocket")
                     emit(Result.Success("${locations.size} locations uploaded"))
                 }
-                is Result.Error -> {
-                    logger.e(logTag, "Failed to upload locations via WebSocket: ${result.message}")
-                    emit(Result.Error(result.message))
+                is WebSocketSendResult.Failed -> {
+                    logger.e(logTag, "Failed to upload locations via WebSocket: ${sendResult.error}")
+                    emit(Result.Error(sendResult.error))
                 }
-                else -> {
-                    emit(Result.Error("Unexpected result type"))
+                is WebSocketSendResult.Pending -> {
+                    logger.d(logTag, "${locations.size} locations queued for upload")
+                    emit(Result.Progress("${locations.size} locations queued"))
                 }
             }
         } catch (e: Exception) {
@@ -843,26 +941,27 @@ class NetworkRepositoryImpl @Inject constructor(
             )
             val payloadJson = Gson().toJson(payloadMap)
 
-            // Send catalog request via WebSocket
-            val result = webSocketRepository.sendMessage(
+            // Send catalog request via WebSocket and collect the result
+            val sendResult = webSocketRepository.sendMessage(
                 type = Constants.WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS,
                 payload = payloadJson
-            )
+            ).first()
 
-            when (result) {
-                is Result.Success -> {
+            when (sendResult) {
+                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "Catalog request sent successfully via WebSocket")
                     emit(Result.Progress("Catalog request sent, waiting for server response..."))
                     // Note: Actual catalog data will be received via WebSocket messages
                     // and processed by WebSocketRepository message handlers
                     emit(Result.Success("Catalog request sent"))
                 }
-                is Result.Error -> {
-                    logger.e(logTag, "Failed to request catalogs via WebSocket: ${result.message}")
-                    emit(Result.Error(result.message))
+                is WebSocketSendResult.Failed -> {
+                    logger.e(logTag, "Failed to request catalogs via WebSocket: ${sendResult.error}")
+                    emit(Result.Error(sendResult.error))
                 }
-                else -> {
-                    emit(Result.Error("Unexpected result type"))
+                is WebSocketSendResult.Pending -> {
+                    logger.d(logTag, "Catalog request queued")
+                    emit(Result.Progress("Catalog request queued"))
                 }
             }
         } catch (e: Exception) {

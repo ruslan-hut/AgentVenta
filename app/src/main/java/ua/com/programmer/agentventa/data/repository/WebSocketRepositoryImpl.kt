@@ -48,6 +48,10 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val _incomingMessages = MutableSharedFlow<IncomingDataMessage>(replay = 0, extraBufferCapacity = 100)
     override val incomingMessages: Flow<IncomingDataMessage> = _incomingMessages.asSharedFlow()
 
+    // Document acknowledgment stream for notifying about successfully uploaded documents
+    private val _documentAcks = MutableSharedFlow<DocumentAck>(replay = 0, extraBufferCapacity = 100)
+    override val documentAcks: SharedFlow<DocumentAck> = _documentAcks.asSharedFlow()
+
     // WebSocket connection and state
     private var webSocket: WebSocket? = null
     private var currentAccount: UserAccount? = null
@@ -163,12 +167,27 @@ class WebSocketRepositoryImpl @Inject constructor(
         try {
             val message = WebSocketMessageFactory.createMessage(type, payload, messageId)
 
+            // Extract document_guid from payload for document upload messages
+            val documentGuid = extractDocumentGuid(type, payload)
+
+            // Track pending message for document uploads
+            if (documentGuid != null) {
+                val pending = PendingMessage(
+                    messageId = messageId,
+                    dataType = type,
+                    data = payload,
+                    documentGuid = documentGuid
+                )
+                pendingMessages[messageId] = pending
+            }
+
             val sent = webSocket?.send(message) ?: false
             if (sent) {
                 resultFlow.emit(SendResult.Sent(messageId))
-                logger.d(TAG, "Message sent: type=$type, id=$messageId")
+                logger.d(TAG, "Message sent: type=$type, id=$messageId${if (documentGuid != null) ", doc=$documentGuid" else ""}")
             } else {
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
+                pendingMessages.remove(messageId)
             }
         } catch (e: Exception) {
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
@@ -176,6 +195,44 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         return resultFlow.asSharedFlow()
+    }
+
+    /**
+     * Extracts document_guid from payload for document upload messages.
+     * Returns null for non-document messages.
+     */
+    private fun extractDocumentGuid(type: String, payload: String): String? {
+        val documentTypes = listOf(
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER,
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH,
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION
+        )
+
+        if (type !in documentTypes) return null
+
+        return try {
+            val gson = Gson()
+            val json = gson.fromJson(payload, com.google.gson.JsonObject::class.java)
+            json.get("document_guid")?.asString
+        } catch (e: Exception) {
+            logger.w(TAG, "Failed to extract document_guid from payload: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Maps WebSocket message type to document type for DocumentAck.
+     * Returns null for non-document message types.
+     */
+    private fun mapMessageTypeToDocumentType(messageType: String): String? {
+        return when (messageType) {
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER -> "order"
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH -> "cash"
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE -> "image"
+            Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION -> "location"
+            else -> null
+        }
     }
 
     override suspend fun reconnect(): Boolean {
@@ -258,6 +315,8 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             logger.d(TAG, "Connecting to: $backendHost")
             logger.d(TAG, "Device UUID: $deviceUuid")
+            logger.d(TAG, "API Key present: ${apiKey.isNotEmpty()}, length: ${apiKey.length}")
+            logger.d(TAG, "Auth token format: Bearer <${apiKey.length} chars>:<${deviceUuid.length} chars>")
 
             val request = Request.Builder()
                 .url(url)
@@ -371,7 +430,22 @@ class WebSocketRepositoryImpl @Inject constructor(
                     if (ackMessage != null) {
                         logger.d(TAG, "Ack received: ${ackMessage.messageId} (status: ${ackMessage.status})")
 
-                        pendingMessages.remove(ackMessage.messageId)
+                        // Check if this ACK is for a document upload and emit DocumentAck
+                        val pendingMessage = pendingMessages.remove(ackMessage.messageId)
+                        if (pendingMessage?.documentGuid != null) {
+                            val documentType = mapMessageTypeToDocumentType(pendingMessage.dataType)
+                            if (documentType != null) {
+                                scope.launch {
+                                    _documentAcks.emit(DocumentAck(
+                                        documentType = documentType,
+                                        documentGuid = pendingMessage.documentGuid,
+                                        messageId = ackMessage.messageId
+                                    ))
+                                    logger.d(TAG, "Document ACK emitted: type=$documentType, guid=${pendingMessage.documentGuid}")
+                                }
+                            }
+                        }
+
                         messageResults[ackMessage.messageId]?.let {
                             scope.launch {
                                 it.emit(SendResult.Acknowledged(ackMessage.messageId))
@@ -619,7 +693,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                             }
                         }
 
-                        counters[valueId] = counters.getOrDefault(valueId, 0) + 1
+                        counters[valueId] = (counters[valueId] ?: 0) + 1
                     } catch (e: Exception) {
                         logger.e(TAG, "Error processing item $i: ${e.message}")
                     }
@@ -747,7 +821,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
                         // Count by value_id
                         val valueId = xMap.getValueId()
-                        counters[valueId] = counters.getOrDefault(valueId, 0) + 1
+                        counters[valueId] = (counters[valueId] ?: 0) + 1
                     } catch (e: Exception) {
                         logger.e(TAG, "Error converting catalog item: ${e.message}")
                     }

@@ -272,4 +272,30 @@ interface DataExchangeDao {
     @Query("SELECT * FROM client_locations WHERE db_guid=:accountGuid AND is_modified=1")
     suspend fun getClientLocations(accountGuid: String): List<ClientLocation>?
 
+    // ========== WebSocket Document Status Updates ==========
+
+    /**
+     * Mark order as sent via WebSocket (after receiving ACK from server)
+     */
+    @Query("UPDATE orders SET is_sent=1 WHERE db_guid=:accountGuid AND guid=:orderGuid")
+    suspend fun markOrderSentViaWebSocket(accountGuid: String, orderGuid: String): Int
+
+    /**
+     * Mark cash receipt as sent via WebSocket (after receiving ACK from server)
+     */
+    @Query("UPDATE cash SET is_sent=1 WHERE db_guid=:accountGuid AND guid=:docGuid")
+    suspend fun markCashSentViaWebSocket(accountGuid: String, docGuid: String): Int
+
+    /**
+     * Mark client image as sent via WebSocket (after receiving ACK from server)
+     */
+    @Query("UPDATE client_images SET is_sent=1, is_local=0 WHERE db_guid=:accountGuid AND guid=:imageGuid")
+    suspend fun markImageSentViaWebSocket(accountGuid: String, imageGuid: String): Int
+
+    /**
+     * Mark client location as synced via WebSocket (reset modified flag)
+     */
+    @Query("UPDATE client_locations SET is_modified=0 WHERE db_guid=:accountGuid AND client_guid=:clientGuid")
+    suspend fun markLocationSentViaWebSocket(accountGuid: String, clientGuid: String): Int
+
 }

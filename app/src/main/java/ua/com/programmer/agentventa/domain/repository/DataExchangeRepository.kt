@@ -18,4 +18,10 @@ interface DataExchangeRepository {
     suspend fun getClientImages(accountGuid: String): List<ClientImage>
     suspend fun getClientLocations(accountGuid: String): List<ClientLocation>
     suspend fun getCash(accountGuid: String): List<Cash>
+
+    // WebSocket document status updates
+    suspend fun markOrderSentViaWebSocket(accountGuid: String, orderGuid: String): Int
+    suspend fun markCashSentViaWebSocket(accountGuid: String, docGuid: String): Int
+    suspend fun markImageSentViaWebSocket(accountGuid: String, imageGuid: String): Int
+    suspend fun markLocationSentViaWebSocket(accountGuid: String, clientGuid: String): Int
 }

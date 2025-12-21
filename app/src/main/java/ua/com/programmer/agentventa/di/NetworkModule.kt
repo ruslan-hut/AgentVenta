@@ -57,6 +57,21 @@ class NetworkModule {
             .build()
     }
 
+    /**
+     * Provides OkHttpClient for WebSocket connections.
+     * This client does NOT include HttpAuthInterceptor to preserve
+     * the Bearer token format required by the relay server.
+     * WebSocket authentication uses: Bearer <API_KEY>:<DEVICE_UUID>
+     */
+    @Provides
+    @Singleton
+    @WebSocketClient
+    fun provideWebSocketOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .pingInterval(30, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+    }
+
     @Provides
     @Singleton
     fun provideRetrofitBuilder(okHttpClient: OkHttpClient): Retrofit.Builder {
@@ -80,7 +95,7 @@ class NetworkModule {
     @Provides
     @Singleton
     fun provideWebSocketRepository(
-        okHttpClient: OkHttpClient,
+        @WebSocketClient okHttpClient: OkHttpClient,
         logger: Logger,
         apiKeyProvider: ApiKeyProvider,
         dataExchangeRepository: DataExchangeRepository,

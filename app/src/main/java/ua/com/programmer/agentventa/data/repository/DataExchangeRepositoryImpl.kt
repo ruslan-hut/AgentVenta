@@ -223,4 +223,22 @@ class DataExchangeRepositoryImpl @Inject constructor(
         return dataExchangeDao.getCash(accountGuid) ?: emptyList()
     }
 
+    // WebSocket document status updates
+
+    override suspend fun markOrderSentViaWebSocket(accountGuid: String, orderGuid: String): Int {
+        return dataExchangeDao.markOrderSentViaWebSocket(accountGuid, orderGuid)
+    }
+
+    override suspend fun markCashSentViaWebSocket(accountGuid: String, docGuid: String): Int {
+        return dataExchangeDao.markCashSentViaWebSocket(accountGuid, docGuid)
+    }
+
+    override suspend fun markImageSentViaWebSocket(accountGuid: String, imageGuid: String): Int {
+        return dataExchangeDao.markImageSentViaWebSocket(accountGuid, imageGuid)
+    }
+
+    override suspend fun markLocationSentViaWebSocket(accountGuid: String, clientGuid: String): Int {
+        return dataExchangeDao.markLocationSentViaWebSocket(accountGuid, clientGuid)
+    }
+
 }

@@ -10,7 +10,8 @@ data class PendingMessage(
     val data: String,
     val timestamp: Long = System.currentTimeMillis(),
     val retryCount: Int = 0,
-    val maxRetries: Int = 3
+    val maxRetries: Int = 3,
+    val documentGuid: String? = null  // For document uploads, tracks the document GUID
 ) {
     /**
      * Checks if this message has exceeded maximum retry attempts.
