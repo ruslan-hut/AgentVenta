@@ -8,31 +8,43 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import ua.com.programmer.agentventa.data.local.entity.getWebSocketUrl
-import ua.com.programmer.agentventa.data.websocket.SendResult
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
-import ua.com.programmer.agentventa.utility.Constants
+import ua.com.programmer.agentventa.infrastructure.websocket.PendingDataChecker
+import ua.com.programmer.agentventa.infrastructure.websocket.PendingDataSummary
+import ua.com.programmer.agentventa.infrastructure.websocket.WebSocketConnectionManager
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+/**
+ * ViewModel for WebSocket status screen.
+ * Shows connection state, pending data counts, and allows manual sync trigger.
+ * Connection is managed automatically by WebSocketConnectionManager.
+ */
 @HiltViewModel
 class WebSocketTestViewModel @Inject constructor(
     private val webSocketRepository: WebSocketRepository,
     private val userAccountRepository: UserAccountRepository,
     private val settingsSyncRepository: ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository,
-    private val logger: Logger,
-    private val apiKeyProvider: ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
+    private val connectionManager: WebSocketConnectionManager,
+    private val pendingDataChecker: PendingDataChecker,
+    private val logger: Logger
 ) : ViewModel() {
 
-    private val TAG = "WSTestViewModel"
+    private val TAG = "WSStatusViewModel"
 
     private val _connectionState = MutableLiveData<String>("Disconnected")
     val connectionState: LiveData<String> = _connectionState
+
+    private val _pendingDataInfo = MutableLiveData<String>("")
+    val pendingDataInfo: LiveData<String> = _pendingDataInfo
+
+    private val _lastSyncTime = MutableLiveData<String>("Never")
+    val lastSyncTime: LiveData<String> = _lastSyncTime
 
     private val _messageLog = MutableLiveData<List<String>>(emptyList())
     val messageLog: LiveData<List<String>> = _messageLog
@@ -43,90 +55,74 @@ class WebSocketTestViewModel @Inject constructor(
     private val _settingsSyncStatus = MutableLiveData<String>("")
     val settingsSyncStatus: LiveData<String> = _settingsSyncStatus
 
+    private val _isSyncing = MutableLiveData<Boolean>(false)
+    val isSyncing: LiveData<Boolean> = _isSyncing
+
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    private val fullDateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
 
     init {
         // Observe WebSocket connection state
         webSocketRepository.connectionState.onEach { state ->
             _connectionState.value = when (state) {
-                is WebSocketState.Connected -> "✓ Connected (UUID: ${state.deviceUuid.take(8)})"
-                is WebSocketState.Connecting -> "⟳ Connecting... (attempt ${state.attempt})"
-                is WebSocketState.Disconnected -> "✗ Disconnected"
-                is WebSocketState.Pending -> "⏸ Pending Approval (UUID: ${state.deviceUuid.take(8)})"
-                is WebSocketState.Error -> "✗ Error: ${state.error}"
-                is WebSocketState.Reconnecting -> "⟳ Reconnecting in ${state.delayMs}ms (attempt ${state.attempt})"
+                is WebSocketState.Connected -> "Connected (${state.deviceUuid.take(8)}...)"
+                is WebSocketState.Connecting -> "Connecting... (attempt ${state.attempt})"
+                is WebSocketState.Disconnected -> "Disconnected"
+                is WebSocketState.Pending -> "Pending Approval"
+                is WebSocketState.Error -> "Error: ${state.error}"
+                is WebSocketState.Reconnecting -> "Reconnecting in ${state.delayMs / 1000}s"
+            }
+        }.launchIn(viewModelScope)
+
+        // Observe pending data summary
+        connectionManager.pendingDataSummary.onEach { summary ->
+            _pendingDataInfo.value = formatPendingDataSummary(summary)
+        }.launchIn(viewModelScope)
+
+        // Observe last sync time
+        connectionManager.lastSyncTime.onEach { timestamp ->
+            _lastSyncTime.value = if (timestamp > 0) {
+                fullDateFormat.format(Date(timestamp))
+            } else {
+                "Never"
             }
         }.launchIn(viewModelScope)
 
         // Listen for incoming messages
         webSocketRepository.incomingMessages.onEach { message ->
-            addToLog("← Received: type=${message.dataType}, id=${message.messageId}")
-            logger.d(TAG, "Received message: ${message.dataType}")
+            addToLog("Received: ${message.dataType}")
         }.launchIn(viewModelScope)
+
+        // Load initial pending data count
+        refreshPendingData()
     }
 
-    fun connect() {
+    /**
+     * Trigger immediate sync check and connection.
+     */
+    fun syncNow() {
         viewModelScope.launch {
-            val account = userAccountRepository.getCurrent()
-            if (account != null && account.dataFormat == Constants.SYNC_FORMAT_WEBSOCKET) {
-                val backendHost = apiKeyProvider.backendHost
-                val wsUrl = account.getWebSocketUrl(backendHost)
+            _isSyncing.value = true
+            addToLog("Manual sync triggered...")
 
-                addToLog("→ Connecting...")
-                addToLog("  Backend: $backendHost")
-                addToLog("  Device UUID: ${account.guid}")
-                addToLog("  URL: $wsUrl")
-
-                val success = webSocketRepository.connect(account)
-                if (!success) {
-                    addToLog("✗ Connection failed - check configuration")
-                }
-            } else {
-                addToLog("✗ Error: No WebSocket account configured")
-                addToLog("  Please configure a WebSocket account first")
+            try {
+                connectionManager.checkAndConnect()
+                addToLog("Sync check completed")
+            } catch (e: Exception) {
+                addToLog("Sync error: ${e.message}")
+            } finally {
+                _isSyncing.value = false
             }
         }
     }
 
-    fun disconnect() {
+    /**
+     * Refresh pending data counts.
+     */
+    fun refreshPendingData() {
         viewModelScope.launch {
-            addToLog("→ Disconnecting...")
-            webSocketRepository.disconnect()
-        }
-    }
-
-    fun sendTestMessage() {
-        viewModelScope.launch {
-            val payload = mapOf(
-                "test" to "Hello from Android",
-                "timestamp" to System.currentTimeMillis().toString(),
-                "data_type" to "test_message"
-            )
-
-            addToLog("→ Sending test message...")
-
-            // Convert map to JSON string
-            val jsonPayload = com.google.gson.Gson().toJson(payload)
-
-            webSocketRepository.sendData(
-                dataType = Constants.DATA_OPTIONS,
-                data = jsonPayload
-            ).collect { result ->
-                when (result) {
-                    is SendResult.Pending -> {
-                        addToLog("  ⏳ Message pending: ${result.messageId.takeLast(8)}")
-                    }
-                    is SendResult.Sent -> {
-                        addToLog("  ✓ Message sent: ${result.messageId.takeLast(8)}")
-                    }
-                    is SendResult.Acknowledged -> {
-                        addToLog("  ✓ Message acknowledged: ${result.messageId.takeLast(8)}")
-                    }
-                    is SendResult.Failed -> {
-                        addToLog("  ✗ Send failed: ${result.error}")
-                    }
-                }
-            }
+            val summary = pendingDataChecker.getPendingDataSummary()
+            _pendingDataInfo.value = formatPendingDataSummary(summary)
         }
     }
 
@@ -138,36 +134,36 @@ class WebSocketTestViewModel @Inject constructor(
         viewModelScope.launch {
             val email = _userEmail.value?.trim()
             if (email.isNullOrEmpty()) {
-                _settingsSyncStatus.value = "❌ Please enter user email"
-                addToLog("✗ Upload failed: Email required")
+                _settingsSyncStatus.value = "Please enter user email"
+                addToLog("Upload failed: Email required")
                 return@launch
             }
 
             val account = userAccountRepository.getCurrent()
             if (account == null) {
-                _settingsSyncStatus.value = "❌ No account configured"
-                addToLog("✗ Upload failed: No account")
+                _settingsSyncStatus.value = "No account configured"
+                addToLog("Upload failed: No account")
                 return@launch
             }
 
-            _settingsSyncStatus.value = "⟳ Uploading settings..."
-            addToLog("→ Uploading settings for: $email")
+            _settingsSyncStatus.value = "Uploading settings..."
+            addToLog("Uploading settings for: $email")
 
             val options = ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder.build(account)
 
             settingsSyncRepository.uploadSettings(email, account, options).collect { result ->
                 when (result) {
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "✓ Settings uploaded"
-                        addToLog("✓ Settings uploaded successfully")
+                        _settingsSyncStatus.value = "Settings uploaded"
+                        addToLog("Settings uploaded successfully")
                     }
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "❌ Upload failed"
-                        addToLog("✗ Upload error: ${result.message}")
+                        _settingsSyncStatus.value = "Upload failed"
+                        addToLog("Upload error: ${result.message}")
                     }
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "❌ Unexpected result"
-                        addToLog("✗ Unexpected: NotFound on upload")
+                        _settingsSyncStatus.value = "Unexpected result"
+                        addToLog("Unexpected: NotFound on upload")
                     }
                 }
             }
@@ -178,34 +174,27 @@ class WebSocketTestViewModel @Inject constructor(
         viewModelScope.launch {
             val email = _userEmail.value?.trim()
             if (email.isNullOrEmpty()) {
-                _settingsSyncStatus.value = "❌ Please enter user email"
-                addToLog("✗ Download failed: Email required")
+                _settingsSyncStatus.value = "Please enter user email"
+                addToLog("Download failed: Email required")
                 return@launch
             }
 
-            _settingsSyncStatus.value = "⟳ Downloading settings..."
-            addToLog("→ Requesting settings for: $email")
+            _settingsSyncStatus.value = "Downloading settings..."
+            addToLog("Requesting settings for: $email")
 
             settingsSyncRepository.downloadSettings(email).collect { result ->
                 when (result) {
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "✓ Settings downloaded"
-                        addToLog("✓ Settings received:")
-                        result.settings.options?.let { options ->
-                            addToLog("  - write: ${options.write}")
-                            addToLog("  - read: ${options.read}")
-                            addToLog("  - loadImages: ${options.loadImages}")
-                            addToLog("  - useCompanies: ${options.useCompanies}")
-                        } ?: addToLog("  - No options provided")
-                        addToLog("  - Updated: ${result.settings.updatedAt ?: "N/A"}")
+                        _settingsSyncStatus.value = "Settings downloaded"
+                        addToLog("Settings received")
                     }
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "ℹ Settings not found"
-                        addToLog("ℹ No settings found for: ${result.userEmail}")
+                        _settingsSyncStatus.value = "Settings not found"
+                        addToLog("No settings found for: ${result.userEmail}")
                     }
                     is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "❌ Download failed"
-                        addToLog("✗ Download error: ${result.message}")
+                        _settingsSyncStatus.value = "Download failed"
+                        addToLog("Download error: ${result.message}")
                     }
                 }
             }
@@ -214,6 +203,20 @@ class WebSocketTestViewModel @Inject constructor(
 
     fun setUserEmail(email: String) {
         _userEmail.value = email
+    }
+
+    private fun formatPendingDataSummary(summary: PendingDataSummary): String {
+        if (!summary.hasPendingData) {
+            return "No pending data"
+        }
+
+        val parts = mutableListOf<String>()
+        if (summary.ordersCount > 0) parts.add("${summary.ordersCount} orders")
+        if (summary.cashCount > 0) parts.add("${summary.cashCount} cash")
+        if (summary.imagesCount > 0) parts.add("${summary.imagesCount} images")
+        if (summary.locationsCount > 0) parts.add("${summary.locationsCount} locations")
+
+        return "Pending: ${parts.joinToString(", ")}"
     }
 
     private fun addToLog(message: String) {

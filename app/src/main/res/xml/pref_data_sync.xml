@@ -51,15 +51,16 @@
         android:singleLine="true"
         android:title="@string/pref_title_password" />
 
-    <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
-    <!--<ListPreference-->
-        <!--android:defaultValue="180"-->
-        <!--android:entries="@array/pref_sync_frequency_titles"-->
-        <!--android:entryValues="@array/pref_sync_frequency_values"-->
-        <!--android:key="sync_frequency"-->
-        <!--android:negativeButtonText="@null"-->
-        <!--android:positiveButtonText="@null"-->
-        <!--android:title="@string/pref_title_sync_frequency" />-->
+    <!-- WebSocket sync interval -->
+    <ListPreference
+        android:defaultValue="15"
+        android:entries="@array/pref_websocket_interval_entries"
+        android:entryValues="@array/pref_websocket_interval_values"
+        android:key="websocket_idle_interval_minutes"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:title="@string/pref_title_websocket_interval"
+        android:summary="@string/pref_summary_websocket_interval" />
 
     <!-- This preference simply launches an intent when selected. Use this UI sparingly, per
          design guidelines. -->

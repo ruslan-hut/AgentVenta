@@ -369,6 +369,10 @@
     <string name="open_account_settings">Відкрити налаштування</string>
     <string name="current_account_for_sync">Поточні налаштування підключення</string>
     <string name="data_deleted">Дані видалені</string>
+    <string name="undo">Скасувати</string>
+    <string name="confirm_delete_task">Видалити це завдання?</string>
+    <string name="task_completed">Завдання виконано</string>
+    <string name="task_reopened">Завдання відкрито знову</string>
     <string name="product_image">Зображення товару</string>
     <string name="client_menu">Меню клієнта</string>
     <string name="data_copied">Дані скопійовано</string>
@@ -428,4 +432,50 @@
     <string name="ignore_sequential_barcodes_desc">Якщо товар вже є в замовлені, считування його штрихкоду буде проігнороване</string>
     <string name="company">Фірма</string>
     <string name="store">Склад</string>
+
+    <!-- WebSocket Configuration -->
+    <string name="relay_server">Relay сервер (WebSocket)</string>
+    <string name="account_guid">GUID акаунта (UUID пристрою)</string>
+    <string name="device_uuid">UUID пристрою</string>
+    <string name="connection_status">Статус підключення</string>
+    <string name="ws_connected">WebSocket підключено</string>
+    <string name="ws_disconnected">WebSocket відключено</string>
+    <string name="ws_connecting">Підключення…</string>
+    <string name="ws_error">Помилка підключення</string>
+    <string name="test_connection">Тест підключення</string>
+    <string name="websocket_connection">WebSocket підключення</string>
+    <string name="connect">Підключити</string>
+    <string name="disconnect">Відключити</string>
+    <string name="settings_sync">Синхронізація налаштувань</string>
+    <string name="settings_sync_email">Email для синхронізації налаштувань</string>
+    <string name="upload_settings">Вивантажити налаштування</string>
+    <string name="download_settings">Завантажити налаштування</string>
+    <string name="manual_server_configuration">Ручне налаштування сервера</string>
+
+    <!-- WebSocket Status Screen -->
+    <string name="websocket_status_title">Стан синхронізації</string>
+    <string name="websocket_connection_status">Підключення</string>
+    <string name="websocket_pending_data">Очікує відправлення</string>
+    <string name="websocket_last_sync">Остання синхронізація</string>
+    <string name="websocket_sync_now">Синхронізувати зараз</string>
+    <string name="websocket_settings_sync">Синхронізація налаштувань</string>
+    <string name="websocket_user_email_hint">Email користувача</string>
+    <string name="websocket_upload_settings">Вивантажити</string>
+    <string name="websocket_download_settings">Завантажити</string>
+    <string name="websocket_activity_log">Журнал активності</string>
+    <string name="websocket_clear_log">Очистити журнал</string>
+    <string name="websocket_no_messages">Немає повідомлень</string>
+
+    <!-- Sync settings -->
+    <string name="pref_title_websocket_interval">Інтервал синхронізації</string>
+    <string name="pref_summary_websocket_interval">Як часто перевіряти нові дані</string>
+    <string name="pref_title_sync_settings">Налаштування синхронізації</string>
+    <string-array name="pref_websocket_interval_entries">
+        <item>5 хвилин</item>
+        <item>10 хвилин</item>
+        <item>15 хвилин</item>
+        <item>30 хвилин</item>
+        <item>45 хвилин</item>
+        <item>60 хвилин</item>
+    </string-array>
 </resources>

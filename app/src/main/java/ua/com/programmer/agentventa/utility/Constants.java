@@ -105,6 +105,11 @@ public final class Constants {
     public static final int WEBSOCKET_RECONNECT_MAX_DELAY = 60000; // 60s
     public static final int WEBSOCKET_PING_INTERVAL = 30000; // 30s
 
+    // Idle interval for periodic connection checks (when no pending data)
+    public static final long WEBSOCKET_IDLE_INTERVAL_DEFAULT = 15 * 60 * 1000L; // 15 min
+    public static final long WEBSOCKET_IDLE_INTERVAL_MIN = 5 * 60 * 1000L; // 5 min
+    public static final long WEBSOCKET_IDLE_INTERVAL_MAX = 60 * 60 * 1000L; // 60 min
+
     /**
      * WebSocket message types
      */

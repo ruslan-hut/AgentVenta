@@ -4,6 +4,20 @@
     <string name="action_settings">Settings</string>
     <string name="action_sync">Sync data</string>
 
+    <!-- WebSocket Status Screen -->
+    <string name="websocket_status_title">Sync Status</string>
+    <string name="websocket_connection_status">Connection</string>
+    <string name="websocket_pending_data">Pending data</string>
+    <string name="websocket_last_sync">Last sync</string>
+    <string name="websocket_sync_now">Sync Now</string>
+    <string name="websocket_settings_sync">Settings Sync</string>
+    <string name="websocket_user_email_hint">User Email</string>
+    <string name="websocket_upload_settings">Upload</string>
+    <string name="websocket_download_settings">Download</string>
+    <string name="websocket_activity_log">Activity Log</string>
+    <string name="websocket_clear_log">Clear Log</string>
+    <string name="websocket_no_messages">No messages</string>
+
     <string name="header_goods_list">Goods list</string>
     <string name="header_orders_list">Orders list</string>
     <string name="title_activity_settings">Settings</string>
@@ -88,9 +102,30 @@
 
     <string-array name="multi_select_list_preference_default_value" />
 
+    <!-- WebSocket sync interval options -->
+    <string-array name="pref_websocket_interval_entries">
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>45 minutes</item>
+        <item>60 minutes</item>
+    </string-array>
+    <string-array name="pref_websocket_interval_values">
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+    </string-array>
+
     <string name="pref_title_sync_format">Connection type</string>
     <string name="pref_title_system_sync_settings">System sync settings</string>
     <string name="pref_title_network_usage">Network usage</string>
+    <string name="pref_title_websocket_interval">Sync interval</string>
+    <string name="pref_summary_websocket_interval">How often to check for new data</string>
+    <string name="pref_title_sync_settings">Sync settings</string>
 
     <string name="pref_title_server_address">Server address</string>
 

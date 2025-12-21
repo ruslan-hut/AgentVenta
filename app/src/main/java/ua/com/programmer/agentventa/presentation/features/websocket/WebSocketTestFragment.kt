@@ -1,18 +1,20 @@
 package ua.com.programmer.agentventa.presentation.features.websocket
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.FragmentWebsocketTestBinding
 
+/**
+ * WebSocket Status Fragment.
+ * Shows connection status, pending data counts, and provides manual sync trigger.
+ * Connection is managed automatically by WebSocketConnectionManager.
+ */
 @AndroidEntryPoint
 class WebSocketTestFragment : Fragment() {
 
@@ -37,14 +39,28 @@ class WebSocketTestFragment : Fragment() {
         setupListeners()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh pending data when screen becomes visible
+        viewModel.refreshPendingData()
+    }
+
     private fun setupObservers() {
         viewModel.connectionState.observe(viewLifecycleOwner) { state ->
             binding.connectionStatusText.text = state
         }
 
+        viewModel.pendingDataInfo.observe(viewLifecycleOwner) { info ->
+            binding.pendingDataText.text = info
+        }
+
+        viewModel.lastSyncTime.observe(viewLifecycleOwner) { time ->
+            binding.lastSyncText.text = time
+        }
+
         viewModel.messageLog.observe(viewLifecycleOwner) { messages ->
             binding.messageLogText.text = if (messages.isEmpty()) {
-                "No messages"
+                getString(R.string.websocket_no_messages)
             } else {
                 messages.joinToString("\n")
             }
@@ -58,27 +74,24 @@ class WebSocketTestFragment : Fragment() {
                 binding.settingsSyncStatus.visibility = View.GONE
             }
         }
+
+        viewModel.isSyncing.observe(viewLifecycleOwner) { isSyncing ->
+            binding.syncNowButton.isEnabled = !isSyncing
+            binding.syncNowButton.text = if (isSyncing) {
+                "Syncing..."
+            } else {
+                getString(R.string.websocket_sync_now)
+            }
+        }
     }
 
     private fun setupListeners() {
-        binding.connectButton.setOnClickListener {
-            viewModel.connect()
-        }
-
-        binding.disconnectButton.setOnClickListener {
-            viewModel.disconnect()
-        }
-
-        binding.sendTestButton.setOnClickListener {
-            viewModel.sendTestMessage()
+        binding.syncNowButton.setOnClickListener {
+            viewModel.syncNow()
         }
 
         binding.clearLogButton.setOnClickListener {
             viewModel.clearLog()
-        }
-
-        binding.copyLogButton.setOnClickListener {
-            copyLogToClipboard()
         }
 
         // Settings sync listeners
@@ -96,18 +109,6 @@ class WebSocketTestFragment : Fragment() {
 
         binding.downloadSettingsButton.setOnClickListener {
             viewModel.downloadSettings()
-        }
-    }
-
-    private fun copyLogToClipboard() {
-        val logText = binding.messageLogText.text.toString()
-        if (logText.isNotEmpty() && logText != "No messages") {
-            val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("WebSocket Log", logText)
-            clipboard.setPrimaryClip(clip)
-            Toast.makeText(requireContext(), "Log copied to clipboard", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(requireContext(), "No log to copy", Toast.LENGTH_SHORT).show()
         }
     }
 
