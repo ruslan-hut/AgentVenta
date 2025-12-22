@@ -9,13 +9,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.repository.toUserAccount
-import ua.com.programmer.agentventa.data.repository.toUserOptions
 import ua.com.programmer.agentventa.data.websocket.SettingsSyncResult
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository
@@ -23,11 +22,13 @@ import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
+import ua.com.programmer.agentventa.utility.ResourceProvider
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class UserAccountViewModel @Inject constructor(
+    private val resourceProvider: ResourceProvider,
     private val userAccountRepository: UserAccountRepository,
     private val webSocketRepository: WebSocketRepository,
     private val settingsSyncRepository: SettingsSyncRepository,
@@ -40,7 +41,7 @@ class UserAccountViewModel @Inject constructor(
     val formatSpinner = MutableLiveData<List<String>>()
     val selectedFormat = MutableLiveData<String>()
 
-    private val _connectionState = MutableLiveData<String>("✗ Disconnected")
+    private val _connectionState = MutableLiveData(resourceProvider.getString(R.string.account_ws_disconnected))
     val connectionState: LiveData<String> = _connectionState
 
     private val _isConnected = MutableLiveData<Boolean>(false)
@@ -69,12 +70,12 @@ class UserAccountViewModel @Inject constructor(
             .onEach { state ->
                 // Update status text
                 val statusText = when (state) {
-                    is WebSocketState.Connected -> "✓ Connected (UUID: ${state.deviceUuid.take(8)})"
-                    is WebSocketState.Connecting -> "⟳ Connecting... (attempt ${state.attempt})"
-                    is WebSocketState.Disconnected -> "✗ Disconnected"
-                    is WebSocketState.Pending -> "⏸ Pending Approval (UUID: ${state.deviceUuid.take(8)})"
-                    is WebSocketState.Error -> "✗ Error: ${state.error}"
-                    is WebSocketState.Reconnecting -> "⟳ Reconnecting in ${state.delayMs}ms (attempt ${state.attempt})"
+                    is WebSocketState.Connected -> resourceProvider.getString(R.string.account_ws_connected, state.deviceUuid.take(8))
+                    is WebSocketState.Connecting -> resourceProvider.getString(R.string.account_ws_connecting, state.attempt)
+                    is WebSocketState.Disconnected -> resourceProvider.getString(R.string.account_ws_disconnected)
+                    is WebSocketState.Pending -> resourceProvider.getString(R.string.account_ws_pending, state.deviceUuid.take(8))
+                    is WebSocketState.Error -> resourceProvider.getString(R.string.account_ws_error, state.error)
+                    is WebSocketState.Reconnecting -> resourceProvider.getString(R.string.account_ws_reconnecting, state.delayMs, state.attempt)
                 }
                 _connectionState.postValue(statusText)
 
@@ -132,7 +133,7 @@ class UserAccountViewModel @Inject constructor(
                 webSocketRepository.connect(currentAccount)
             } else {
                 logger.w(TAG, "Cannot connect: No account loaded")
-                _connectionState.value = "✗ Error: No account loaded"
+                _connectionState.value = resourceProvider.getString(R.string.account_ws_no_account)
             }
         }
     }
@@ -149,18 +150,18 @@ class UserAccountViewModel @Inject constructor(
         viewModelScope.launch {
             val currentAccount = userAccount ?: account.value
             if (currentAccount == null) {
-                _settingsSyncStatus.value = "❌ No account loaded"
+                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_no_account)
                 return@launch
             }
 
             // Get user email from account syncEmail field
             val userEmail = currentAccount.syncEmail
             if (userEmail.isBlank()) {
-                _settingsSyncStatus.value = "❌ Email required for sync"
+                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_email_required)
                 return@launch
             }
 
-            _settingsSyncStatus.value = "⟳ Uploading settings..."
+            _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_uploading)
             logger.d(TAG, "Uploading full account settings for: $userEmail")
 
             val options = UserOptionsBuilder.build(currentAccount)
@@ -168,15 +169,15 @@ class UserAccountViewModel @Inject constructor(
             settingsSyncRepository.uploadSettings(userEmail, currentAccount, options).collect { result ->
                 when (result) {
                     is SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "✓ Settings uploaded"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_uploaded)
                         logger.d(TAG, "Settings uploaded successfully")
                     }
                     is SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "❌ Upload failed: ${result.message}"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_upload_failed, result.message)
                         logger.e(TAG, "Upload error: ${result.message}")
                     }
                     is SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "❌ Unexpected result"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_unexpected)
                         logger.w(TAG, "Unexpected NotFound on upload")
                     }
                 }
@@ -188,24 +189,24 @@ class UserAccountViewModel @Inject constructor(
         viewModelScope.launch {
             val currentAccount = userAccount ?: account.value
             if (currentAccount == null) {
-                _settingsSyncStatus.value = "❌ No account loaded"
+                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_no_account)
                 return@launch
             }
 
             // Get user email from account syncEmail field
             val userEmail = currentAccount.syncEmail
             if (userEmail.isBlank()) {
-                _settingsSyncStatus.value = "❌ Email required for sync"
+                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_email_required)
                 return@launch
             }
 
-            _settingsSyncStatus.value = "⟳ Downloading settings..."
+            _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_downloading)
             logger.d(TAG, "Downloading settings for: $userEmail")
 
             settingsSyncRepository.downloadSettings(userEmail).collect { result ->
                 when (result) {
                     is SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "✓ Settings downloaded"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_downloaded)
                         logger.d(TAG, "Settings received - applying full account data")
 
                         // Apply downloaded settings to create updated UserAccount
@@ -213,7 +214,7 @@ class UserAccountViewModel @Inject constructor(
 
                         // Save updated account
                         userAccountRepository.saveAccount(updatedAccount)
-                        _settingsSyncStatus.value = "✓ Settings applied"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_applied)
                         logger.d(TAG, "Full account settings applied")
 
                         // If useWebSocket is enabled, automatically upload current version back to server
@@ -223,11 +224,11 @@ class UserAccountViewModel @Inject constructor(
                         }
                     }
                     is SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "ℹ No settings found on server"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_not_found)
                         logger.d(TAG, "No settings found for: $userEmail")
                     }
                     is SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "❌ Download failed: ${result.message}"
+                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_download_failed, result.message)
                         logger.e(TAG, "Download error: ${result.message}")
                     }
                 }

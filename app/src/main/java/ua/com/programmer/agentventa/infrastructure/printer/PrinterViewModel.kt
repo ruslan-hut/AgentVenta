@@ -14,6 +14,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.BuildConfig
+import ua.com.programmer.agentventa.R
+import ua.com.programmer.agentventa.utility.ResourceProvider
 import java.io.File
 import java.io.IOException
 import java.nio.charset.Charset
@@ -22,6 +24,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PrinterViewModel @Inject constructor(
+    private val resourceProvider: ResourceProvider,
     private val bluetoothAdapter: BluetoothAdapter?,
     private val preferences: SharedPreferences
 ): ViewModel() {
@@ -56,15 +59,15 @@ class PrinterViewModel @Inject constructor(
     @SuppressLint("MissingPermission")
     fun printTest() {
         setStatus("")
-        if (permissionGranted.value != true)  return setStatus("Permission not granted")
+        if (permissionGranted.value != true)  return setStatus(resourceProvider.getString(R.string.printer_permission_not_granted))
         val address = printerAddress()
-        if (address.isEmpty()) return setStatus("Printer not selected")
+        if (address.isEmpty()) return setStatus(resourceProvider.getString(R.string.printer_not_selected))
         setProgress(true)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val charset = Charset.forName("cp866")
 
-                val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch setStatus("Not connected")
+                val device = bluetoothAdapter?.getRemoteDevice(address) ?: return@launch setStatus(resourceProvider.getString(R.string.printer_not_connected))
                 val socket = device.createRfcommSocketToServiceRecord(serialPortId)
                 socket.connect()
 
@@ -131,11 +134,11 @@ class PrinterViewModel @Inject constructor(
                 socket.close()
             } catch (e: IOException) {
                 withContext(Dispatchers.Main) {
-                    setStatus("Output error: ${e.message}")
+                    setStatus(resourceProvider.getString(R.string.printer_output_error, e.message ?: ""))
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    setStatus("Error: ${e.message}")
+                    setStatus(resourceProvider.getString(R.string.printer_error, e.message ?: ""))
                 }
             } finally {
                 withContext(Dispatchers.Main) {
@@ -203,7 +206,7 @@ class PrinterViewModel @Inject constructor(
                 socket.close()
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    setStatus(e.message ?: "Unknown error")
+                    setStatus(e.message ?: resourceProvider.getString(R.string.printer_unknown_error))
                 }
             }
 

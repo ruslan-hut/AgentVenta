@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.presentation.features.fiscal.checkbox.Checkbox
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
@@ -16,12 +17,14 @@ import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder
 import ua.com.programmer.agentventa.utility.Constants
+import ua.com.programmer.agentventa.utility.ResourceProvider
 import java.io.File
 import javax.inject.Inject
 import kotlin.reflect.KSuspendFunction2
 
 @HiltViewModel
 class FiscalViewModel @Inject constructor(
+    private val resourceProvider: ResourceProvider,
     private val userAccountRepository: UserAccountRepository,
     private val orderRepository: OrderRepository,
     private val preferences: SharedPreferences,
@@ -160,12 +163,12 @@ class FiscalViewModel @Inject constructor(
     private fun callService(action: KSuspendFunction2<FiscalService, FiscalOptions, OperationResult>, onResult: (OperationResult) -> Unit = {}) {
         if (isLoading.value == true) return
         if (fiscalService == null) {
-            onResult(OperationResult(false, "Не підключено фіскальний сервіс"))
+            onResult(OperationResult(false, resourceProvider.getString(R.string.fiscal_service_not_connected)))
             return
         }
         isLoading.value = true
         viewModelScope.launch{
-            var actionResult = OperationResult(false, "Не вдалося виконати запит")
+            var actionResult = OperationResult(false, resourceProvider.getString(R.string.fiscal_request_failed))
             withContext(Dispatchers.IO) {
                 fiscalService?.let {service ->
                     val initResult = service.init(fiscalOptions)

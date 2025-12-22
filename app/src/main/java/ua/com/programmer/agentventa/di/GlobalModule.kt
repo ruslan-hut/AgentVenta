@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,6 +20,8 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.presentation.common.viewmodel.BarcodeHandler
 import ua.com.programmer.agentventa.presentation.common.viewmodel.GlideImageLoadingManager
 import ua.com.programmer.agentventa.presentation.common.viewmodel.ImageLoadingManager
+import ua.com.programmer.agentventa.utility.ResourceProvider
+import ua.com.programmer.agentventa.utility.ResourceProviderImpl
 import ua.com.programmer.agentventa.utility.Utils
 import ua.com.programmer.agentventa.utility.UtilsInterface
 import javax.inject.Singleton
@@ -87,4 +90,12 @@ object CoroutineModule {
     fun provideIoDispatcher() = Dispatchers.IO
 
     annotation class IoDispatcher
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class ResourceProviderModule {
+    @Binds
+    @Singleton
+    abstract fun bindResourceProvider(impl: ResourceProviderImpl): ResourceProvider
 }

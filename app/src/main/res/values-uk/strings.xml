@@ -482,6 +482,38 @@
     <string name="websocket_cash_count">%1$d касових</string>
     <string name="websocket_images_count">%1$d зображень</string>
     <string name="websocket_locations_count">%1$d локацій</string>
+    <!-- UserAccount WebSocket status (with icons) -->
+    <string name="account_ws_connected">✓ Підключено (UUID: %1$s)</string>
+    <string name="account_ws_connecting">⟳ Підключення… (спроба %1$d)</string>
+    <string name="account_ws_disconnected">✗ Відключено</string>
+    <string name="account_ws_pending">⏸ Очікує підтвердження (UUID: %1$s)</string>
+    <string name="account_ws_error">✗ Помилка: %1$s</string>
+    <string name="account_ws_reconnecting">⟳ Перепідключення через %1$d мс (спроба %2$d)</string>
+    <string name="account_ws_no_account">✗ Помилка: Акаунт не завантажено</string>
+    <!-- Settings sync status -->
+    <string name="settings_sync_no_account">❌ Акаунт не завантажено</string>
+    <string name="settings_sync_email_required">❌ Для синхронізації потрібен email</string>
+    <string name="settings_sync_uploading">⟳ Вивантаження налаштувань…</string>
+    <string name="settings_sync_uploaded">✓ Налаштування вивантажено</string>
+    <string name="settings_sync_upload_failed">❌ Помилка вивантаження: %1$s</string>
+    <string name="settings_sync_unexpected">❌ Неочікуваний результат</string>
+    <string name="settings_sync_downloading">⟳ Завантаження налаштувань…</string>
+    <string name="settings_sync_downloaded">✓ Налаштування завантажено</string>
+    <string name="settings_sync_applied">✓ Налаштування застосовано</string>
+    <string name="settings_sync_not_found">ℹ Налаштування на сервері не знайдено</string>
+    <string name="settings_sync_download_failed">❌ Помилка завантаження: %1$s</string>
+    <!-- Printer status messages -->
+    <string name="printer_permission_not_granted">Дозвіл не надано</string>
+    <string name="printer_not_selected">Принтер не обрано</string>
+    <string name="printer_not_connected">Не підключено</string>
+    <string name="printer_output_error">Помилка виводу: %1$s</string>
+    <string name="printer_error">Помилка: %1$s</string>
+    <string name="printer_unknown_error">Невідома помилка</string>
+    <!-- Fiscal service messages -->
+    <string name="fiscal_service_not_connected">Фіскальний сервіс не підключено</string>
+    <string name="fiscal_request_failed">Не вдалося виконати запит</string>
+    <!-- Client messages -->
+    <string name="client_set_default_image_failed">Не вдалося встановити зображення за замовчуванням</string>
 
     <!-- Sync settings -->
     <string name="pref_title_websocket_interval">Інтервал синхронізації</string>

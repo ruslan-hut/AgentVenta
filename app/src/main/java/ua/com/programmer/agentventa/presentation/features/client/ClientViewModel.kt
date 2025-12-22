@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.LClient
@@ -21,6 +22,7 @@ import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.FilesRepository
 import ua.com.programmer.agentventa.presentation.common.viewmodel.EventChannel
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
+import ua.com.programmer.agentventa.utility.ResourceProvider
 import javax.inject.Inject
 
 /**
@@ -34,6 +36,7 @@ sealed class ClientEvent {
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class ClientViewModel @Inject constructor(
+    private val resourceProvider: ResourceProvider,
     private val clientRepository: ClientRepository,
     private val filesRepository: FilesRepository
 ): ViewModel() {
@@ -104,7 +107,7 @@ class ClientViewModel @Inject constructor(
                 filesRepository.setAsDefault(image)
                 _events.send(ClientEvent.ImageSetAsDefault(true))
             } catch (e: Exception) {
-                _events.send(ClientEvent.Error(e.message ?: "Failed to set default image"))
+                _events.send(ClientEvent.Error(e.message ?: resourceProvider.getString(R.string.client_set_default_image_failed)))
             }
         }
     }

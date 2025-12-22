@@ -34,6 +34,38 @@
     <string name="websocket_cash_count">%1$d cash</string>
     <string name="websocket_images_count">%1$d images</string>
     <string name="websocket_locations_count">%1$d locations</string>
+    <!-- UserAccount WebSocket status (with icons) -->
+    <string name="account_ws_connected">✓ Connected (UUID: %1$s)</string>
+    <string name="account_ws_connecting">⟳ Connecting… (attempt %1$d)</string>
+    <string name="account_ws_disconnected">✗ Disconnected</string>
+    <string name="account_ws_pending">⏸ Pending Approval (UUID: %1$s)</string>
+    <string name="account_ws_error">✗ Error: %1$s</string>
+    <string name="account_ws_reconnecting">⟳ Reconnecting in %1$dms (attempt %2$d)</string>
+    <string name="account_ws_no_account">✗ Error: No account loaded</string>
+    <!-- Settings sync status -->
+    <string name="settings_sync_no_account">❌ No account loaded</string>
+    <string name="settings_sync_email_required">❌ Email required for sync</string>
+    <string name="settings_sync_uploading">⟳ Uploading settings…</string>
+    <string name="settings_sync_uploaded">✓ Settings uploaded</string>
+    <string name="settings_sync_upload_failed">❌ Upload failed: %1$s</string>
+    <string name="settings_sync_unexpected">❌ Unexpected result</string>
+    <string name="settings_sync_downloading">⟳ Downloading settings…</string>
+    <string name="settings_sync_downloaded">✓ Settings downloaded</string>
+    <string name="settings_sync_applied">✓ Settings applied</string>
+    <string name="settings_sync_not_found">ℹ No settings found on server</string>
+    <string name="settings_sync_download_failed">❌ Download failed: %1$s</string>
+    <!-- Printer status messages -->
+    <string name="printer_permission_not_granted">Permission not granted</string>
+    <string name="printer_not_selected">Printer not selected</string>
+    <string name="printer_not_connected">Not connected</string>
+    <string name="printer_output_error">Output error: %1$s</string>
+    <string name="printer_error">Error: %1$s</string>
+    <string name="printer_unknown_error">Unknown error</string>
+    <!-- Fiscal service messages -->
+    <string name="fiscal_service_not_connected">Fiscal service not connected</string>
+    <string name="fiscal_request_failed">Failed to execute request</string>
+    <!-- Client messages -->
+    <string name="client_set_default_image_failed">Failed to set default image</string>
 
     <string name="header_goods_list">Goods list</string>
     <string name="header_orders_list">Orders list</string>
