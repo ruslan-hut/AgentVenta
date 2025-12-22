@@ -1,13 +1,16 @@
 package ua.com.programmer.agentventa.presentation.features.websocket
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
@@ -27,6 +30,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class WebSocketTestViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val webSocketRepository: WebSocketRepository,
     private val userAccountRepository: UserAccountRepository,
     private val settingsSyncRepository: ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository,
@@ -37,13 +41,13 @@ class WebSocketTestViewModel @Inject constructor(
 
     private val TAG = "WSStatusViewModel"
 
-    private val _connectionState = MutableLiveData<String>("Disconnected")
+    private val _connectionState = MutableLiveData(context.getString(R.string.websocket_disconnected))
     val connectionState: LiveData<String> = _connectionState
 
     private val _pendingDataInfo = MutableLiveData<String>("")
     val pendingDataInfo: LiveData<String> = _pendingDataInfo
 
-    private val _lastSyncTime = MutableLiveData<String>("Never")
+    private val _lastSyncTime = MutableLiveData(context.getString(R.string.websocket_never))
     val lastSyncTime: LiveData<String> = _lastSyncTime
 
     private val _messageLog = MutableLiveData<List<String>>(emptyList())
@@ -65,12 +69,12 @@ class WebSocketTestViewModel @Inject constructor(
         // Observe WebSocket connection state
         webSocketRepository.connectionState.onEach { state ->
             _connectionState.value = when (state) {
-                is WebSocketState.Connected -> "Connected (${state.deviceUuid.take(8)}...)"
-                is WebSocketState.Connecting -> "Connecting... (attempt ${state.attempt})"
-                is WebSocketState.Disconnected -> "Disconnected"
-                is WebSocketState.Pending -> "Pending Approval"
-                is WebSocketState.Error -> "Error: ${state.error}"
-                is WebSocketState.Reconnecting -> "Reconnecting in ${state.delayMs / 1000}s"
+                is WebSocketState.Connected -> context.getString(R.string.websocket_connected, "${state.deviceUuid.take(8)}…")
+                is WebSocketState.Connecting -> context.getString(R.string.websocket_connecting, state.attempt)
+                is WebSocketState.Disconnected -> context.getString(R.string.websocket_disconnected)
+                is WebSocketState.Pending -> context.getString(R.string.websocket_pending_approval)
+                is WebSocketState.Error -> context.getString(R.string.websocket_error, state.error)
+                is WebSocketState.Reconnecting -> context.getString(R.string.websocket_reconnecting, state.delayMs / 1000)
             }
         }.launchIn(viewModelScope)
 
@@ -84,13 +88,13 @@ class WebSocketTestViewModel @Inject constructor(
             _lastSyncTime.value = if (timestamp > 0) {
                 fullDateFormat.format(Date(timestamp))
             } else {
-                "Never"
+                context.getString(R.string.websocket_never)
             }
         }.launchIn(viewModelScope)
 
         // Listen for incoming messages
         webSocketRepository.incomingMessages.onEach { message ->
-            addToLog("Received: ${message.dataType}")
+            addToLog(context.getString(R.string.websocket_received, message.dataType))
         }.launchIn(viewModelScope)
 
         // Load initial pending data count
@@ -103,13 +107,13 @@ class WebSocketTestViewModel @Inject constructor(
     fun syncNow() {
         viewModelScope.launch {
             _isSyncing.value = true
-            addToLog("Manual sync triggered...")
+            addToLog(context.getString(R.string.websocket_sync_triggered))
 
             try {
                 connectionManager.checkAndConnect()
-                addToLog("Sync check completed")
+                addToLog(context.getString(R.string.websocket_sync_completed))
             } catch (e: Exception) {
-                addToLog("Sync error: ${e.message}")
+                addToLog(context.getString(R.string.websocket_sync_error, e.message ?: ""))
             } finally {
                 _isSyncing.value = false
             }
@@ -207,16 +211,16 @@ class WebSocketTestViewModel @Inject constructor(
 
     private fun formatPendingDataSummary(summary: PendingDataSummary): String {
         if (!summary.hasPendingData) {
-            return "No pending data"
+            return context.getString(R.string.websocket_no_pending_data)
         }
 
         val parts = mutableListOf<String>()
-        if (summary.ordersCount > 0) parts.add("${summary.ordersCount} orders")
-        if (summary.cashCount > 0) parts.add("${summary.cashCount} cash")
-        if (summary.imagesCount > 0) parts.add("${summary.imagesCount} images")
-        if (summary.locationsCount > 0) parts.add("${summary.locationsCount} locations")
+        if (summary.ordersCount > 0) parts.add(context.getString(R.string.websocket_orders_count, summary.ordersCount))
+        if (summary.cashCount > 0) parts.add(context.getString(R.string.websocket_cash_count, summary.cashCount))
+        if (summary.imagesCount > 0) parts.add(context.getString(R.string.websocket_images_count, summary.imagesCount))
+        if (summary.locationsCount > 0) parts.add(context.getString(R.string.websocket_locations_count, summary.locationsCount))
 
-        return "Pending: ${parts.joinToString(", ")}"
+        return context.getString(R.string.websocket_pending_format, parts.joinToString(", "))
     }
 
     private fun addToLog(message: String) {

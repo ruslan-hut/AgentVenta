@@ -17,6 +17,23 @@
     <string name="websocket_activity_log">Activity Log</string>
     <string name="websocket_clear_log">Clear Log</string>
     <string name="websocket_no_messages">No messages</string>
+    <string name="websocket_disconnected">Disconnected</string>
+    <string name="websocket_no_pending_data">No pending data</string>
+    <string name="websocket_never">Never</string>
+    <string name="websocket_connected">Connected (%1$s)</string>
+    <string name="websocket_connecting">Connecting… (attempt %1$d)</string>
+    <string name="websocket_pending_approval">Pending Approval</string>
+    <string name="websocket_error">Error: %1$s</string>
+    <string name="websocket_reconnecting">Reconnecting in %1$ds</string>
+    <string name="websocket_sync_triggered">Manual sync triggered…</string>
+    <string name="websocket_sync_completed">Sync check completed</string>
+    <string name="websocket_sync_error">Sync error: %1$s</string>
+    <string name="websocket_received">Received: %1$s</string>
+    <string name="websocket_pending_format">Pending: %1$s</string>
+    <string name="websocket_orders_count">%1$d orders</string>
+    <string name="websocket_cash_count">%1$d cash</string>
+    <string name="websocket_images_count">%1$d images</string>
+    <string name="websocket_locations_count">%1$d locations</string>
 
     <string name="header_goods_list">Goods list</string>
     <string name="header_orders_list">Orders list</string>

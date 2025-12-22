@@ -66,19 +66,10 @@ class WebSocketTestFragment : Fragment() {
             }
         }
 
-        viewModel.settingsSyncStatus.observe(viewLifecycleOwner) { status ->
-            if (status.isNotEmpty()) {
-                binding.settingsSyncStatus.text = status
-                binding.settingsSyncStatus.visibility = View.VISIBLE
-            } else {
-                binding.settingsSyncStatus.visibility = View.GONE
-            }
-        }
-
         viewModel.isSyncing.observe(viewLifecycleOwner) { isSyncing ->
             binding.syncNowButton.isEnabled = !isSyncing
             binding.syncNowButton.text = if (isSyncing) {
-                "Syncing..."
+                getString(R.string.status_downloading)
             } else {
                 getString(R.string.websocket_sync_now)
             }
@@ -92,23 +83,6 @@ class WebSocketTestFragment : Fragment() {
 
         binding.clearLogButton.setOnClickListener {
             viewModel.clearLog()
-        }
-
-        // Settings sync listeners
-        binding.userEmailInput.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
-                viewModel.setUserEmail(s?.toString() ?: "")
-            }
-        })
-
-        binding.uploadSettingsButton.setOnClickListener {
-            viewModel.uploadSettings()
-        }
-
-        binding.downloadSettingsButton.setOnClickListener {
-            viewModel.downloadSettings()
         }
     }
 
