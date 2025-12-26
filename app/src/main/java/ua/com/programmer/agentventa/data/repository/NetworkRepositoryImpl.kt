@@ -71,10 +71,10 @@ class NetworkRepositoryImpl @Inject constructor(
 
             if (userAccount == null) return@onEach
             currentSystemAccount = userAccount
-            if (isNotValidAccount(currentSystemAccount)) {
-                logger.w(logTag, "Account ${currentSystemAccount?.getGuid()} is not valid for connection")
-                return@onEach
-            }
+
+            // Always set account for WebSocket sync to work
+            // Only configure HTTP service for HTTP-capable accounts
+            val isHttpAccount = !isNotValidAccount(currentSystemAccount)
 
             account?.let {
                 if (it.connectionSettingsChanged(userAccount)) {
@@ -91,23 +91,25 @@ class NetworkRepositoryImpl @Inject constructor(
             }
 
             userAccount.let {
-
                 account = it
-                //accountGuid = it.guid
                 token = it.token
 
-                httpAuthInterceptor.setCredentials(it.dbUser, it.dbPassword)
+                // Only configure HTTP service for HTTP-capable accounts
+                if (isHttpAccount) {
+                    httpAuthInterceptor.setCredentials(it.dbUser, it.dbPassword)
 
-                val retrofit = retrofit.baseUrl(it.getBaseUrl()).build()
-                apiService = retrofit.create(HttpClientApi::class.java)
+                    val retrofit = retrofit.baseUrl(it.getBaseUrl()).build()
+                    apiService = retrofit.create(HttpClientApi::class.java)
 
-                // Configure token manager with new account and API service
-                tokenManager.configure(it)
-                if (tokenManager is TokenManagerImpl) {
-                    tokenManager.setApiService(apiService!!)
+                    // Configure token manager with new account and API service
+                    tokenManager.configure(it)
+                    if (tokenManager is TokenManagerImpl) {
+                        tokenManager.setApiService(apiService!!)
+                    }
+                } else {
+                    logger.d(logTag, "WebSocket account configured: ${it.guid}")
+                    apiService = null
                 }
-
-                //logger.d("NetworkRepositoryImpl", "set connection: ${it.dbServer}: ${it.dbUser}")
             }
 
         }.launchIn(CoroutineScope(Dispatchers.IO))
