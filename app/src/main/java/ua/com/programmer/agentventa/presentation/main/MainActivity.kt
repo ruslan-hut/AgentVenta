@@ -150,7 +150,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun copyToClipboard(text: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(getString(R.string.pref_title_user_id), text)
         clipboard.setPrimaryClip(clip)
 

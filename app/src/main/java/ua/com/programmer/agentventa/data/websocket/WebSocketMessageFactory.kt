@@ -1,14 +1,14 @@
 package ua.com.programmer.agentventa.data.websocket
 
 import com.google.gson.Gson
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
 import ua.com.programmer.agentventa.utility.Constants
-import java.time.Instant
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Factory for creating and parsing WebSocket messages.
@@ -23,10 +23,10 @@ object WebSocketMessageFactory {
 
     private val gson = Gson()
 
-    // ISO 8601 timestamp formatter (UTC)
-    private val timestampFormatter = DateTimeFormatter
-        .ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        .withZone(ZoneOffset.UTC)
+    // ISO 8601 timestamp formatter (UTC) - compatible with API 23+
+    private val timestampFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
 
     /**
      * Creates a generic WebSocket message.
@@ -52,7 +52,7 @@ object WebSocketMessageFactory {
         // Parse payload string to JsonObject
         val payloadObject = try {
             JsonParser.parseString(payload).asJsonObject
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             JsonObject()
         }
 
@@ -92,7 +92,7 @@ object WebSocketMessageFactory {
         // Parse data string to JsonObject
         val dataObject = try {
             JsonParser.parseString(data).asJsonObject
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // If parsing fails, wrap string in a JSON object
             JsonObject().apply {
                 addProperty("value", data)
@@ -332,7 +332,7 @@ object WebSocketMessageFactory {
                 status = message.status,
                 reason = reason
             )
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -349,6 +349,6 @@ object WebSocketMessageFactory {
      * Format: 2025-01-15T10:30:00Z
      */
     private fun getCurrentTimestamp(): String {
-        return timestampFormatter.format(Instant.now())
+        return timestampFormatter.format(Date())
     }
 }
