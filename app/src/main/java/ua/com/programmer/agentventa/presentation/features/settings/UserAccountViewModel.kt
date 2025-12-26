@@ -74,6 +74,7 @@ class UserAccountViewModel @Inject constructor(
                     is WebSocketState.Connecting -> resourceProvider.getString(R.string.account_ws_connecting, state.attempt)
                     is WebSocketState.Disconnected -> resourceProvider.getString(R.string.account_ws_disconnected)
                     is WebSocketState.Pending -> resourceProvider.getString(R.string.account_ws_pending, state.deviceUuid.take(8))
+                    is WebSocketState.LicenseError -> resourceProvider.getString(R.string.account_ws_license_error, state.reason)
                     is WebSocketState.Error -> resourceProvider.getString(R.string.account_ws_error, state.error)
                     is WebSocketState.Reconnecting -> resourceProvider.getString(R.string.account_ws_reconnecting, state.delayMs, state.attempt)
                 }

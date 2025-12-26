@@ -16,6 +16,7 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 /**
  * Manages automatic WebSocket connection lifecycle.
@@ -93,8 +94,34 @@ class WebSocketConnectionManager @Inject constructor(
             }
         }
 
+        // Observe connection state changes to trigger sync on successful connection
+        scope.launch {
+            webSocketRepository.connectionState.collect { state ->
+                if (state is WebSocketState.Connected) {
+                    handleConnectionSuccess()
+                }
+            }
+        }
+
         // Start periodic check scheduler
         startPeriodicCheck()
+    }
+
+    /**
+     * Called when WebSocket connection is successfully established.
+     * Triggers data sync if there is pending data.
+     */
+    private suspend fun handleConnectionSuccess() {
+        logger.d(TAG, "Connection established, checking for pending data")
+        updatePendingDataSummary()
+
+        if (_pendingDataSummary.value.hasPendingData) {
+            logger.d(TAG, "Pending data found, triggering sync")
+            _lastSyncTime.value = System.currentTimeMillis()
+            triggerDataSync()
+        } else {
+            logger.d(TAG, "No pending data to sync")
+        }
     }
 
     /**
@@ -135,6 +162,7 @@ class WebSocketConnectionManager @Inject constructor(
     /**
      * Check conditions and connect if needed.
      * Can be called manually (e.g., "Sync Now" button).
+     * Sync is triggered automatically in handleConnectionSuccess() when connection succeeds.
      */
     suspend fun checkAndConnect() {
         updatePendingDataSummary()
@@ -150,17 +178,8 @@ class WebSocketConnectionManager @Inject constructor(
 
         connectionJob = scope.launch {
             logger.d(TAG, "Initiating WebSocket connection")
-
-            val connected = webSocketRepository.connect(account)
-            if (connected) {
-                _lastSyncTime.value = System.currentTimeMillis()
-
-                // If connected and has pending data, trigger sync
-                if (pendingDataChecker.hasPendingData()) {
-                    logger.d(TAG, "Connected with pending data, triggering sync")
-                    triggerDataSync()
-                }
-            }
+            // Connection success and sync trigger handled by connectionState observer
+            webSocketRepository.connect(account)
         }
     }
 
@@ -189,7 +208,9 @@ class WebSocketConnectionManager @Inject constructor(
     suspend fun triggerDataSync() {
         // The NetworkRepository handles the actual sync logic
         // It will check if WebSocket is connected and send pending data
-        networkRepository.updateDifferential()
+        networkRepository.updateDifferential().collect { result ->
+            logger.d(TAG, "Sync result: $result")
+        }
     }
 
     /**
@@ -211,9 +232,9 @@ class WebSocketConnectionManager @Inject constructor(
         val clampedMinutes = minutes.coerceIn(5, 60)
         val intervalMs = clampedMinutes * 60 * 1000L
 
-        sharedPreferences.edit()
-            .putLong(PREF_WEBSOCKET_IDLE_INTERVAL, intervalMs)
-            .apply()
+        sharedPreferences.edit {
+            putLong(PREF_WEBSOCKET_IDLE_INTERVAL, intervalMs)
+        }
 
         logger.d(TAG, "Idle interval set to $clampedMinutes minutes")
 

@@ -162,4 +162,11 @@ public final class Constants {
     public static final String DEVICE_STATUS_PENDING = "pending";
     public static final String DEVICE_STATUS_APPROVED = "approved";
     public static final String DEVICE_STATUS_DENIED = "denied";
+
+    /**
+     * License-specific error codes from server (sent in error payload)
+     */
+    public static final String LICENSE_ERROR_EXPIRED = "license_expired";
+    public static final String LICENSE_ERROR_NOT_ACTIVE = "license_not_active";
+    public static final String LICENSE_ERROR_DEVICE_LIMIT = "device_limit_reached";
 }

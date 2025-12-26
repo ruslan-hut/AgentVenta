@@ -472,6 +472,7 @@
     <string name="websocket_connected">Подключено (%1$s)</string>
     <string name="websocket_connecting">Подключение… (попытка %1$d)</string>
     <string name="websocket_pending_approval">Ожидает подтверждения</string>
+    <string name="websocket_license_error">Лицензия: %1$s</string>
     <string name="websocket_error">Ошибка: %1$s</string>
     <string name="websocket_reconnecting">Переподключение через %1$d сек</string>
     <string name="websocket_sync_triggered">Запущена ручная синхронизация…</string>
@@ -488,9 +489,20 @@
     <string name="account_ws_connecting">⟳ Подключение… (попытка %1$d)</string>
     <string name="account_ws_disconnected">✗ Отключено</string>
     <string name="account_ws_pending">⏸ Ожидает подтверждения (UUID: %1$s)</string>
+    <string name="account_ws_license_error">⚠ Лицензия: %1$s</string>
     <string name="account_ws_error">✗ Ошибка: %1$s</string>
     <string name="account_ws_reconnecting">⟳ Переподключение через %1$d мс (попытка %2$d)</string>
     <string name="account_ws_no_account">✗ Ошибка: Аккаунт не загружен</string>
+    <!-- Snackbar notifications -->
+    <string name="snackbar_connection_error">Ошибка соединения: %1$s</string>
+    <string name="snackbar_license_error">Лицензия: %1$s</string>
+    <string name="snackbar_pending_approval">Устройство ожидает подтверждения</string>
+    <string name="snackbar_orders_sent">Отправлено заказов: %1$d</string>
+    <string name="snackbar_cash_sent">Отправлено кассовых документов: %1$d</string>
+    <string name="snackbar_images_sent">Отправлено изображений: %1$d</string>
+    <string name="snackbar_locations_sent">Отправлено локаций: %1$d</string>
+    <string name="snackbar_catalog_received">Получено данных: %1$d записей</string>
+    <string name="snackbar_sync_error">Ошибка синхронизации: %1$s</string>
     <!-- Settings sync status -->
     <string name="settings_sync_no_account">❌ Аккаунт не загружен</string>
     <string name="settings_sync_email_required">❌ Для синхронизации требуется email</string>

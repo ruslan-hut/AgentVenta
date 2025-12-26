@@ -89,11 +89,14 @@ data class AckMessage(
 
 /**
  * Error message from server.
+ * For license errors (license_expired, license_not_active, device_limit_reached),
+ * the reason field contains human-readable description.
  */
 data class ErrorMessage(
     val error: String,
     val messageId: String?,
-    val status: String?  // Device status - check for "pending"
+    val status: String?,  // Device status - check for "pending"
+    val reason: String? = null  // Human-readable reason for license errors
 )
 
 /**

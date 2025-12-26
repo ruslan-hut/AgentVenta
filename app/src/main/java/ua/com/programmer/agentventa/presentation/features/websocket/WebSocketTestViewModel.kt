@@ -72,6 +72,7 @@ class WebSocketTestViewModel @Inject constructor(
                 is WebSocketState.Connecting -> resourceProvider.getString(R.string.websocket_connecting, state.attempt)
                 is WebSocketState.Disconnected -> resourceProvider.getString(R.string.websocket_disconnected)
                 is WebSocketState.Pending -> resourceProvider.getString(R.string.websocket_pending_approval)
+                is WebSocketState.LicenseError -> resourceProvider.getString(R.string.websocket_license_error, state.reason)
                 is WebSocketState.Error -> resourceProvider.getString(R.string.websocket_error, state.error)
                 is WebSocketState.Reconnecting -> resourceProvider.getString(R.string.websocket_reconnecting, state.delayMs / 1000)
             }

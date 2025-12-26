@@ -59,6 +59,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     private var pingJob: Job? = null
     private var reconnectAttempt = 0
     private var isPendingDevice = false  // Flag to prevent reconnection for pending devices
+    private var isLicenseError = false   // Flag to prevent reconnection for license errors
 
     // Message tracking
     private val pendingMessages = ConcurrentHashMap<String, PendingMessage>()
@@ -104,6 +105,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         currentAccount = account
         reconnectAttempt = 0
         isPendingDevice = false  // Reset pending flag on new connection attempt
+        isLicenseError = false   // Reset license error flag on new connection attempt
         cancelReconnection()
 
         return performConnection(account)
@@ -117,6 +119,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         webSocket = null
         currentAccount = null
         isPendingDevice = false
+        isLicenseError = false
         _connectionState.value = WebSocketState.Disconnected
         pendingMessages.clear()
         messageResults.clear()
@@ -343,6 +346,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             return
         }
 
+        // Don't schedule reconnection if license error
+        if (isLicenseError) {
+            logger.d(TAG, "Skipping reconnection - license error")
+            return
+        }
+
         cancelReconnection()
 
         val delay = calculateBackoffDelay(reconnectAttempt)
@@ -466,7 +475,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_ERROR -> {
                     val errorMessage = WebSocketMessageFactory.parseErrorMessage(message)
                     if (errorMessage != null) {
-                        logger.e(TAG, "Server error: ${errorMessage.error} (status: ${errorMessage.status})")
+                        logger.e(TAG, "Server error: ${errorMessage.error} (status: ${errorMessage.status}, reason: ${errorMessage.reason})")
 
                         // Check if device is pending approval
                         if (errorMessage.status == Constants.DEVICE_STATUS_PENDING) {
@@ -488,6 +497,40 @@ class WebSocketRepositoryImpl @Inject constructor(
                             )
                             cancelReconnection()
                             return
+                        }
+
+                        // Check for license-specific errors
+                        when (errorMessage.error) {
+                            Constants.LICENSE_ERROR_EXPIRED -> {
+                                logger.e(TAG, "License expired: ${errorMessage.reason}")
+                                isLicenseError = true  // Set flag to prevent reconnection
+                                _connectionState.value = WebSocketState.LicenseError(
+                                    errorCode = errorMessage.error,
+                                    reason = errorMessage.reason ?: "License expired"
+                                )
+                                cancelReconnection()
+                                return
+                            }
+                            Constants.LICENSE_ERROR_NOT_ACTIVE -> {
+                                logger.e(TAG, "License not active: ${errorMessage.reason}")
+                                isLicenseError = true  // Set flag to prevent reconnection
+                                _connectionState.value = WebSocketState.LicenseError(
+                                    errorCode = errorMessage.error,
+                                    reason = errorMessage.reason ?: "License not active"
+                                )
+                                cancelReconnection()
+                                return
+                            }
+                            Constants.LICENSE_ERROR_DEVICE_LIMIT -> {
+                                logger.e(TAG, "Device limit reached: ${errorMessage.reason}")
+                                isLicenseError = true  // Set flag to prevent reconnection
+                                _connectionState.value = WebSocketState.LicenseError(
+                                    errorCode = errorMessage.error,
+                                    reason = errorMessage.reason ?: "Device limit reached"
+                                )
+                                cancelReconnection()
+                                return
+                            }
                         }
 
                         // Handle message-specific errors
@@ -526,7 +569,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 val payload = message.payload
 
                 // Parse the payload as a JSON object
-                val payloadObj = gson.fromJson(payload, Map::class.java) as? Map<*, *> ?: run {
+                val payloadObj = gson.fromJson(payload, Map::class.java) ?: run {
                     logger.e(TAG, "Invalid catalog update payload")
                     return@launch
                 }
@@ -1002,6 +1045,12 @@ class WebSocketRepositoryImpl @Inject constructor(
                 return
             }
 
+            // Don't reconnect if license error
+            if (isLicenseError) {
+                logger.d(TAG, "Connection closed due to license error - no reconnection")
+                return
+            }
+
             if (code != 1000) { // Not a normal closure
                 _connectionState.value = WebSocketState.Error("Connection closed: $reason", canRetry = true)
                 scheduleReconnection()
@@ -1017,6 +1066,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             // Don't reconnect if device is pending approval
             if (isPendingDevice) {
                 logger.d(TAG, "Connection failed for pending device - no reconnection")
+                return
+            }
+
+            // Don't reconnect if license error
+            if (isLicenseError) {
+                logger.d(TAG, "Connection failed due to license error - no reconnection")
                 return
             }
 

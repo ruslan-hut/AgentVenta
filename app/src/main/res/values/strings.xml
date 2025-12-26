@@ -23,6 +23,7 @@
     <string name="websocket_connected">Connected (%1$s)</string>
     <string name="websocket_connecting">Connecting… (attempt %1$d)</string>
     <string name="websocket_pending_approval">Pending Approval</string>
+    <string name="websocket_license_error">License: %1$s</string>
     <string name="websocket_error">Error: %1$s</string>
     <string name="websocket_reconnecting">Reconnecting in %1$ds</string>
     <string name="websocket_sync_triggered">Manual sync triggered…</string>
@@ -39,9 +40,20 @@
     <string name="account_ws_connecting">⟳ Connecting… (attempt %1$d)</string>
     <string name="account_ws_disconnected">✗ Disconnected</string>
     <string name="account_ws_pending">⏸ Pending Approval (UUID: %1$s)</string>
+    <string name="account_ws_license_error">⚠ License: %1$s</string>
     <string name="account_ws_error">✗ Error: %1$s</string>
     <string name="account_ws_reconnecting">⟳ Reconnecting in %1$dms (attempt %2$d)</string>
     <string name="account_ws_no_account">✗ Error: No account loaded</string>
+    <!-- Snackbar notifications -->
+    <string name="snackbar_connection_error">Connection error: %1$s</string>
+    <string name="snackbar_license_error">License: %1$s</string>
+    <string name="snackbar_pending_approval">Device pending approval</string>
+    <string name="snackbar_orders_sent">%1$d order(s) sent</string>
+    <string name="snackbar_cash_sent">%1$d cash document(s) sent</string>
+    <string name="snackbar_images_sent">%1$d image(s) sent</string>
+    <string name="snackbar_locations_sent">%1$d location(s) sent</string>
+    <string name="snackbar_catalog_received">Data received: %1$d items</string>
+    <string name="snackbar_sync_error">Sync error: %1$s</string>
     <!-- Settings sync status -->
     <string name="settings_sync_no_account">❌ No account loaded</string>
     <string name="settings_sync_email_required">❌ Email required for sync</string>

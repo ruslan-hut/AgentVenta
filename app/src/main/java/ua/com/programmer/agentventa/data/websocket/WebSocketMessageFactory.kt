@@ -324,11 +324,13 @@ object WebSocketMessageFactory {
 
             val payloadObject = message.payload.asJsonObject
             val error = payloadObject.get("error")?.asString ?: return null
+            val reason = payloadObject.get("reason")?.asString
 
             ErrorMessage(
                 error = error,
                 messageId = message.messageId?.takeIf { it.isNotEmpty() },
-                status = message.status
+                status = message.status,
+                reason = reason
             )
         } catch (e: Exception) {
             null

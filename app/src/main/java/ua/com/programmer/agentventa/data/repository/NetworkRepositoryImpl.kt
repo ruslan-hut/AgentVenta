@@ -256,7 +256,31 @@ class NetworkRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateDifferential(): Flow<Result> = flow {
+        val currentAccount = account
 
+        // For WebSocket accounts, skip HTTP preparation and use WebSocket sync directly
+        if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
+            logger.d(logTag, "Using WebSocket differential sync")
+            _timestamp = System.currentTimeMillis()
+
+            try {
+                sendDocumentsViaWebSocket(currentAccount.guid).collect {
+                    emit(it)
+                }
+            } catch (e: Exception) {
+                logger.e(logTag, "WebSocket sync error: $e")
+                emit(Result.Error(e.message ?: "WebSocket sync failed"))
+                return@flow
+            }
+
+            val timeSpent = showTime(_timestamp, System.currentTimeMillis())
+            logger.d(logTag, "WebSocket sync finish: $timeSpent")
+            emit(Result.Progress("finish: $timeSpent"))
+            emit(Result.Success(""))
+            return@flow
+        }
+
+        // HTTP sync path (legacy)
         runCatching {
             prepare.collect {
                 emit(it)
@@ -267,7 +291,7 @@ class NetworkRepositoryImpl @Inject constructor(
             return@flow
         }
 
-        val accountGuid = account?.guid ?: ""
+        val accountGuid = currentAccount?.guid ?: ""
 
         if(_options.write) {
             try {

@@ -1,18 +1,13 @@
 package ua.com.programmer.agentventa.presentation.main
 
 import android.Manifest
-
-import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.KeyEvent
-import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
@@ -23,11 +18,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.getGuid
@@ -35,7 +35,7 @@ import ua.com.programmer.agentventa.databinding.ActivityMainBinding
 import ua.com.programmer.agentventa.infrastructure.location.LocationUpdatesService
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
-import androidx.core.view.isGone
+import ua.com.programmer.agentventa.presentation.common.viewmodel.WebSocketSnackbarEvent
 
 private lateinit var drawerLayout: DrawerLayout
 
@@ -118,21 +118,14 @@ class MainActivity : AppCompatActivity() {
             updateViewWithOptions(sharedViewModel.options)
         }
 
-        sharedViewModel.updateState.observe(this) { result ->
-            when (result) {
-                is ua.com.programmer.agentventa.data.remote.Result.Error -> {
-                    val errorMessage = getString(R.string.request_error)
-                    showProgress(errorMessage + ":\n" + result.message)
+        // Observe snackbar events for WebSocket notifications
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.snackbarEvents.collect { event ->
+                    showSnackbar(event)
                 }
-                is ua.com.programmer.agentventa.data.remote.Result.Progress -> {
-                    val message = convertProgressMessage(result.message)
-                    sharedViewModel.addProgressText(message)
-                    showProgress(sharedViewModel.progressMessage)
-                }
-                else -> onSuccess()
             }
         }
-        hideProgress()
 
     }
 
@@ -164,49 +157,36 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
     }
 
-    @SuppressLint("DiscouragedApi")
-    private fun convertProgressMessage(message: String): String {
-        val parts = message.split(":")
-        return if (parts.size > 1) {
-            val resMessage = when (parts[0].lowercase()) {
-                "start" -> {
-                    getString(R.string.sync_settings)
+    private fun showSnackbar(event: WebSocketSnackbarEvent) {
+        val (message, duration) = when (event) {
+            is WebSocketSnackbarEvent.ConnectionError ->
+                getString(R.string.snackbar_connection_error, event.error) to Snackbar.LENGTH_LONG
+
+            is WebSocketSnackbarEvent.LicenseError ->
+                getString(R.string.snackbar_license_error, event.reason) to Snackbar.LENGTH_LONG
+
+            is WebSocketSnackbarEvent.PendingApproval ->
+                getString(R.string.snackbar_pending_approval) to Snackbar.LENGTH_LONG
+
+            is WebSocketSnackbarEvent.DataSent -> {
+                val msg = when (event.type) {
+                    "order" -> getString(R.string.snackbar_orders_sent, event.count)
+                    "cash" -> getString(R.string.snackbar_cash_sent, event.count)
+                    "image" -> getString(R.string.snackbar_images_sent, event.count)
+                    "location" -> getString(R.string.snackbar_locations_sent, event.count)
+                    else -> "${event.type}: ${event.count}"
                 }
-                "finish" -> {
-                    getString(R.string.request_finished)
-                }
-                else -> {
-                    val resName = "data_type_" + parts[0].lowercase()
-                    val resId = resources.getIdentifier(resName, "string", packageName)
-                    if (resId != 0) getString(resId) else parts[0]
-                }
+                msg to Snackbar.LENGTH_SHORT
             }
-            "$resMessage: ${parts[1]}"
-        } else {
-            message
+
+            is WebSocketSnackbarEvent.CatalogReceived ->
+                getString(R.string.snackbar_catalog_received, event.count) to Snackbar.LENGTH_SHORT
+
+            is WebSocketSnackbarEvent.SyncError ->
+                getString(R.string.snackbar_sync_error, event.message) to Snackbar.LENGTH_LONG
         }
-    }
 
-    private fun showProgress(message: String) {
-        binding.let{
-            if (it.progressView.isGone) {
-                it.progressView.visibility = View.VISIBLE
-                it.progressView.setOnClickListener { hideProgress() }
-            }
-            it.progressText.text = message
-        }
-    }
-
-    private fun hideProgress() {
-        binding.progressView.visibility = View.GONE
-    }
-
-    private fun onSuccess() {
-        // Wait for 3 seconds before dismissing the message
-        val handler = Handler(Looper.getMainLooper())
-        handler.postDelayed({
-            hideProgress()
-        }, 3000)
+        Snackbar.make(binding.navigationDrawerLayout, message, duration).show()
     }
 
     private fun checkPermissions(): Boolean {

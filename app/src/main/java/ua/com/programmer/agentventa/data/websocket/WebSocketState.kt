@@ -30,6 +30,14 @@ sealed class WebSocketState {
     data class Pending(val deviceUuid: String) : WebSocketState()
 
     /**
+     * License-related error that prevents connection.
+     * No reconnection attempts will be made until license issue is resolved.
+     * @param errorCode The error code (license_expired, license_not_active, device_limit_reached)
+     * @param reason Human-readable reason from server
+     */
+    data class LicenseError(val errorCode: String, val reason: String) : WebSocketState()
+
+    /**
      * WebSocket connection failed.
      * @param error Error message describing the failure
      * @param canRetry Whether automatic reconnection will be attempted
@@ -63,6 +71,7 @@ fun WebSocketState.getDescription(): String = when (this) {
     is WebSocketState.Connecting -> "Connecting${if (attempt > 1) " (attempt $attempt)" else ""}"
     is WebSocketState.Connected -> "Connected"
     is WebSocketState.Pending -> "Pending Approval"
+    is WebSocketState.LicenseError -> "License Error: $reason"
     is WebSocketState.Error -> "Error: $error"
     is WebSocketState.Reconnecting -> "Reconnecting in ${delayMs / 1000}s (attempt $attempt)"
 }

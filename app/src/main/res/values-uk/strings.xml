@@ -471,6 +471,7 @@
     <string name="websocket_connected">Підключено (%1$s)</string>
     <string name="websocket_connecting">Підключення… (спроба %1$d)</string>
     <string name="websocket_pending_approval">Очікує підтвердження</string>
+    <string name="websocket_license_error">Ліцензія: %1$s</string>
     <string name="websocket_error">Помилка: %1$s</string>
     <string name="websocket_reconnecting">Перепідключення через %1$d сек</string>
     <string name="websocket_sync_triggered">Запущено ручну синхронізацію…</string>
@@ -487,9 +488,20 @@
     <string name="account_ws_connecting">⟳ Підключення… (спроба %1$d)</string>
     <string name="account_ws_disconnected">✗ Відключено</string>
     <string name="account_ws_pending">⏸ Очікує підтвердження (UUID: %1$s)</string>
+    <string name="account_ws_license_error">⚠ Ліцензія: %1$s</string>
     <string name="account_ws_error">✗ Помилка: %1$s</string>
     <string name="account_ws_reconnecting">⟳ Перепідключення через %1$d мс (спроба %2$d)</string>
     <string name="account_ws_no_account">✗ Помилка: Акаунт не завантажено</string>
+    <!-- Snackbar notifications -->
+    <string name="snackbar_connection_error">Помилка з\'єднання: %1$s</string>
+    <string name="snackbar_license_error">Ліцензія: %1$s</string>
+    <string name="snackbar_pending_approval">Пристрій очікує підтвердження</string>
+    <string name="snackbar_orders_sent">Відправлено замовлень: %1$d</string>
+    <string name="snackbar_cash_sent">Відправлено касових документів: %1$d</string>
+    <string name="snackbar_images_sent">Відправлено зображень: %1$d</string>
+    <string name="snackbar_locations_sent">Відправлено локацій: %1$d</string>
+    <string name="snackbar_catalog_received">Отримано даних: %1$d записів</string>
+    <string name="snackbar_sync_error">Помилка синхронізації: %1$s</string>
     <!-- Settings sync status -->
     <string name="settings_sync_no_account">❌ Акаунт не завантажено</string>
     <string name="settings_sync_email_required">❌ Для синхронізації потрібен email</string>
