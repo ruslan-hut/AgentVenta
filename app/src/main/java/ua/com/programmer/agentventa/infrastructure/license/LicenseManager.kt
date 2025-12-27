@@ -13,6 +13,19 @@ import ua.com.programmer.agentventa.utility.XMap
 import java.net.ProtocolException
 import java.net.SocketTimeoutException
 
+/**
+ * @deprecated This class is deprecated. License management is now handled via WebSocket.
+ * Use WebSocketRepository for license validation and device status updates.
+ *
+ * The WebSocket connection:
+ * - Validates device approval status
+ * - Handles license errors (expired, not active, device limit)
+ * - Receives license number updates in pong messages
+ *
+ * @see ua.com.programmer.agentventa.domain.repository.WebSocketRepository
+ * @see ua.com.programmer.agentventa.data.websocket.WebSocketState
+ */
+@Deprecated("Use WebSocket for license management. See WebSocketRepository and WebSocketState.")
 class LicenseManager {
 
     private var api: LicenseApi? = null

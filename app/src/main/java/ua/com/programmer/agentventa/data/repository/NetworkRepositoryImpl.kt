@@ -28,6 +28,7 @@ import ua.com.programmer.agentventa.data.remote.TokenManager
 import ua.com.programmer.agentventa.data.websocket.SendResult as WebSocketSendResult
 import kotlinx.coroutines.flow.first
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
+import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
@@ -151,9 +152,46 @@ class NetworkRepositoryImpl @Inject constructor(
         tokenManager.clearToken()
     }
 
+    /**
+     * Checks if device is approved for data operations via WebSocket connection state.
+     * Device must be approved before any HTTP data exchange is allowed.
+     *
+     * @return Pair<Boolean, String> - (isApproved, errorMessage)
+     */
+    private fun checkDeviceApproval(): Pair<Boolean, String> {
+        val wsState = webSocketRepository.connectionState.value
+        return when (wsState) {
+            is WebSocketState.Connected -> Pair(true, "")
+            is WebSocketState.Pending -> Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
+            is WebSocketState.LicenseError -> Pair(false, "License error: ${wsState.reason}")
+            is WebSocketState.Error -> {
+                // For connection errors, we may allow retry but inform user
+                if (!wsState.canRetry) {
+                    Pair(false, "Connection error: ${wsState.error}")
+                } else {
+                    // Allow operation with warning - connection might recover
+                    Pair(true, "")
+                }
+            }
+            is WebSocketState.Disconnected, is WebSocketState.Connecting, is WebSocketState.Reconnecting -> {
+                // Not yet connected - HTTP operations should wait for approval
+                // Return error to force user to wait for connection
+                Pair(false, "Connecting to server... Please wait for connection to establish.")
+            }
+        }
+    }
+
     private val prepare: Flow<Result> = flow {
         if (isNotValidAccount(currentSystemAccount)) {
             emit(Result.Error("Wrong connection settings"))
+            return@flow
+        }
+
+        // Check device approval status before HTTP operations
+        val (isApproved, approvalError) = checkDeviceApproval()
+        if (!isApproved) {
+            logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
+            emit(Result.Error(approvalError))
             return@flow
         }
 

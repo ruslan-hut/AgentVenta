@@ -144,24 +144,60 @@ object WebSocketMessageFactory {
     }
 
     /**
-     * Creates a ping message for keepalive.
+     * Creates a ping message for keepalive with current account configuration.
      *
      * API Format:
      * {
      *   "type": "ping",
      *   "message_id": "ping-12345",
      *   "timestamp": "2025-01-15T10:30:00Z",
-     *   "payload": {}
+     *   "payload": {
+     *     "device_uuid": "abc-123-def",
+     *     "description": "Agent Device",
+     *     "license": "ABCD-1234",
+     *     "data_format": "HTTP_service",
+     *     "db_server": "example.com",
+     *     "db_name": "database1",
+     *     "use_websocket": true,
+     *     "options": { ... parsed options object ... }
+     *   }
      * }
+     *
+     * @param accountData Map containing UserAccount fields to include in ping
      */
-    fun createPingMessage(): String {
+    fun createPingMessage(accountData: Map<String, Any?>? = null): String {
+        val payload = JsonObject()
+
+        accountData?.forEach { (key, value) ->
+            when (value) {
+                is String -> payload.addProperty(key, value)
+                is Boolean -> payload.addProperty(key, value)
+                is Number -> payload.addProperty(key, value)
+                is JsonObject -> payload.add(key, value)
+                null -> { /* skip null values */ }
+            }
+        }
+
         val message = WebSocketMessage(
             type = Constants.WEBSOCKET_MESSAGE_TYPE_PING,
             messageId = generateMessageId(),
             timestamp = getCurrentTimestamp(),
-            payload = JsonObject()
+            payload = payload
         )
         return gson.toJson(message)
+    }
+
+    /**
+     * Parses options JSON string to JsonObject for inclusion in ping payload.
+     * @return JsonObject or null if parsing fails
+     */
+    fun parseOptionsToJson(optionsJson: String?): JsonObject? {
+        if (optionsJson.isNullOrBlank()) return null
+        return try {
+            JsonParser.parseString(optionsJson).asJsonObject
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**

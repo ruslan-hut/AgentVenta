@@ -7,6 +7,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
+import ua.com.programmer.agentventa.data.local.entity.isValidForWebSocketConnection
 import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
@@ -21,10 +22,20 @@ import androidx.core.content.edit
 /**
  * Manages automatic WebSocket connection lifecycle.
  *
+ * IMPORTANT: WebSocket ALWAYS connects for license management and device status,
+ * regardless of the useWebSocket flag. The useWebSocket flag only controls
+ * whether DATA EXCHANGE uses WebSocket or HTTP.
+ *
  * Connection triggers:
- * 1. App comes to foreground + has pending data
- * 2. Network becomes available + has pending data
- * 3. Idle interval elapsed (periodic check for new data from server)
+ * 1. App comes to foreground (always - for license/status)
+ * 2. Network becomes available (always - for license/status)
+ * 3. Idle interval elapsed (periodic check for license/status updates)
+ * 4. Pending data exists (only if useWebSocket=true for data sync)
+ *
+ * Device Status Flow:
+ * - Device must be approved via WebSocket before any data sync
+ * - HTTP operations are blocked until device is approved
+ * - License errors prevent data sync until resolved
  *
  * Disconnection:
  * - App goes to background and no pending data (after grace period)
@@ -46,6 +57,19 @@ class WebSocketConnectionManager @Inject constructor(
 
     // Connection state exposed for UI observation
     val connectionState: StateFlow<WebSocketState> = webSocketRepository.connectionState
+
+    // Device approval status derived from connection state
+    // Device is considered approved only when WebSocket is connected with "approved" status
+    val isDeviceApproved: Boolean
+        get() = connectionState.value is WebSocketState.Connected
+
+    // Device is pending approval
+    val isDevicePending: Boolean
+        get() = connectionState.value is WebSocketState.Pending
+
+    // Device has license error (expired, not active, device limit)
+    val hasLicenseError: Boolean
+        get() = connectionState.value is WebSocketState.LicenseError
 
     // Pending data summary for UI
     private val _pendingDataSummary = MutableStateFlow(PendingDataSummary.EMPTY)
@@ -185,6 +209,7 @@ class WebSocketConnectionManager @Inject constructor(
 
     /**
      * Force immediate connection attempt (ignores idle interval).
+     * WebSocket ALWAYS connects for license management, regardless of useWebSocket flag.
      */
     suspend fun connectNow() {
         val account = currentAccount ?: return
@@ -194,8 +219,8 @@ class WebSocketConnectionManager @Inject constructor(
             return
         }
 
-        if (!account.shouldUseWebSocket()) {
-            logger.w(TAG, "Cannot connect: WebSocket not enabled for account")
+        if (!account.isValidForWebSocketConnection()) {
+            logger.w(TAG, "Cannot connect: account not valid for WebSocket (missing guid)")
             return
         }
 
@@ -249,8 +274,10 @@ class WebSocketConnectionManager @Inject constructor(
             return false
         }
 
-        if (!account.shouldUseWebSocket()) {
-            logger.d(TAG, "WebSocket not enabled for account")
+        // WebSocket ALWAYS connects for license management and device status
+        // The useWebSocket flag only controls DATA EXCHANGE method, not the connection itself
+        if (!account.isValidForWebSocketConnection()) {
+            logger.d(TAG, "Account not valid for WebSocket connection (missing guid)")
             return false
         }
 
@@ -264,24 +291,25 @@ class WebSocketConnectionManager @Inject constructor(
             return false
         }
 
-        // Connect if has pending data
-        if (_pendingDataSummary.value.hasPendingData) {
+        // Connect if has pending data (only for accounts using WebSocket for data)
+        if (account.shouldUseWebSocket() && _pendingDataSummary.value.hasPendingData) {
             logger.d(TAG, "Has pending data, should connect")
             return true
         }
 
-        // Connect if idle interval has elapsed
+        // Connect if idle interval has elapsed (for license/status updates)
         val idleInterval = sharedPreferences.getLong(
             PREF_WEBSOCKET_IDLE_INTERVAL,
             Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT
         )
         val timeSinceLastSync = System.currentTimeMillis() - _lastSyncTime.value
         if (timeSinceLastSync >= idleInterval) {
-            logger.d(TAG, "Idle interval elapsed, should connect to check for new data")
+            logger.d(TAG, "Idle interval elapsed, should connect for license/status check")
             return true
         }
 
-        return false
+        // Always connect for license management on app start
+        return true
     }
 
     private fun handleAccountChange(account: UserAccount?) {

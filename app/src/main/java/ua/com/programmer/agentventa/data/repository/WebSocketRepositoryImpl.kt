@@ -383,12 +383,37 @@ class WebSocketRepositoryImpl @Inject constructor(
             while (isActive && isConnected()) {
                 delay(Constants.WEBSOCKET_PING_INTERVAL.toLong())
                 try {
-                    val pingMessage = WebSocketMessageFactory.createPingMessage()
+                    val accountData = buildPingAccountData()
+                    val pingMessage = WebSocketMessageFactory.createPingMessage(accountData)
                     webSocket?.send(pingMessage)
-                    logger.d(TAG, "Ping sent")
+                    logger.d(TAG, "Ping sent with account data")
                 } catch (e: Exception) {
                     logger.e(TAG, "Ping error: ${e.message}")
                 }
+            }
+        }
+    }
+
+    /**
+     * Builds account data map for inclusion in ping messages.
+     * Includes all UserAccount fields for backend administrative purposes.
+     */
+    private fun buildPingAccountData(): Map<String, Any?> {
+        val account = currentAccount ?: return emptyMap()
+
+        return buildMap {
+            put("device_uuid", account.guid)
+            put("description", account.description)
+            put("license", account.license)
+            put("data_format", account.dataFormat)
+            put("db_server", account.dbServer)
+            put("db_name", account.dbName)
+            put("db_user", account.dbUser)
+            put("db_password", account.dbPassword)
+            put("use_websocket", account.useWebSocket)
+            // Parse options JSON string to JsonObject for proper nesting
+            WebSocketMessageFactory.parseOptionsToJson(account.options)?.let {
+                put("options", it)
             }
         }
     }

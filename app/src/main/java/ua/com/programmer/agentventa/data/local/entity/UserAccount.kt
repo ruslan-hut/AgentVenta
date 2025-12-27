@@ -109,8 +109,12 @@ fun UserAccount.isDemo(): Boolean {
 //
 // Backend host is predefined in BuildConfig (from local.properties KEY_HOST)
 // The relayServer field is kept for backward compatibility but is not required
+//
+// IMPORTANT: WebSocket ALWAYS connects for license management and device status.
+// The useWebSocket flag only controls DATA EXCHANGE method (HTTP vs WebSocket).
+// Device must be approved via WebSocket before any data sync (HTTP or WebSocket).
 fun UserAccount.isValidForWebSocketConnection(): Boolean {
-    return useWebSocket && guid.isNotEmpty()
+    return guid.isNotEmpty()
 }
 
 // Constructs WebSocket URL for connection using predefined backend host
