@@ -24,7 +24,6 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.equalTo
 import ua.com.programmer.agentventa.data.local.entity.getGuid
-import ua.com.programmer.agentventa.data.local.entity.getLicense
 import ua.com.programmer.agentventa.databinding.ActivityConnectionsListBinding
 import ua.com.programmer.agentventa.databinding.ConnectionsListItemBinding
 
@@ -105,11 +104,16 @@ class UserAccountListFragment: Fragment(), MenuProvider {
             fun bind(item: UserAccount) {
                 binding.apply {
                     description.text = item.description
-                    server.text = item.dbServer
-                    user.text = item.dbUser
+                    if (item.useWebSocket) {
+                        server.setText(R.string.auto_connection)
+                        user.setText(R.string.auto_connection)
+                    } else {
+                        server.text = item.dbServer
+                        user.text = item.dbUser
+                    }
                     guid.text = item.getGuid()
-                    if (item.license.length > 7) {
-                        licenseKey.text = item.getLicense()
+                    if (item.license.isNotEmpty()) {
+                        licenseKey.text = item.license
                     } else {
                         licenseKey.setText(R.string.license_not_installed)
                     }

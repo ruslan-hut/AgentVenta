@@ -579,5 +579,6 @@
     <string name="upload_settings">Upload Settings</string>
     <string name="download_settings">Download Settings</string>
     <string name="manual_server_configuration">Manual Server Configuration</string>
+    <string name="auto_connection">Auto Connection</string>
 
 </resources>

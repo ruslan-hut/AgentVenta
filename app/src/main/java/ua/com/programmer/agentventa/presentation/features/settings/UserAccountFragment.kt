@@ -10,7 +10,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -24,8 +23,6 @@ import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
-import ua.com.programmer.agentventa.data.local.entity.getGuid
-import ua.com.programmer.agentventa.data.local.entity.getLicense
 import ua.com.programmer.agentventa.data.local.entity.isDemo
 import ua.com.programmer.agentventa.databinding.ActivityConnectionEditBinding
 import ua.com.programmer.agentventa.utility.Constants
@@ -60,11 +57,8 @@ class UserAccountFragment: Fragment(), MenuProvider {
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         // Setup listeners first before observing account data
-        setupManualConfigSwitch()
+        setupAutoConnectionSwitch()
         setupFormatSpinner()
-        setupWebSocketSection()
-        setupSettingsSyncObservers()
-        setupButtonListeners()
 
         viewModel.account.observe(this.viewLifecycleOwner) { account ->
             account?.let {
@@ -73,27 +67,25 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 binding.dbName.setText(account.dbName)
                 binding.dbUser.setText(account.dbUser)
                 binding.dbPassword.setText(account.dbPassword)
-                binding.syncEmail.setText(account.syncEmail)
-                binding.accountId.text = account.getGuid()
+                binding.accountId.text = formatDeviceId(account.guid)
                 binding.accountGuid.text = account.guid
-                binding.license.text = account.getLicense()
+                binding.license.text = account.license
 
-                // Set manual config switch based on useWebSocket field
-                val isManualConfig = !account.useWebSocket
-                binding.manualConfigSwitch.isChecked = isManualConfig
+                // Set auto connection switch based on useWebSocket field
+                val isAutoConnection = account.useWebSocket
+                binding.autoConnectionSwitch.isChecked = isAutoConnection
 
-                // Update visibility based on account data format
-                updateFieldsVisibility(isManualConfig)
+                // Update visibility based on auto connection mode
+                updateFieldsVisibility(isAutoConnection)
 
                 if (account.isDemo()) {
                     binding.description.isEnabled = false
-                    binding.manualConfigSwitch.isEnabled = false
+                    binding.autoConnectionSwitch.isEnabled = false
                     binding.server.isEnabled = false
                     binding.dbName.isEnabled = false
                     binding.dbUser.isEnabled = false
                     binding.dbPassword.isEnabled = false
                     binding.syncFormatSpinner.isEnabled = false
-                    binding.syncEmail.isEnabled = false
                 }
 
                 _account = account
@@ -120,28 +112,22 @@ class UserAccountFragment: Fragment(), MenuProvider {
         return binding.root
     }
 
-    private fun setupManualConfigSwitch() {
-        binding.manualConfigSwitch.setOnCheckedChangeListener { _, isChecked ->
+    private fun setupAutoConnectionSwitch() {
+        binding.autoConnectionSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateFieldsVisibility(isChecked)
 
-            // Update selected format (manual = HTTP, relay = WebSocket)
+            // Update selected format (auto = WebSocket, unchecked = HTTP/manual)
             viewModel.selectedFormat.value = if (isChecked) {
-                Constants.SYNC_FORMAT_HTTP
-            } else {
                 Constants.SYNC_FORMAT_WEBSOCKET
+            } else {
+                Constants.SYNC_FORMAT_HTTP
             }
         }
     }
 
-    private fun updateFieldsVisibility(isManualConfig: Boolean) {
-        // Show/hide manual configuration section
-        binding.manualConfigSection.visibility = if (isManualConfig) View.VISIBLE else View.GONE
-
-        // Show/hide WebSocket section (visible when NOT in manual mode)
-        binding.websocketSection.visibility = if (!isManualConfig) View.VISIBLE else View.GONE
-
-        // Show/hide email field for settings sync (visible when NOT in manual mode)
-        binding.syncEmailLayout.visibility = if (!isManualConfig) View.VISIBLE else View.GONE
+    private fun updateFieldsVisibility(isAutoConnection: Boolean) {
+        // Show/hide manual configuration section (visible when NOT in auto mode)
+        binding.manualConfigSection.visibility = if (!isAutoConnection) View.VISIBLE else View.GONE
     }
 
     private fun finish() {
@@ -156,18 +142,17 @@ class UserAccountFragment: Fragment(), MenuProvider {
         }
 
         val fakeGuid = binding.fakeGuid.text.toString().trim()
-        val isManualConfig = binding.manualConfigSwitch.isChecked
+        val isAutoConnection = binding.autoConnectionSwitch.isChecked
 
         _account?.let {
             val updated = it.copy(
                 description = binding.description.text.toString().trim(),
-                useWebSocket = !isManualConfig, // Store the preference
-                dataFormat = if (isManualConfig) Constants.SYNC_FORMAT_HTTP else Constants.SYNC_FORMAT_WEBSOCKET,
-                dbServer = if (isManualConfig) binding.server.text.toString().trim() else "",
-                dbName = if (isManualConfig) binding.dbName.text.toString().trim() else "",
-                dbUser = if (isManualConfig) binding.dbUser.text.toString().trim() else "",
-                dbPassword = if (isManualConfig) binding.dbPassword.text.toString().trim() else "",
-                syncEmail = if (!isManualConfig) binding.syncEmail.text.toString().trim() else "",
+                useWebSocket = isAutoConnection, // Store the preference
+                dataFormat = if (isAutoConnection) Constants.SYNC_FORMAT_WEBSOCKET else Constants.SYNC_FORMAT_HTTP,
+                dbServer = if (!isAutoConnection) binding.server.text.toString().trim() else "",
+                dbName = if (!isAutoConnection) binding.dbName.text.toString().trim() else "",
+                dbUser = if (!isAutoConnection) binding.dbUser.text.toString().trim() else "",
+                dbPassword = if (!isAutoConnection) binding.dbPassword.text.toString().trim() else "",
                 relayServer = "", // Not used anymore
                 guid = fakeGuid.ifEmpty { it.guid }
             )
@@ -231,65 +216,11 @@ class UserAccountFragment: Fragment(), MenuProvider {
         Toast.makeText(activity, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
     }
 
-    private fun setupWebSocketSection() {
-        // Observe connection state text for display
-        viewModel.connectionState.observe(viewLifecycleOwner) { state ->
-            binding.connectionStatus.text = state
-        }
-
-        // Observe boolean connection states for button logic
-        viewModel.isConnected.observe(viewLifecycleOwner) { connected ->
-            binding.disconnectButton.isEnabled = connected
-            binding.uploadSettingsButton.isEnabled = connected
-            binding.downloadSettingsButton.isEnabled = connected
-
-            // Update connect button based on connected and connecting states
-            updateConnectButton()
-        }
-
-        viewModel.isConnecting.observe(viewLifecycleOwner) {
-            // Update connect button based on connected and connecting states
-            updateConnectButton()
-        }
-    }
-
-    private fun updateConnectButton() {
-        val connected = viewModel.isConnected.value ?: false
-        val connecting = viewModel.isConnecting.value ?: false
-        binding.connectButton.isEnabled = !connected && !connecting
-    }
-
-    private fun setupSettingsSyncObservers() {
-        // Observe settings sync status
-        viewModel.settingsSyncStatus.observe(viewLifecycleOwner) { status ->
-            if (status.isNotEmpty()) {
-                binding.settingsSyncStatus.text = status
-                binding.settingsSyncStatus.visibility = View.VISIBLE
-            } else {
-                binding.settingsSyncStatus.visibility = View.GONE
-            }
-        }
-    }
-
-    private fun setupButtonListeners() {
-        // Connect button
-        binding.connectButton.setOnClickListener {
-            viewModel.connectWebSocket(_account)
-        }
-
-        // Disconnect button
-        binding.disconnectButton.setOnClickListener {
-            viewModel.disconnectWebSocket()
-        }
-
-        // Upload settings button
-        binding.uploadSettingsButton.setOnClickListener {
-            viewModel.uploadSettings(_account)
-        }
-
-        // Download settings button
-        binding.downloadSettingsButton.setOnClickListener {
-            viewModel.downloadSettings(_account)
+    private fun formatDeviceId(guid: String): String {
+        return if (guid.length > 12) {
+            "${guid.take(6)}****${guid.takeLast(6)}"
+        } else {
+            guid
         }
     }
 

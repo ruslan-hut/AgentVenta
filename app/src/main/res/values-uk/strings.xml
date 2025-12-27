@@ -451,6 +451,7 @@
     <string name="upload_settings">Вивантажити налаштування</string>
     <string name="download_settings">Завантажити налаштування</string>
     <string name="manual_server_configuration">Ручне налаштування сервера</string>
+    <string name="auto_connection">Авто підключення</string>
 
     <!-- WebSocket Status Screen -->
     <string name="websocket_status_title">Стан синхронізації</string>

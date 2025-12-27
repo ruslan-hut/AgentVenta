@@ -36,14 +36,14 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Manual Configuration Switch -->
+            <!-- Auto Connection Switch -->
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/manual_config_switch"
+                android:id="@+id/auto_connection_switch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:padding="8dp"
-                android:text="@string/manual_server_configuration"
+                android:text="@string/auto_connection"
                 android:checked="false" />
 
             <!-- Manual Configuration Section (HTTP only) -->
@@ -140,24 +140,6 @@
                     android:maxLines="1" />
             </LinearLayout>
 
-            <!-- Email for Settings Sync (only visible in WebSocket mode) -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/sync_email_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:hint="@string/settings_sync_email"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/sync_email"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:inputType="textEmailAddress" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
             <!-- Account ID (internal ID) -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -176,105 +158,6 @@
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:maxLines="1" />
-            </LinearLayout>
-
-            <!-- WebSocket Connection Status and Controls -->
-            <LinearLayout
-                android:id="@+id/websocket_section"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:padding="16dp"
-                android:orientation="vertical"
-                android:background="?attr/colorSurfaceVariant">
-
-                <!-- Connection Status -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/websocket_connection"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:paddingBottom="8dp"/>
-
-                <TextView
-                    android:id="@+id/connection_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/ws_disconnected"
-                    android:textSize="14sp"
-                    android:paddingBottom="12dp"/>
-
-                <!-- Connection Buttons -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingBottom="16dp">
-
-                    <Button
-                        android:id="@+id/connect_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/connect"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                    <Button
-                        android:id="@+id/disconnect_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/disconnect"
-                        android:enabled="false"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-                </LinearLayout>
-
-                <!-- Settings Sync Section -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_sync"
-                    android:textStyle="bold"
-                    android:textSize="16sp"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp"/>
-
-                <TextView
-                    android:id="@+id/settings_sync_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textSize="14sp"
-                    android:paddingBottom="8dp"
-                    android:visibility="gone"/>
-
-                <!-- Settings Sync Buttons -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/upload_settings_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:text="@string/upload_settings"
-                        android:enabled="false"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"/>
-
-                    <Button
-                        android:id="@+id/download_settings_button"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/download_settings"
-                        android:enabled="false"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"/>
-                </LinearLayout>
             </LinearLayout>
 
             <!-- Hidden fields for backward compatibility -->

@@ -470,6 +470,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
                 Constants.WEBSOCKET_MESSAGE_TYPE_PONG -> {
                     logger.d(TAG, "Pong received")
+                    handlePongMessage(message)
                 }
 
                 Constants.WEBSOCKET_MESSAGE_TYPE_ERROR -> {
@@ -781,14 +782,24 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             // Use first options item (should only be one)
             val optionsObject = optionsItems.first().deepCopy()
+
+            // Extract license before removing it from options
+            val license = optionsObject.get("license")?.asString ?: ""
+
             optionsObject.remove("value_id")
 
             val gson = Gson()
             val optionsJson = gson.toJson(optionsObject)
 
             logger.d(TAG, "Updating options for account ${account.guid} (${optionsJson.length} chars)")
+//            if (license.isNotEmpty()) {
+//                logger.d(TAG, "License received: ${license.take(6)}...")
+//            }
 
-            val updatedAccount = account.copy(options = optionsJson)
+            val updatedAccount = account.copy(
+                options = optionsJson,
+                license = license.ifEmpty { account.license }
+            )
 
             try {
                 userAccountRepository.saveAccount(updatedAccount)
@@ -895,84 +906,45 @@ class WebSocketRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Handles options update from the server.
-     * Updates the current UserAccount's options field.
+     * Handles pong message from server.
+     * Extracts license number from payload if present and saves to account.
      *
      * Expected format:
      * {
-     *   "data_type": "options",
-     *   "data": [
-     *     {
-     *       "value_id": "options",
-     *       "allowPriceTypeChoose": false,
-     *       "write": true,
-     *       ...
-     *     }
-     *   ]
+     *   "type": "pong",
+     *   "message_id": "some-id",
+     *   "timestamp": "2025-12-27T12:00:00Z",
+     *   "status": "approved",
+     *   "payload": {
+     *     "license_number": "ABCD-EF1234"
+     *   }
      * }
      */
-    private fun handleOptionsUpdate(dataMessage: IncomingDataMessage) {
+    private fun handlePongMessage(message: WebSocketMessage) {
         scope.launch {
             try {
-                // Extract data array from the message
-                val dataArray = dataMessage.data.getAsJsonArray("data")
-                if (dataArray == null || dataArray.size() == 0) {
-                    logger.w(TAG, "Empty data array in options update")
-                    sendAck(dataMessage.messageId, "options", 0)
+                val payload = message.payload?.asJsonObject ?: return@launch
+                val licenseNumber = payload.get("license_number")?.asString
+
+                if (licenseNumber.isNullOrEmpty()) {
                     return@launch
                 }
 
-                // Get current account
-                val account = currentAccount ?: run {
-                    logger.e(TAG, "No current account for options update")
-                    sendError(dataMessage.messageId, "options", "No current account")
+                val account = currentAccount ?: return@launch
+
+                // Only update if license changed
+                if (account.license == licenseNumber) {
                     return@launch
                 }
 
-                // Find the options object (first item with value_id = "options")
-                var optionsObject: com.google.gson.JsonObject? = null
-                for (i in 0 until dataArray.size()) {
-                    val item = dataArray.get(i).asJsonObject
-                    val valueId = item.get("value_id")?.asString
-                    if (valueId == Constants.VALUE_ID_OPTIONS) {
-                        optionsObject = item
-                        break
-                    }
-                }
+                logger.d(TAG, "License received: ${licenseNumber.take(6)}...")
 
-                if (optionsObject == null) {
-                    logger.w(TAG, "No options object found in data array")
-                    sendAck(dataMessage.messageId, "options", 0)
-                    return@launch
-                }
-
-                // Remove value_id field from options before saving
-                optionsObject.remove("value_id")
-
-                // Convert to JSON string
-                val gson = Gson()
-                val optionsJson = gson.toJson(optionsObject)
-
-                logger.d(TAG, "Updating options for account ${account.guid}: ${optionsJson.take(200)}")
-
-                // Update the current account's options
-                val updatedAccount = account.copy(options = optionsJson)
-
-                // Save to database using UserAccountRepository
-                try {
-                    userAccountRepository.saveAccount(updatedAccount)
-                    logger.d(TAG, "Options saved to database successfully (${optionsJson.length} chars)")
-
-                    // Send acknowledgment
-                    sendAck(dataMessage.messageId, "options", 1)
-                } catch (e: Exception) {
-                    logger.e(TAG, "Failed to save options to database: ${e.message}")
-                    sendError(dataMessage.messageId, "options", "Failed to save: ${e.message}")
-                }
+                val updatedAccount = account.copy(license = licenseNumber)
+                userAccountRepository.saveAccount(updatedAccount)
+                currentAccount = updatedAccount
 
             } catch (e: Exception) {
-                logger.e(TAG, "Error handling options update: ${e.message}")
-                sendError(dataMessage.messageId, "options", e.message ?: "Failed to update options")
+                logger.e(TAG, "Error handling pong message: ${e.message}")
             }
         }
     }
