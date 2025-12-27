@@ -89,33 +89,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/websocket_sync_now" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/websocket_activity_log"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/clear_log_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/websocket_clear_log"
-            style="@style/Widget.MaterialComponents.Button.TextButton" />
-
-        <TextView
-            android:id="@+id/message_log_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="?attr/colorSurfaceVariant"
-            android:fontFamily="monospace"
-            android:padding="8dp"
-            android:text="@string/websocket_no_messages"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

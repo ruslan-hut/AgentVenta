@@ -118,14 +118,6 @@ class SyncFragment: Fragment(), MenuProvider {
             wsBinding?.lastSyncText?.text = time
         }
 
-        webSocketViewModel.messageLog.observe(viewLifecycleOwner) { messages ->
-            wsBinding?.messageLogText?.text = if (messages.isEmpty()) {
-                getString(R.string.websocket_no_messages)
-            } else {
-                messages.joinToString("\n")
-            }
-        }
-
         webSocketViewModel.isSyncing.observe(viewLifecycleOwner) { isSyncing ->
             wsBinding?.syncNowButton?.apply {
                 isEnabled = !isSyncing
@@ -139,14 +131,8 @@ class SyncFragment: Fragment(), MenuProvider {
     }
 
     private fun setupWebSocketListeners() {
-        wsBinding?.apply {
-            syncNowButton.setOnClickListener {
-                webSocketViewModel.syncNow()
-            }
-
-            clearLogButton.setOnClickListener {
-                webSocketViewModel.clearLog()
-            }
+        wsBinding?.syncNowButton?.setOnClickListener {
+            webSocketViewModel.syncNow()
         }
     }
 

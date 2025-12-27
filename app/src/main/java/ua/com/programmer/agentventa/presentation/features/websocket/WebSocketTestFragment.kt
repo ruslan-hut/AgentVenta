@@ -58,14 +58,6 @@ class WebSocketTestFragment : Fragment() {
             binding.lastSyncText.text = time
         }
 
-        viewModel.messageLog.observe(viewLifecycleOwner) { messages ->
-            binding.messageLogText.text = if (messages.isEmpty()) {
-                getString(R.string.websocket_no_messages)
-            } else {
-                messages.joinToString("\n")
-            }
-        }
-
         viewModel.isSyncing.observe(viewLifecycleOwner) { isSyncing ->
             binding.syncNowButton.isEnabled = !isSyncing
             binding.syncNowButton.text = if (isSyncing) {
@@ -79,10 +71,6 @@ class WebSocketTestFragment : Fragment() {
     private fun setupListeners() {
         binding.syncNowButton.setOnClickListener {
             viewModel.syncNow()
-        }
-
-        binding.clearLogButton.setOnClickListener {
-            viewModel.clearLog()
         }
     }
 
