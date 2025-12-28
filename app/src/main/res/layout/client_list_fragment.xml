@@ -48,41 +48,39 @@
                 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <LinearLayout
-            android:id="@+id/table_company_top"
-            android:orientation="horizontal"
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/filter_chip_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/search_input_layout">
+            android:layout_below="@id/search_input_layout"
+            android:paddingStart="@dimen/spacing_sm"
+            android:paddingEnd="@dimen/spacing_sm"
+            android:paddingTop="@dimen/spacing_xs"
+            android:paddingBottom="@dimen/spacing_xs"
+            app:singleSelection="true"
+            app:selectionRequired="true">
 
-            <TextView
+            <com.google.android.material.chip.Chip
                 android:id="@+id/filter_company"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="8dp"
-                android:layout_marginLeft="8dp"
-                android:textColor="?attr/colorTertiary"
+                android:checked="true"
                 android:text="@string/company" />
 
-            <TextView
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content" />
-
-            <TextView
+            <com.google.android.material.chip.Chip
                 android:id="@+id/filter_store"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="@string/store"
-                android:textColor="?attr/colorTertiary"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp" />
+                android:layout_height="wrap_content"
+                android:text="@string/store" />
 
-        </LinearLayout>
+        </com.google.android.material.chip.ChipGroup>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/clients_swipe"
-            android:layout_below="@id/table_company_top"
+            android:layout_below="@id/filter_chip_group"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 

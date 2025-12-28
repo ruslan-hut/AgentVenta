@@ -84,11 +84,11 @@ class ClientListFragment: Fragment(), MenuProvider {
             Log.d("ClientList", "params: $params")
 
             if (params.companyGuid.isNotBlank()) {
-                binding.tableCompanyTop.visibility = View.VISIBLE
+                binding.filterChipGroup.visibility = View.VISIBLE
                 binding.filterCompany.text = params.company
                 binding.filterStore.text = params.store
             } else {
-                binding.tableCompanyTop.visibility = View.GONE
+                binding.filterChipGroup.visibility = View.GONE
             }
         }
     }

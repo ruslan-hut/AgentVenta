@@ -12,8 +12,12 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:windowActivityTransitions">true</item>
-        <item name="android:windowEnterTransition">@android:transition/slide_right</item>
-        <item name="android:windowExitTransition">@android:transition/slide_left</item>
+        
+        <!-- Material Motion transitions -->
+        <item name="android:windowEnterTransition">@transition/material_fade_through</item>
+        <item name="android:windowExitTransition">@transition/material_fade_through</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/material_shared_axis_x</item>
+        <item name="android:windowSharedElementExitTransition">@transition/material_shared_axis_x</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

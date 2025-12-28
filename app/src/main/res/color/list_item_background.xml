@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Selected state (when item is clicked/selected) -->
+    <item android:color="?attr/colorPrimaryContainer" android:state_selected="true"/>
+    
+    <!-- Activated state (for persistent selection like in navigation) -->
+    <item android:color="?attr/colorSecondaryContainer" android:state_activated="true"/>
+    
+    <!-- Pressed/focused state -->
+    <item android:color="?attr/colorSurfaceVariant" android:state_pressed="true"/>
+    
+    <!-- Default state -->
+    <item android:color="?attr/colorSurface"/>
+</selector>
