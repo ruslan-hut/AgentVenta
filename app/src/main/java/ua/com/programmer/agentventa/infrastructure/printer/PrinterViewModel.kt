@@ -21,6 +21,7 @@ import java.io.IOException
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
+import androidx.core.content.edit
 
 @HiltViewModel
 class PrinterViewModel @Inject constructor(
@@ -53,7 +54,7 @@ class PrinterViewModel @Inject constructor(
     fun onDeviceSelected(deviceName: String) {
         setStatus("")
         val device = devices.value?.find { it.name == deviceName } ?: return
-        preferences.edit().putString("printer_address", device.address).apply()
+        preferences.edit { putString("printer_address", device.address) }
     }
 
     @SuppressLint("MissingPermission")
@@ -149,13 +150,9 @@ class PrinterViewModel @Inject constructor(
     }
 
     private fun maxPacketSize(socket: BluetoothSocket): Int {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val packet = socket.maxTransmitPacketSize
-            if (packet > 0) {
-                packet
-            } else {
-                1024
-            }
+        val packet = socket.maxTransmitPacketSize
+        return if (packet > 0) {
+            packet
         } else {
             1024
         }
@@ -227,7 +224,7 @@ class PrinterViewModel @Inject constructor(
     }
 
     fun saveUseInFiscalService(use: Boolean) {
-        preferences.edit().putBoolean("use_in_fiscal_service", use).apply()
+        preferences.edit { putBoolean("use_in_fiscal_service", use) }
     }
 
     fun autoPrint(): Boolean {
@@ -235,7 +232,7 @@ class PrinterViewModel @Inject constructor(
     }
 
     fun saveAutoPrint(use: Boolean) {
-        preferences.edit().putBoolean("auto_print", use).apply()
+        preferences.edit { putBoolean("auto_print", use) }
     }
 
     fun readPrintAreaWidth(): Int {
@@ -243,12 +240,12 @@ class PrinterViewModel @Inject constructor(
     }
 
     fun savePrintAreaWidth(width: Int) {
-        val correctWidth = if (width < 10 || width > 250) {
+        val correctWidth = if (width !in 10..250) {
             32
         } else {
             width
         }
-        preferences.edit().putInt("print_area_width", correctWidth).apply()
+        preferences.edit { putInt("print_area_width", correctWidth) }
     }
 
     private fun printerAddress(): String {
@@ -257,5 +254,20 @@ class PrinterViewModel @Inject constructor(
 
     fun readyToPrint(): Boolean {
         return printerAddress().isNotEmpty() && permissionGranted.value == true
+    }
+
+    fun isBluetoothPrintEnabled(): Boolean {
+        return preferences.getBoolean("bluetooth_print_enabled", true)
+    }
+
+    fun saveBluetoothPrintEnabled(enabled: Boolean) {
+        preferences.edit { putBoolean("bluetooth_print_enabled", enabled) }
+    }
+
+    /**
+     * Check if Bluetooth printing is both enabled and ready.
+     */
+    fun isBluetoothPrintReady(): Boolean {
+        return isBluetoothPrintEnabled() && readyToPrint()
     }
 }

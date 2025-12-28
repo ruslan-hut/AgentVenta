@@ -97,12 +97,10 @@ class OrderFragment: Fragment(), MenuProvider {
 
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
             var title = getString(R.string.order)
-            var guid = ""
-            var isProcessed = false
 
             title += " ${order.number}"
-            guid = order.guid
-            isProcessed = order.isProcessed > 0
+            val guid: String = order.guid
+            val isProcessed: Boolean = order.isProcessed > 0
 
             (activity as AppCompatActivity).supportActionBar?.title = title
 
@@ -281,17 +279,48 @@ class OrderFragment: Fragment(), MenuProvider {
 
     private fun printDocument() {
         val guid = viewModel.getGuid()
+
+        // Path 1: Fiscal orders with Bluetooth - use fiscal service (unchanged)
         if (viewModel.isFiscal() && printerModel.useInFiscalService()) {
             if (fiscalServiceNotReady()) return
             fiscalModel.getReceiptText(guid)
             return
         }
-        if (!sharedModel.options.printingEnabled) {
-            Toast.makeText(requireContext(), getString(R.string.error_printing_not_available), Toast.LENGTH_SHORT).show()
+
+        // Check if document can be printed
+        if (!viewModel.canPrint()) {
+            AlertDialog.Builder(requireContext())
+                .setTitle(getString(R.string.warning))
+                .setMessage(getString(R.string.error_cannot_print))
+                .setPositiveButton(getString(R.string.OK), null)
+                .show()
             return
         }
-        if (viewModel.canPrint()) {
-            sharedModel.callPrintDocument(guid) {success ->
+
+        val bluetoothReady = printerModel.isBluetoothPrintReady()
+        val webhookEnabled = viewModel.isWebhookPrintEnabled()
+
+        // If both options available, show dialog
+        if (bluetoothReady && webhookEnabled) {
+            showPrintMethodDialog()
+            return
+        }
+
+        // Path 2: Bluetooth printing with local text generation
+        if (bluetoothReady) {
+            printViaBluetooth()
+            return
+        }
+
+        // Path 3: Webhook printing
+        if (webhookEnabled) {
+            printViaWebhook()
+            return
+        }
+
+        // Path 4: Fallback to server PDF (legacy)
+        if (sharedModel.options.printingEnabled) {
+            sharedModel.callPrintDocument(guid) { success ->
                 if (!success) {
                     Toast.makeText(requireContext(), getString(R.string.error_while_print), Toast.LENGTH_SHORT).show()
                     return@callPrintDocument
@@ -299,11 +328,59 @@ class OrderFragment: Fragment(), MenuProvider {
                 openFile("$guid.pdf")
             }
         } else {
-            AlertDialog.Builder(requireContext())
-                .setTitle(getString(R.string.warning))
-                .setMessage(getString(R.string.error_cannot_print))
-                .setPositiveButton(getString(R.string.OK), null)
-                .show()
+            Toast.makeText(requireContext(), getString(R.string.error_printing_not_available), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showPrintMethodDialog() {
+        val options = arrayOf(
+            getString(R.string.print_method_bluetooth),
+            getString(R.string.print_method_webhook)
+        )
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.print_method_dialog_title))
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> printViaBluetooth()
+                    1 -> printViaWebhook()
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    private fun printViaBluetooth() {
+        val cacheDir = sharedModel.cacheDir
+        if (cacheDir == null) {
+            Toast.makeText(requireContext(), getString(R.string.error_while_print), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val deviceId = sharedModel.currentAccount.value?.guid ?: ""
+        viewModel.generatePrintText(
+            cacheDir = cacheDir,
+            deviceId = deviceId
+        ) { fileName ->
+            if (fileName != null) {
+                openFile(fileName)
+            } else {
+                Toast.makeText(requireContext(), getString(R.string.error_while_print), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun printViaWebhook() {
+        viewModel.sendToWebhook { success, message ->
+            if (success) {
+                Toast.makeText(requireContext(), getString(R.string.webhook_print_success), Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.webhook_print_error, message),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 
@@ -392,7 +469,7 @@ class OrderFragment: Fragment(), MenuProvider {
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         try {
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(requireContext(), getString(R.string.error_open_file), Toast.LENGTH_SHORT).show()
         }
 

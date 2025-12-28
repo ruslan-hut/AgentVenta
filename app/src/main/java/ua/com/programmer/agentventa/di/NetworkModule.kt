@@ -99,7 +99,7 @@ class NetworkModule {
         logger: Logger,
         apiKeyProvider: ApiKeyProvider,
         dataExchangeRepository: DataExchangeRepository,
-        userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository
+        userAccountRepository: UserAccountRepository
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
@@ -112,13 +112,20 @@ class NetworkModule {
 
     @Provides
     @Singleton
+    fun provideGson(): Gson {
+        return Gson()
+    }
+
+    @Provides
+    @Singleton
     fun provideSettingsSyncRepository(
         webSocketRepository: WebSocketRepository,
-        logger: Logger
+        logger: Logger,
+        gson: Gson
     ): SettingsSyncRepository {
         return SettingsSyncRepositoryImpl(
             webSocketRepository = webSocketRepository,
-            gson = Gson(),
+            gson = gson,
             logger = logger
         )
     }

@@ -556,6 +556,33 @@
     <string name="number_of_characters_in_line" translatable="false">32</string>
     <string name="use_in_fiscal_service">Use in fiscal service</string>
     <string name="auto_print_saved_orders">Auto print saved orders</string>
+    <string name="bluetooth_print_enabled">Enable Bluetooth printing</string>
+
+    <!-- Webhook printing -->
+    <string name="webhook_print_section">Print with webhook</string>
+    <string name="webhook_print_enabled">Enable webhook printing</string>
+    <string name="webhook_print_url">Webhook URL</string>
+    <string name="webhook_print_url_hint">https://example.com/print</string>
+    <string name="webhook_print_method">HTTP Method</string>
+    <string name="webhook_print_use_auth">Use authentication</string>
+    <string name="webhook_print_username">Username</string>
+    <string name="webhook_print_password">Password</string>
+    <string name="webhook_print_test">Test webhook</string>
+    <string name="webhook_print_success">Webhook request successful</string>
+    <string name="webhook_print_error">Webhook error: %1$s</string>
+    <string name="webhook_print_no_url">Webhook URL is not configured</string>
+    <string name="print_method_dialog_title">Select print method</string>
+    <string name="print_method_bluetooth">Bluetooth printer</string>
+    <string name="print_method_webhook">Webhook (server)</string>
+    <string-array name="webhook_method_entries">
+        <item>GET</item>
+        <item>POST</item>
+    </string-array>
+    <string-array name="webhook_method_values">
+        <item>GET</item>
+        <item>POST</item>
+    </string-array>
+
     <string name="ignore_sequential_barcodes">Ignore sequential barcode reads</string>
     <string name="ignore_sequential_barcodes_desc">When product is already added to list, ignore other barcode reads of this product</string>
     <string name="company">Company</string>

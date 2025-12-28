@@ -26,8 +26,11 @@ import ua.com.programmer.agentventa.presentation.common.document.DocumentViewMod
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.GenerateOrderPrintUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.toPrintData
+import ua.com.programmer.agentventa.infrastructure.printer.WebhookPrintService
 import ua.com.programmer.agentventa.extensions.localFormatted
 import ua.com.programmer.agentventa.extensions.round
 import ua.com.programmer.agentventa.extensions.roundToInt
@@ -47,6 +50,8 @@ class OrderViewModel @Inject constructor(
     private val validateOrderUseCase: ValidateOrderUseCase,
     private val saveOrderUseCase: SaveOrderUseCase,
     private val enableOrderEditUseCase: EnableOrderEditUseCase,
+    private val generateOrderPrintUseCase: GenerateOrderPrintUseCase,
+    private val webhookPrintService: WebhookPrintService,
     logger: Logger
 ) : DocumentViewModel<Order>(
     repository = orderRepository,
@@ -319,6 +324,77 @@ class OrderViewModel @Inject constructor(
             }
             // Set navigation page
             _navigateToPage.value = 1
+        }
+    }
+
+    // ==================== Print Methods ====================
+
+    /**
+     * Check if webhook printing is enabled and configured.
+     */
+    fun isWebhookPrintEnabled(): Boolean {
+        return webhookPrintService.isEnabled() && webhookPrintService.isConfigured()
+    }
+
+    /**
+     * Generate text file for Bluetooth printing.
+     *
+     * @param cacheDir Directory to save the generated file
+     * @param deviceId Device identifier for footer (last 6 chars will be shown)
+     * @param onResult Callback with file name on success or null on failure
+     */
+    fun generatePrintText(
+        cacheDir: java.io.File,
+        deviceId: String = "",
+        onResult: (String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            val params = GenerateOrderPrintUseCase.Params(
+                orderGuid = order.guid,
+                outputDir = cacheDir,
+                companyName = order.company,
+                deviceId = deviceId
+            )
+
+            when (val result = generateOrderPrintUseCase(params)) {
+                is Result.Success -> {
+                    withContext(Dispatchers.Main) {
+                        onResult(result.data.name)
+                    }
+                }
+                is Result.Error -> {
+                    logger.e(logTag, "Print generation failed: ${result.exception.message}")
+                    withContext(Dispatchers.Main) {
+                        onResult(null)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Send order data to webhook for printing.
+     *
+     * @param onResult Callback with success status and message
+     */
+    fun sendToWebhook(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val content = orderRepository.getContent(order.guid)
+            val printData = order.toPrintData(content)
+
+            val result = webhookPrintService.sendPrintData(printData)
+
+            withContext(Dispatchers.Main) {
+                result.fold(
+                    onSuccess = { message ->
+                        onResult(true, message)
+                    },
+                    onFailure = { error ->
+                        logger.e(logTag, "Webhook print failed: ${error.message}")
+                        onResult(false, error.message ?: "Unknown error")
+                    }
+                )
+            }
         }
     }
 }

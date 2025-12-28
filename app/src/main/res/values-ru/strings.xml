@@ -429,6 +429,25 @@
     <string name="print_area_width_in_characters">Ширина печати в символах</string>
     <string name="use_in_fiscal_service">Использовать для фискальных чеков</string>
     <string name="auto_print_saved_orders">Автоматически распечатывать заказ</string>
+    <string name="bluetooth_print_enabled">Включить печать через Bluetooth</string>
+
+    <!-- Webhook printing -->
+    <string name="webhook_print_section">Печать через webhook</string>
+    <string name="webhook_print_enabled">Включить печать через webhook</string>
+    <string name="webhook_print_url">URL webhook</string>
+    <string name="webhook_print_url_hint">https://example.com/print</string>
+    <string name="webhook_print_method">HTTP метод</string>
+    <string name="webhook_print_use_auth">Использовать авторизацию</string>
+    <string name="webhook_print_username">Имя пользователя</string>
+    <string name="webhook_print_password">Пароль</string>
+    <string name="webhook_print_test">Тест webhook</string>
+    <string name="webhook_print_success">Запрос webhook выполнен успешно</string>
+    <string name="webhook_print_error">Ошибка webhook: %1$s</string>
+    <string name="webhook_print_no_url">URL webhook не настроен</string>
+    <string name="print_method_dialog_title">Выберите способ печати</string>
+    <string name="print_method_bluetooth">Bluetooth принтер</string>
+    <string name="print_method_webhook">Webhook (сервер)</string>
+
     <string name="ignore_sequential_barcodes">Игнорировать повторное чтение одинаковых штрихкодов</string>
     <string name="ignore_sequential_barcodes_desc">Если товар уже добавлен в заказ, повторные считываения его штрихкода будут проигнорированы</string>
     <string name="company">Фирма</string>
