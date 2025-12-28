@@ -38,7 +38,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="16dp"
                     />
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/request_permission_button"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -82,7 +82,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="32dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/test_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -231,7 +231,7 @@
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/webhook_test_button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

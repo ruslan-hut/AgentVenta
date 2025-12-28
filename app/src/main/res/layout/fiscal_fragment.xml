@@ -169,7 +169,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_cashier_login"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -180,7 +180,7 @@
                 <TextView
                     android:layout_width="8dp"
                     android:layout_height="match_parent"/>
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_cashier_logout"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -194,7 +194,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_check_status"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -204,7 +204,7 @@
                 <TextView
                     android:layout_width="8dp"
                     android:layout_height="match_parent"/>
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_open_shift"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -238,7 +238,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_service_in"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -249,7 +249,7 @@
                 <TextView
                     android:layout_width="8dp"
                     android:layout_height="match_parent"/>
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_service_out"
                     android:layout_width="0dp"
                     android:layout_weight="1"
@@ -267,7 +267,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_x_report"
                 android:layout_width="0dp"
                 android:layout_weight="1"
@@ -277,7 +277,7 @@
             <TextView
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_close_shift"
                 android:layout_width="0dp"
                 android:layout_weight="1"

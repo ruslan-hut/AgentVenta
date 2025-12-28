@@ -6,13 +6,11 @@
 
     </data>
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/root_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
-        app:cardBackgroundColor="?android:colorBackground"
+        app:cardElevation="@dimen/elevation_card"
         android:layout_margin="2dp">
 
         <LinearLayout
@@ -51,5 +49,5 @@
                 android:gravity="end" />
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 </layout>

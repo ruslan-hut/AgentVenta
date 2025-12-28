@@ -5,14 +5,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="16dp">
 
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="56dp"
-        app:cardBackgroundColor="?attr/colorErrorContainer"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp">
+        app:cardElevation="@dimen/elevation_card"
+        app:strokeWidth="0dp">
 
         <!--        <ProgressBar-->
         <!--            android:id="@+id/progress_bar"-->
@@ -54,6 +53,6 @@
 
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
 </RelativeLayout>

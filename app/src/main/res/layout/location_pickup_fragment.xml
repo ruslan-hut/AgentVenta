@@ -24,16 +24,14 @@
             android:layout_height="64dp"
             android:layout_centerInParent="true" />
 
-        <androidx.cardview.widget.CardView
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/bottom_bar"
             android:visibility="invisible"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
             android:layout_margin="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
+            app:cardElevation="@dimen/elevation_card"
             android:layout_alignParentTop="true">
 
             <LinearLayout
@@ -57,7 +55,7 @@
                     android:textStyle="bold"
                     android:text="@string/holder_text" />
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
     </RelativeLayout>
 </layout>
