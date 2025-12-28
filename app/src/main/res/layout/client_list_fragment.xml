@@ -26,22 +26,34 @@
             android:gravity="center"
             app:drawableTopCompat="@drawable/ic_error_gray_64dp"/>
 
-        <EditText
-            android:id="@+id/edit_search"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/search_input_layout"
             android:layout_alignParentTop="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@{viewModel.searchText}"
+            android:layout_margin="@dimen/spacing_sm"
             android:visibility="@{viewModel.searchVisibility}"
-            android:onTextChanged="@{viewModel::onTextChanged}"
-            android:hint="@string/search_hint" />
+            app:startIconDrawable="@drawable/baseline_search_24"
+            app:endIconMode="clear_text"
+            android:hint="@string/search_hint">
+            
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_search"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.searchText}"
+                android:onTextChanged="@{viewModel::onTextChanged}"
+                android:inputType="text"
+                android:maxLines="1" />
+                
+        </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout
             android:id="@+id/table_company_top"
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/edit_search">
+            android:layout_below="@id/search_input_layout">
 
             <TextView
                 android:id="@+id/filter_company"

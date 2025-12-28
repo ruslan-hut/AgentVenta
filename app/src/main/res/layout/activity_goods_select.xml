@@ -136,7 +136,7 @@
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/goods_bottomBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
@@ -182,7 +182,7 @@
                     android:layout_height="match_parent"
                     android:src="@drawable/baseline_edit_24"/>
             </LinearLayout>
-        </androidx.appcompat.widget.Toolbar>
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </RelativeLayout>
 
