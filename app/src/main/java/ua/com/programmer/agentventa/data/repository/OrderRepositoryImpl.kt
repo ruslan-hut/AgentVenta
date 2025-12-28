@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.data.local.entity.LocationHistory
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.OrderContent
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.data.local.entity.PriceType
 import ua.com.programmer.agentventa.data.local.entity.Store
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
@@ -268,5 +269,11 @@ class OrderRepositoryImpl @Inject constructor(
 
     override suspend fun deleteDocument(document: Order): Boolean {
         return orderDao.delete(document) > 0
+    }
+
+    override suspend fun getPreviousOrderContent(clientGuid: String): List<PreviousOrderContent> {
+        if (clientGuid.isEmpty()) return emptyList()
+        val todayStart = utils.dateBeginOfToday()
+        return orderDao.getPreviousOrderContent(clientGuid, todayStart)
     }
 }

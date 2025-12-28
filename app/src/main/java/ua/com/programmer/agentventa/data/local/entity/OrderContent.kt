@@ -77,3 +77,34 @@ fun LOrderContent.toMap(): Map<String,Any> {
         "is_packed" to isPacked
     )
 }
+
+/**
+ * Data class for displaying aggregated previous order content.
+ * Used by OrderPageContentPrevious to show products from the most recent order day.
+ */
+data class PreviousOrderContent(
+    val productGuid: String = "",
+    val code: String = "",
+    val description: String = "",
+    val groupName: String = "",
+    val unit: String = "",
+    val quantity: Double = 0.0,
+    val price: Double = 0.0,
+    val sum: Double = 0.0
+)
+
+fun PreviousOrderContent.getQuantityFormatted(): String {
+    if (quantity == 0.0) return ""
+    return if (quantity % 1 == 0.0) String.format(Locale.getDefault(), "%.0f", quantity)
+    else String.format(Locale.getDefault(), "%.3f", quantity)
+}
+
+fun PreviousOrderContent.getPriceFormatted(): String {
+    return if (price == 0.0) "0.00"
+    else String.format(Locale.getDefault(), "%.2f", price)
+}
+
+fun PreviousOrderContent.getSumFormatted(): String {
+    return if (sum == 0.0) "0.00"
+    else String.format(Locale.getDefault(), "%.2f", sum)
+}

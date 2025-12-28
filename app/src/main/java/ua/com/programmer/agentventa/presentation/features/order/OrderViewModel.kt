@@ -20,6 +20,7 @@ import ua.com.programmer.agentventa.data.local.entity.LProduct
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.data.local.entity.setClient
 import ua.com.programmer.agentventa.data.local.entity.toUi
 import ua.com.programmer.agentventa.presentation.common.document.DocumentViewModel
@@ -88,11 +89,52 @@ class OrderViewModel @Inject constructor(
     val currentContentFlow: StateFlow<List<LOrderContent>> get() = _currentContentFlow
     val currentContent: androidx.lifecycle.MutableLiveData<List<LOrderContent>> = androidx.lifecycle.MutableLiveData(emptyList())
 
+    // Previous order content
+    private val _previousContent = MutableStateFlow<List<PreviousOrderContent>>(emptyList())
+    val previousContent: StateFlow<List<PreviousOrderContent>> = _previousContent.asStateFlow()
+
     init {
         viewModelScope.launch {
             _currentContentFlow.collect { content ->
                 currentContent.postValue(content)
             }
+        }
+    }
+
+    fun loadPreviousContent() {
+        val clientGuid = order.clientGuid ?: return
+        if (clientGuid.isEmpty()) return
+        viewModelScope.launch {
+            val content = withContext(Dispatchers.IO) {
+                orderRepository.getPreviousOrderContent(clientGuid)
+            }
+            _previousContent.value = content
+        }
+    }
+
+    fun copySelectedProducts(items: List<PreviousOrderContent>, onComplete: (Boolean) -> Unit) {
+        if (items.isEmpty()) return onComplete(false)
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                items.forEach { item ->
+                    val contentLine = orderRepository.getContentLine(order.guid, item.productGuid)
+                    val updated = contentLine.copy(
+                        unitCode = item.unit,
+                        price = item.price,
+                        quantity = item.quantity,
+                        sum = item.price * item.quantity
+                    )
+                    orderRepository.updateContentLine(updated)
+                }
+                val totals = orderRepository.getDocumentTotals(order.guid)
+                updateDocument(order.copy(
+                    price = totals.sum,
+                    quantity = totals.quantity,
+                    weight = totals.weight,
+                    discountValue = totals.discount
+                ))
+            }
+            withContext(Dispatchers.Main) { onComplete(true) }
         }
     }
 

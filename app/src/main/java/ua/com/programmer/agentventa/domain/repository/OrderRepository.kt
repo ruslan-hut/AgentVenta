@@ -8,6 +8,7 @@ import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.OrderContent
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
+import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.data.local.entity.PriceType
 import ua.com.programmer.agentventa.data.local.entity.Store
 import java.util.Date
@@ -36,4 +37,5 @@ interface OrderRepository: DocumentRepository<Order> {
     suspend fun setCompany(guid: String, company: Company)
     suspend fun setStore(guid: String, store: Store)
     suspend fun setClient(guid: String, client: Client)
+    suspend fun getPreviousOrderContent(clientGuid: String): List<PreviousOrderContent>
 }

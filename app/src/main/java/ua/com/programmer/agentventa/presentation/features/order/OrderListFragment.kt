@@ -108,7 +108,7 @@ class OrderListFragment: Fragment(), MenuProvider {
         )
         try {
             binding?.root?.findNavController()?.navigate(action)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT).show()
         }
     }

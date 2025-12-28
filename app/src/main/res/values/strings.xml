@@ -501,6 +501,8 @@
     <string name="product_image">Product image</string>
     <string name="client_menu">clientMenu</string>
     <string name="data_copied">Data copied</string>
+    <string name="no_items_selected">No items selected</string>
+    <string name="error_copy_failed">Failed to copy data</string>
     <string name="delimiter_sum" translatable="false">=</string>
     <string name="title_data">Data</string>
     <!-- TODO: Remove or change this placeholder text -->

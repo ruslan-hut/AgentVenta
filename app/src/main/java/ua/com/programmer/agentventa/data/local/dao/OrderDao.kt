@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.data.local.entity.DocumentTotals
 import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.OrderContent
+import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
 import ua.com.programmer.agentventa.data.local.entity.PriceType
 import ua.com.programmer.agentventa.data.local.entity.Store
@@ -245,4 +246,41 @@ interface OrderDao {
 
     @Query("UPDATE orders SET client_guid=:clientGuid, client_description=:clientDescription WHERE guid=:guid")
     suspend fun setClient(guid: String, clientGuid: String, clientDescription: String)
+
+    // Get aggregated products from the most recent order day for a client
+    @Query("""
+        SELECT
+            content.product_guid AS productGuid,
+            IFNULL(product.code2, '<?>') AS code,
+            IFNULL(product.description, '<?>') AS description,
+            IFNULL(product.groupName, '') AS groupName,
+            content.unit_code AS unit,
+            SUM(content.quantity) AS quantity,
+            AVG(content.price) AS price,
+            SUM(content.sum) AS sum
+        FROM order_content AS content
+        INNER JOIN orders ON content.order_guid = orders.guid
+        LEFT OUTER JOIN (
+            SELECT products.guid, products.description, products.code2,
+                   IFNULL(product_groups.description, '') AS groupName
+            FROM products
+            LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS product_groups
+                ON products.group_guid=product_groups.guid AND products.db_guid=product_groups.db_guid
+            WHERE products.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        ) AS product ON product.guid=content.product_guid
+        WHERE orders.client_guid = :clientGuid
+            AND orders.date = (
+                SELECT date FROM orders
+                WHERE client_guid = :clientGuid
+                    AND time < :todayStart
+                    AND is_sent = 1
+                    AND db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+                ORDER BY time DESC LIMIT 1
+            )
+            AND orders.is_sent = 1
+            AND orders.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)
+        GROUP BY content.product_guid
+        ORDER BY product.description ASC
+    """)
+    suspend fun getPreviousOrderContent(clientGuid: String, todayStart: Long): List<PreviousOrderContent>
 }

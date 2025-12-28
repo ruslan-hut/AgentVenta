@@ -377,6 +377,8 @@
     <string name="product_image">Картинка товара</string>
     <string name="client_menu">Меню клиента</string>
     <string name="data_copied">Данные скопированы</string>
+    <string name="no_items_selected">Элементы не выбраны</string>
+    <string name="error_copy_failed">Не удалось скопировать данные</string>
     <string name="title_data">Сведения</string>
     <string name="camera">Камера</string>
     <string name="client_image">Фото клиента</string>
