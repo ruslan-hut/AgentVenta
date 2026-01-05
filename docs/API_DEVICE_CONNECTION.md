@@ -814,12 +814,3 @@ class WebSocketClient {
     }
 }
 ```
-
----
-
-## Related Documentation
-
-- [1C Base Connection API](API_1C_CONNECTION.md) - REST API for accounting systems
-- [Admin API](ADMIN_API.md) - Admin interface API
-- [Testing Guide](TESTING.md) - Testing and debugging
-
