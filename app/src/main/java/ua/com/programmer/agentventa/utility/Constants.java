@@ -118,8 +118,6 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_PING = "ping";
     public static final String WEBSOCKET_MESSAGE_TYPE_PONG = "pong";
     public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
-    public static final String WEBSOCKET_MESSAGE_TYPE_SYNC_SETTINGS = "sync_settings";
-
     // Document sync message types
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER = "upload_order";
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH = "upload_cash";
@@ -131,7 +129,6 @@ public final class Constants {
     /**
      * WebSocket data types (for payload.data_type field)
      */
-    public static final String WEBSOCKET_DATA_TYPE_SETTINGS = "settings";
     public static final String WEBSOCKET_DATA_TYPE_OPTIONS = "options";
     public static final String WEBSOCKET_DATA_TYPE_ORDER = "order";
     public static final String WEBSOCKET_DATA_TYPE_CASH = "cash";

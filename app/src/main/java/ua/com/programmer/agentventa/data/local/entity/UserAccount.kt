@@ -20,7 +20,6 @@ data class UserAccount(
     val token: String = "",
     val options: String = "",
     @ColumnInfo(name = "relay_server") val relayServer: String = "",
-    @ColumnInfo(name = "sync_email") val syncEmail: String = "",
     @ColumnInfo(name = "use_websocket") val useWebSocket: Boolean = true // Default to WebSocket (relay mode)
 ){
     companion object Builder {
@@ -33,6 +32,7 @@ data class UserAccount(
                 dbName = "simple",
                 dbUser = "Агент",
                 dbPassword = "112233",
+                useWebSocket = false,
             )
         }
         fun buildEmpty(): UserAccount {

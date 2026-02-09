@@ -35,7 +35,7 @@ class ApiKeyProvider @Inject constructor() {
      * via device UUID (UserAccount.guid).
      */
     val webSocketApiKey: String
-        get() = BuildConfig.WEBSOCKET_API_KEY ?: ""
+        get() = BuildConfig.WEBSOCKET_API_KEY
 
     /**
      * Backend relay server host
@@ -50,7 +50,7 @@ class ApiKeyProvider @Inject constructor() {
      * Note: The secrets-gradle-plugin automatically exposes KEY_HOST from local.properties
      */
     val backendHost: String
-        get() = BuildConfig.KEY_HOST ?: ""
+        get() = BuildConfig.KEY_HOST
 
     /**
      * Check if WebSocket API key is configured

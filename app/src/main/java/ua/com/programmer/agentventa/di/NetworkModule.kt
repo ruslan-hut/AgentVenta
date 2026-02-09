@@ -16,8 +16,6 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
-import ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository
-import ua.com.programmer.agentventa.data.repository.SettingsSyncRepositoryImpl
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import com.google.gson.Gson
@@ -114,20 +112,6 @@ class NetworkModule {
     @Singleton
     fun provideGson(): Gson {
         return Gson()
-    }
-
-    @Provides
-    @Singleton
-    fun provideSettingsSyncRepository(
-        webSocketRepository: WebSocketRepository,
-        logger: Logger,
-        gson: Gson
-    ): SettingsSyncRepository {
-        return SettingsSyncRepositoryImpl(
-            webSocketRepository = webSocketRepository,
-            gson = gson,
-            logger = logger
-        )
     }
 
 }

@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.data.repository
 
+import android.util.Base64
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import okhttp3.*
@@ -302,8 +303,8 @@ class WebSocketRepositoryImpl @Inject constructor(
             }
 
             // Build WebSocket URL using predefined backend host
-            val url = account.getWebSocketUrl(backendHost)
-            if (url.isEmpty()) {
+            val baseUrl = account.getWebSocketUrl(backendHost)
+            if (baseUrl.isEmpty()) {
                 _connectionState.value = WebSocketState.Error("Invalid WebSocket URL", canRetry = false)
                 return false
             }
@@ -315,6 +316,15 @@ class WebSocketRepositoryImpl @Inject constructor(
             val apiKey = apiKeyProvider.webSocketApiKey
             val deviceUuid = account.guid
             val authToken = "$apiKey:$deviceUuid"
+
+            // Encode app_parameters as base64 query parameter so the server
+            // receives them on initial connect (before any WebSocket messages)
+            val appParamsJson = Gson().toJson(buildAppParameters(account))
+            val appParamsBase64 = Base64.encodeToString(
+                appParamsJson.toByteArray(Charsets.UTF_8),
+                Base64.URL_SAFE or Base64.NO_WRAP
+            )
+            val url = "$baseUrl?app_parameters=$appParamsBase64"
 
             logger.d(TAG, "Connecting to: $backendHost")
             logger.d(TAG, "Device UUID: $deviceUuid")
@@ -380,6 +390,17 @@ class WebSocketRepositoryImpl @Inject constructor(
     private fun startPingScheduler() {
         cancelPing()
         pingJob = scope.launch {
+            // Send first ping immediately so server receives app_parameters
+            // even if connection is short-lived (e.g. pending devices)
+            try {
+                val accountData = buildPingAccountData()
+                val pingMessage = WebSocketMessageFactory.createPingMessage(accountData)
+                webSocket?.send(pingMessage)
+                logger.d(TAG, "Initial ping sent with account data")
+            } catch (e: Exception) {
+                logger.e(TAG, "Initial ping error: ${e.message}")
+            }
+
             while (isActive && isConnected()) {
                 delay(Constants.WEBSOCKET_PING_INTERVAL.toLong())
                 try {
@@ -396,11 +417,36 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     /**
      * Builds account data map for inclusion in ping messages.
-     * Includes all UserAccount fields for backend administrative purposes.
+     * Wraps UserAccount fields in "app_parameters" object so the server
+     * can store them as device.app_params.
      */
     private fun buildPingAccountData(): Map<String, Any?> {
         val account = currentAccount ?: return emptyMap()
 
+        val appParameters = buildMap {
+            put("device_uuid", account.guid)
+            put("description", account.description)
+            put("license", account.license)
+            put("data_format", account.dataFormat)
+            put("db_server", account.dbServer)
+            put("db_name", account.dbName)
+            put("db_user", account.dbUser)
+            put("db_password", account.dbPassword)
+            put("use_websocket", account.useWebSocket)
+            WebSocketMessageFactory.parseOptionsToJson(account.options)?.let {
+                put("options", it)
+            }
+        }
+
+        return mapOf("app_parameters" to appParameters)
+    }
+
+    /**
+     * Builds app_parameters map from a UserAccount for URL query parameter encoding.
+     * Used during initial WebSocket connection so the server receives device info
+     * before any WebSocket messages are exchanged.
+     */
+    private fun buildAppParameters(account: UserAccount): Map<String, Any?> {
         return buildMap {
             put("device_uuid", account.guid)
             put("description", account.description)
@@ -411,7 +457,6 @@ class WebSocketRepositoryImpl @Inject constructor(
             put("db_user", account.dbUser)
             put("db_password", account.dbPassword)
             put("use_websocket", account.useWebSocket)
-            // Parse options JSON string to JsonObject for proper nesting
             WebSocketMessageFactory.parseOptionsToJson(account.options)?.let {
                 put("options", it)
             }

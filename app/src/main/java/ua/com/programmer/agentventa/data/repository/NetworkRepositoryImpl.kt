@@ -16,6 +16,7 @@ import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.connectionSettingsChanged
 import ua.com.programmer.agentventa.data.local.entity.getBaseUrl
 import ua.com.programmer.agentventa.data.local.entity.getGuid
+import ua.com.programmer.agentventa.data.local.entity.isDemo
 import ua.com.programmer.agentventa.data.local.entity.isValidForHttpConnection
 import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.local.entity.toMap
@@ -187,12 +188,16 @@ class NetworkRepositoryImpl @Inject constructor(
             return@flow
         }
 
-        // Check device approval status before HTTP operations
-        val (isApproved, approvalError) = checkDeviceApproval()
-        if (!isApproved) {
-            logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
-            emit(Result.Error(approvalError))
-            return@flow
+        // Check device approval status before HTTP operations (skip for demo accounts)
+        if (account?.isDemo() == true) {
+            logger.d(logTag, "Demo account - skipping device approval check")
+        } else {
+            val (isApproved, approvalError) = checkDeviceApproval()
+            if (!isApproved) {
+                logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
+                emit(Result.Error(approvalError))
+                return@flow
+            }
         }
 
         _timestamp = System.currentTimeMillis()

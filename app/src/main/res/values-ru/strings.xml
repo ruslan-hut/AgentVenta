@@ -468,10 +468,6 @@
     <string name="websocket_connection">WebSocket подключение</string>
     <string name="connect">Подключить</string>
     <string name="disconnect">Отключить</string>
-    <string name="settings_sync">Синхронизация настроек</string>
-    <string name="settings_sync_email">Email для синхронизации настроек</string>
-    <string name="upload_settings">Выгрузить настройки</string>
-    <string name="download_settings">Загрузить настройки</string>
     <string name="manual_server_configuration">Ручная настройка сервера</string>
     <string name="auto_connection">Авто подключение</string>
 
@@ -481,10 +477,6 @@
     <string name="websocket_pending_data">Ожидает отправки</string>
     <string name="websocket_last_sync">Последняя синхронизация</string>
     <string name="websocket_sync_now">Синхронизировать сейчас</string>
-    <string name="websocket_settings_sync">Синхронизация настроек</string>
-    <string name="websocket_user_email_hint">Email пользователя</string>
-    <string name="websocket_upload_settings">Выгрузить</string>
-    <string name="websocket_download_settings">Загрузить</string>
     <string name="websocket_activity_log">Журнал активности</string>
     <string name="websocket_clear_log">Очистить журнал</string>
     <string name="websocket_no_messages">Нет сообщений</string>
@@ -525,18 +517,6 @@
     <string name="snackbar_locations_sent">Отправлено локаций: %1$d</string>
     <string name="snackbar_catalog_received">Получено данных: %1$d записей</string>
     <string name="snackbar_sync_error">Ошибка синхронизации: %1$s</string>
-    <!-- Settings sync status -->
-    <string name="settings_sync_no_account">❌ Аккаунт не загружен</string>
-    <string name="settings_sync_email_required">❌ Для синхронизации требуется email</string>
-    <string name="settings_sync_uploading">⟳ Выгрузка настроек…</string>
-    <string name="settings_sync_uploaded">✓ Настройки выгружены</string>
-    <string name="settings_sync_upload_failed">❌ Ошибка выгрузки: %1$s</string>
-    <string name="settings_sync_unexpected">❌ Неожиданный результат</string>
-    <string name="settings_sync_downloading">⟳ Загрузка настроек…</string>
-    <string name="settings_sync_downloaded">✓ Настройки загружены</string>
-    <string name="settings_sync_applied">✓ Настройки применены</string>
-    <string name="settings_sync_not_found">ℹ Настройки на сервере не найдены</string>
-    <string name="settings_sync_download_failed">❌ Ошибка загрузки: %1$s</string>
     <!-- Printer status messages -->
     <string name="printer_permission_not_granted">Разрешение не предоставлено</string>
     <string name="printer_not_selected">Принтер не выбран</string>

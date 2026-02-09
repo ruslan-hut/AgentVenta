@@ -14,10 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
-import ua.com.programmer.agentventa.data.repository.toUserAccount
-import ua.com.programmer.agentventa.data.websocket.SettingsSyncResult
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
-import ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
@@ -31,7 +28,6 @@ class UserAccountViewModel @Inject constructor(
     private val resourceProvider: ResourceProvider,
     private val userAccountRepository: UserAccountRepository,
     private val webSocketRepository: WebSocketRepository,
-    private val settingsSyncRepository: SettingsSyncRepository,
     private val logger: Logger
 ) : ViewModel() {
 
@@ -49,9 +45,6 @@ class UserAccountViewModel @Inject constructor(
 
     private val _isConnecting = MutableLiveData<Boolean>(false)
     val isConnecting: LiveData<Boolean> = _isConnecting
-
-    private val _settingsSyncStatus = MutableLiveData<String>("")
-    val settingsSyncStatus: LiveData<String> = _settingsSyncStatus
 
     val account get() = _guid.switchMap {
         userAccountRepository.getByGuid(it).asLiveData()
@@ -100,15 +93,6 @@ class UserAccountViewModel @Inject constructor(
     fun saveAccount(updated: UserAccount, afterSave: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             userAccountRepository.saveAccount(updated)
-
-            // If WebSocket is enabled, automatically upload settings to server
-            if (updated.useWebSocket && updated.syncEmail.isNotBlank()) {
-                logger.d(TAG, "Auto-uploading settings after save (useWebSocket=true)")
-                withContext(Dispatchers.Main) {
-                    uploadSettings(updated)
-                }
-            }
-
             withContext(Dispatchers.Main) {
                 afterSave()
             }
@@ -146,94 +130,4 @@ class UserAccountViewModel @Inject constructor(
         }
     }
 
-    // Settings sync methods
-    fun uploadSettings(userAccount: UserAccount? = null) {
-        viewModelScope.launch {
-            val currentAccount = userAccount ?: account.value
-            if (currentAccount == null) {
-                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_no_account)
-                return@launch
-            }
-
-            // Get user email from account syncEmail field
-            val userEmail = currentAccount.syncEmail
-            if (userEmail.isBlank()) {
-                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_email_required)
-                return@launch
-            }
-
-            _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_uploading)
-            logger.d(TAG, "Uploading full account settings for: $userEmail")
-
-            val options = UserOptionsBuilder.build(currentAccount)
-
-            settingsSyncRepository.uploadSettings(userEmail, currentAccount, options).collect { result ->
-                when (result) {
-                    is SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_uploaded)
-                        logger.d(TAG, "Settings uploaded successfully")
-                    }
-                    is SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_upload_failed, result.message)
-                        logger.e(TAG, "Upload error: ${result.message}")
-                    }
-                    is SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_unexpected)
-                        logger.w(TAG, "Unexpected NotFound on upload")
-                    }
-                }
-            }
-        }
-    }
-
-    fun downloadSettings(userAccount: UserAccount? = null) {
-        viewModelScope.launch {
-            val currentAccount = userAccount ?: account.value
-            if (currentAccount == null) {
-                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_no_account)
-                return@launch
-            }
-
-            // Get user email from account syncEmail field
-            val userEmail = currentAccount.syncEmail
-            if (userEmail.isBlank()) {
-                _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_email_required)
-                return@launch
-            }
-
-            _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_downloading)
-            logger.d(TAG, "Downloading settings for: $userEmail")
-
-            settingsSyncRepository.downloadSettings(userEmail).collect { result ->
-                when (result) {
-                    is SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_downloaded)
-                        logger.d(TAG, "Settings received - applying full account data")
-
-                        // Apply downloaded settings to create updated UserAccount
-                        val updatedAccount = result.settings.toUserAccount(currentAccount)
-
-                        // Save updated account
-                        userAccountRepository.saveAccount(updatedAccount)
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_applied)
-                        logger.d(TAG, "Full account settings applied")
-
-                        // If useWebSocket is enabled, automatically upload current version back to server
-                        if (updatedAccount.useWebSocket && updatedAccount.syncEmail.isNotBlank()) {
-                            logger.d(TAG, "Auto-uploading current settings after download")
-                            uploadSettings(updatedAccount)
-                        }
-                    }
-                    is SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_not_found)
-                        logger.d(TAG, "No settings found for: $userEmail")
-                    }
-                    is SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = resourceProvider.getString(R.string.settings_sync_download_failed, result.message)
-                        logger.e(TAG, "Download error: ${result.message}")
-                    }
-                }
-            }
-        }
-    }
 }

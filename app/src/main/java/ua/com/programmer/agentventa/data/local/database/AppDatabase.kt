@@ -59,7 +59,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Rest::class,
     Company::class,
     Store::class,
-                     ], version = 24, exportSchema = true)
+                     ], version = 25, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -222,16 +222,43 @@ abstract class AppDatabase: RoomDatabase() {
 
         private val MIGRATION_22_23 = object : Migration(22, 23) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add sync_email field to user_accounts table for settings sync
                 db.execSQL("ALTER TABLE user_accounts ADD COLUMN sync_email TEXT NOT NULL DEFAULT ''")
             }
         }
 
         private val MIGRATION_23_24 = object : Migration(23, 24) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add use_websocket field to track connection mode preference
-                // Default to 1 (true) for WebSocket/relay mode
                 db.execSQL("ALTER TABLE user_accounts ADD COLUMN use_websocket INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+
+        private val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Remove sync_email column by recreating user_accounts table
+                db.execSQL("CREATE TABLE user_accounts_new (" +
+                        "guid TEXT NOT NULL, " +
+                        "is_current INTEGER NOT NULL DEFAULT 0, " +
+                        "extended_id INTEGER NOT NULL DEFAULT 0, " +
+                        "description TEXT NOT NULL DEFAULT '', " +
+                        "license TEXT NOT NULL DEFAULT '', " +
+                        "data_format TEXT NOT NULL DEFAULT '', " +
+                        "db_server TEXT NOT NULL DEFAULT '', " +
+                        "db_name TEXT NOT NULL DEFAULT '', " +
+                        "db_user TEXT NOT NULL DEFAULT '', " +
+                        "db_password TEXT NOT NULL DEFAULT '', " +
+                        "token TEXT NOT NULL DEFAULT '', " +
+                        "options TEXT NOT NULL DEFAULT '', " +
+                        "relay_server TEXT NOT NULL DEFAULT '', " +
+                        "use_websocket INTEGER NOT NULL DEFAULT 1, " +
+                        "PRIMARY KEY(guid))")
+                db.execSQL("INSERT INTO user_accounts_new " +
+                        "(guid, is_current, extended_id, description, license, data_format, " +
+                        "db_server, db_name, db_user, db_password, token, options, relay_server, use_websocket) " +
+                        "SELECT guid, is_current, extended_id, description, license, data_format, " +
+                        "db_server, db_name, db_user, db_password, token, options, relay_server, use_websocket " +
+                        "FROM user_accounts")
+                db.execSQL("DROP TABLE user_accounts")
+                db.execSQL("ALTER TABLE user_accounts_new RENAME TO user_accounts")
             }
         }
 
@@ -253,6 +280,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_21_22,
                         MIGRATION_22_23,
                         MIGRATION_23_24,
+                        MIGRATION_24_25,
                     )
                     .build()
                 INSTANCE = instance

@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
-import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.infrastructure.websocket.PendingDataChecker
@@ -31,8 +30,6 @@ import javax.inject.Inject
 class WebSocketTestViewModel @Inject constructor(
     private val resourceProvider: ResourceProvider,
     private val webSocketRepository: WebSocketRepository,
-    private val userAccountRepository: UserAccountRepository,
-    private val settingsSyncRepository: ua.com.programmer.agentventa.domain.repository.SettingsSyncRepository,
     private val connectionManager: WebSocketConnectionManager,
     private val pendingDataChecker: PendingDataChecker,
     private val logger: Logger
@@ -51,12 +48,6 @@ class WebSocketTestViewModel @Inject constructor(
 
     private val _messageLog = MutableLiveData<List<String>>(emptyList())
     val messageLog: LiveData<List<String>> = _messageLog
-
-    private val _userEmail = MutableLiveData<String>("")
-    val userEmail: LiveData<String> = _userEmail
-
-    private val _settingsSyncStatus = MutableLiveData<String>("")
-    val settingsSyncStatus: LiveData<String> = _settingsSyncStatus
 
     private val _isSyncing = MutableLiveData<Boolean>(false)
     val isSyncing: LiveData<Boolean> = _isSyncing
@@ -132,81 +123,6 @@ class WebSocketTestViewModel @Inject constructor(
 
     fun clearLog() {
         _messageLog.value = emptyList()
-    }
-
-    fun uploadSettings() {
-        viewModelScope.launch {
-            val email = _userEmail.value?.trim()
-            if (email.isNullOrEmpty()) {
-                _settingsSyncStatus.value = "Please enter user email"
-                addToLog("Upload failed: Email required")
-                return@launch
-            }
-
-            val account = userAccountRepository.getCurrent()
-            if (account == null) {
-                _settingsSyncStatus.value = "No account configured"
-                addToLog("Upload failed: No account")
-                return@launch
-            }
-
-            _settingsSyncStatus.value = "Uploading settings..."
-            addToLog("Uploading settings for: $email")
-
-            val options = ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder.build(account)
-
-            settingsSyncRepository.uploadSettings(email, account, options).collect { result ->
-                when (result) {
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "Settings uploaded"
-                        addToLog("Settings uploaded successfully")
-                    }
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "Upload failed"
-                        addToLog("Upload error: ${result.message}")
-                    }
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "Unexpected result"
-                        addToLog("Unexpected: NotFound on upload")
-                    }
-                }
-            }
-        }
-    }
-
-    fun downloadSettings() {
-        viewModelScope.launch {
-            val email = _userEmail.value?.trim()
-            if (email.isNullOrEmpty()) {
-                _settingsSyncStatus.value = "Please enter user email"
-                addToLog("Download failed: Email required")
-                return@launch
-            }
-
-            _settingsSyncStatus.value = "Downloading settings..."
-            addToLog("Requesting settings for: $email")
-
-            settingsSyncRepository.downloadSettings(email).collect { result ->
-                when (result) {
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Success -> {
-                        _settingsSyncStatus.value = "Settings downloaded"
-                        addToLog("Settings received")
-                    }
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.NotFound -> {
-                        _settingsSyncStatus.value = "Settings not found"
-                        addToLog("No settings found for: ${result.userEmail}")
-                    }
-                    is ua.com.programmer.agentventa.data.websocket.SettingsSyncResult.Error -> {
-                        _settingsSyncStatus.value = "Download failed"
-                        addToLog("Download error: ${result.message}")
-                    }
-                }
-            }
-        }
-    }
-
-    fun setUserEmail(email: String) {
-        _userEmail.value = email
     }
 
     private fun formatPendingDataSummary(summary: PendingDataSummary): String {

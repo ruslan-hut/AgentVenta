@@ -152,18 +152,20 @@ object WebSocketMessageFactory {
      *   "message_id": "ping-12345",
      *   "timestamp": "2025-01-15T10:30:00Z",
      *   "payload": {
-     *     "device_uuid": "abc-123-def",
-     *     "description": "Agent Device",
-     *     "license": "ABCD-1234",
-     *     "data_format": "HTTP_service",
-     *     "db_server": "example.com",
-     *     "db_name": "database1",
-     *     "use_websocket": true,
-     *     "options": { ... parsed options object ... }
+     *     "app_parameters": {
+     *       "device_uuid": "abc-123-def",
+     *       "description": "Agent Device",
+     *       "license": "ABCD-1234",
+     *       "data_format": "HTTP_service",
+     *       "db_server": "example.com",
+     *       "db_name": "database1",
+     *       "use_websocket": true,
+     *       "options": { ... parsed options object ... }
+     *     }
      *   }
      * }
      *
-     * @param accountData Map containing UserAccount fields to include in ping
+     * @param accountData Map containing ping payload fields
      */
     fun createPingMessage(accountData: Map<String, Any?>? = null): String {
         val payload = JsonObject()
@@ -174,6 +176,7 @@ object WebSocketMessageFactory {
                 is Boolean -> payload.addProperty(key, value)
                 is Number -> payload.addProperty(key, value)
                 is JsonObject -> payload.add(key, value)
+                is Map<*, *> -> payload.add(key, mapToJsonObject(value))
                 null -> { /* skip null values */ }
             }
         }
@@ -185,6 +188,25 @@ object WebSocketMessageFactory {
             payload = payload
         )
         return gson.toJson(message)
+    }
+
+    /**
+     * Converts a Map to JsonObject for nested serialization.
+     */
+    private fun mapToJsonObject(map: Map<*, *>): JsonObject {
+        val obj = JsonObject()
+        map.forEach { (key, value) ->
+            val k = key?.toString() ?: return@forEach
+            when (value) {
+                is String -> obj.addProperty(k, value)
+                is Boolean -> obj.addProperty(k, value)
+                is Number -> obj.addProperty(k, value)
+                is JsonObject -> obj.add(k, value)
+                is Map<*, *> -> obj.add(k, mapToJsonObject(value))
+                null -> { /* skip null values */ }
+            }
+        }
+        return obj
     }
 
     /**
