@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#006f85</color>
-    <color name="colorPrimary2">#0097A7</color>
-    <color name="colorPrimaryDark">#00383b</color>
-    <color name="colorAccent">#00d4ff</color>
-    <color name="colorButtonLight">#e0f2f1</color>
-    <color name="colorButtonText">#E0F7FA</color>
-    <color name="listBackground">#FAFAFA</color>
-    <color name="secondaryText">#8BC34A</color>
-    <color name="lightGray">#EEEEEE</color>
-    <color name="gray">#BDBDBD</color>
-    <color name="darkGray">#9E9E9E</color>
-    <color name="black">#000000</color>
+    <color name="colorPrimary">#5548C8</color>
+    <color name="colorPrimary2">#B52A62</color>
+    <color name="colorPrimaryDark">#2C1897</color>
+    <color name="colorAccent">#C9BEFF</color>
+    <color name="colorButtonLight">#E3DFFF</color>
+    <color name="colorButtonText">#160067</color>
+    <color name="listBackground">#FFFFFF</color>
+    <color name="secondaryText">#5F5C71</color>
+    <color name="lightGray">#ECE6F0</color>
+    <color name="gray">#C9C4D0</color>
+    <color name="darkGray">#79757F</color>
+    <color name="black">#1C1B1F</color>
     <color name="white">#FFFFFF</color>
-    <color name="docName">#E6EE9C</color>
-    <color name="document_title">#B2DFDB</color>
-    <color name="yellowLight">#FFF9C4</color>
-    <color name="pinkDark">#e91e63</color>
-    <color name="warning">#f06292</color>
-    <color name="light_blue_600">#FF039BE5</color>
-    <color name="light_blue_900">#FF01579B</color>
-    <color name="light_blue_A200">#FF40C4FF</color>
-    <color name="light_blue_A400">#FF00B0FF</color>
+    <color name="docName">#E3DFFF</color>
+    <color name="document_title">#E5DFF9</color>
+    <color name="yellowLight">#F7F2FA</color>
+    <color name="pinkDark">#B52A62</color>
+    <color name="warning">#F06292</color>
+    <color name="light_blue_600">#FF5548C8</color>
+    <color name="light_blue_900">#FF2C1897</color>
+    <color name="light_blue_A200">#FFC9BEFF</color>
+    <color name="light_blue_A400">#FF8B7FE8</color>
     <color name="black_overlay">#66000000</color>
 </resources>

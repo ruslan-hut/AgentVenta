@@ -51,7 +51,7 @@
                         android:id="@+id/guid"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="?attr/colorPrimaryVariant"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:text="@string/holder_text"
                         android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
                 </LinearLayout>

@@ -312,7 +312,7 @@
                     style="@style/DocumentValue"
                     android:gravity="end"
                     android:textAppearance="?android:textAppearanceLarge"
-                    android:textColor="?attr/colorPrimaryVariant" />
+                    android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
 
