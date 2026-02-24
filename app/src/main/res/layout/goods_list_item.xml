@@ -61,6 +61,7 @@
                         android:id="@+id/item_quantity_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
                         android:text="@string/rest" />
 
                     <TextView
@@ -71,6 +72,7 @@
                         android:id="@+id/item_quantity"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
                         android:textAppearance="@style/TextAppearance.AppCompat.Small"
                         android:textStyle="bold"
                         android:paddingStart="4dp"

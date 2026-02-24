@@ -16,7 +16,9 @@
       "WebFetch(domain:proandroiddev.com)",
       "Bash(chmod +x:*)",
       "WebFetch(domain:www.droidcon.com)",
-      "WebFetch(domain:anvil.works)"
+      "WebFetch(domain:anvil.works)",
+      "WebFetch(domain:dt.in.th)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
