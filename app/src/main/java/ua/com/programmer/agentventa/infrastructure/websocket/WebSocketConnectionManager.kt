@@ -93,7 +93,7 @@ class WebSocketConnectionManager @Inject constructor(
      * Should be called from Application.onCreate()
      */
     fun initialize() {
-        logger.d(TAG, "Initializing WebSocket connection manager")
+        // Register lifecycle observer, start network monitoring, observe account changes
 
         // Register as lifecycle observer
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
@@ -112,7 +112,6 @@ class WebSocketConnectionManager @Inject constructor(
         scope.launch {
             networkMonitor.isConnected.collect { isConnected ->
                 if (isConnected && isAppInForeground) {
-                    logger.d(TAG, "Network restored, checking connection")
                     checkAndConnect()
                 }
             }
@@ -140,11 +139,8 @@ class WebSocketConnectionManager @Inject constructor(
         updatePendingDataSummary()
 
         if (_pendingDataSummary.value.hasPendingData) {
-            logger.d(TAG, "Pending data found, triggering sync")
             _lastSyncTime.value = System.currentTimeMillis()
             triggerDataSync()
-        } else {
-            logger.d(TAG, "No pending data to sync")
         }
     }
 
@@ -152,7 +148,6 @@ class WebSocketConnectionManager @Inject constructor(
      * App came to foreground.
      */
     override fun onStart(owner: LifecycleOwner) {
-        logger.d(TAG, "App to foreground")
         isAppInForeground = true
 
         // Cancel any pending background disconnect
@@ -169,7 +164,6 @@ class WebSocketConnectionManager @Inject constructor(
      * App went to background.
      */
     override fun onStop(owner: LifecycleOwner) {
-        logger.d(TAG, "App to background")
         isAppInForeground = false
 
         // Schedule disconnect after grace period if no pending data
@@ -177,7 +171,6 @@ class WebSocketConnectionManager @Inject constructor(
             delay(backgroundGracePeriod)
 
             if (!isAppInForeground && !pendingDataChecker.hasPendingData()) {
-                logger.d(TAG, "No pending data, disconnecting after background grace period")
                 webSocketRepository.disconnect()
             }
         }
@@ -201,7 +194,6 @@ class WebSocketConnectionManager @Inject constructor(
         connectionJob?.cancel()
 
         connectionJob = scope.launch {
-            logger.d(TAG, "Initiating WebSocket connection")
             // Connection success and sync trigger handled by connectionState observer
             webSocketRepository.connect(account)
         }
@@ -270,30 +262,25 @@ class WebSocketConnectionManager @Inject constructor(
     private fun shouldConnect(): Boolean {
         val account = currentAccount
         if (account == null) {
-            logger.d(TAG, "No current account")
             return false
         }
 
         // WebSocket ALWAYS connects for license management and device status
         // The useWebSocket flag only controls DATA EXCHANGE method, not the connection itself
         if (!account.isValidForWebSocketConnection()) {
-            logger.d(TAG, "Account not valid for WebSocket connection (missing guid)")
             return false
         }
 
         if (!networkMonitor.isNetworkAvailable()) {
-            logger.d(TAG, "No network available")
             return false
         }
 
         if (webSocketRepository.isConnected()) {
-            logger.d(TAG, "Already connected")
             return false
         }
 
         // Connect if has pending data (only for accounts using WebSocket for data)
         if (account.shouldUseWebSocket() && _pendingDataSummary.value.hasPendingData) {
-            logger.d(TAG, "Has pending data, should connect")
             return true
         }
 
@@ -304,7 +291,6 @@ class WebSocketConnectionManager @Inject constructor(
         )
         val timeSinceLastSync = System.currentTimeMillis() - _lastSyncTime.value
         if (timeSinceLastSync >= idleInterval) {
-            logger.d(TAG, "Idle interval elapsed, should connect for license/status check")
             return true
         }
 
@@ -317,14 +303,12 @@ class WebSocketConnectionManager @Inject constructor(
         currentAccount = account
 
         if (account == null) {
-            logger.d(TAG, "Account cleared, disconnecting")
             scope.launch { webSocketRepository.disconnect() }
             return
         }
 
         // If account changed, reconnect
         if (previousAccount?.guid != account.guid) {
-            logger.d(TAG, "Account changed, reconnecting")
             scope.launch {
                 webSocketRepository.disconnect()
                 delay(500) // Brief delay before reconnecting
@@ -349,13 +333,12 @@ class WebSocketConnectionManager @Inject constructor(
                 delay(interval)
 
                 if (isAppInForeground || pendingDataChecker.hasPendingData()) {
-                    logger.d(TAG, "Periodic check: checking connection")
                     checkAndConnect()
                 }
             }
         }
 
-        logger.d(TAG, "Periodic check started with interval: ${interval / 60000} minutes")
+        // Periodic check started with configured interval
     }
 
     private fun restartPeriodicCheck() {

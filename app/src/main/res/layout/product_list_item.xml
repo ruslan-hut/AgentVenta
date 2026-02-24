@@ -30,10 +30,10 @@
                 android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:paddingRight="4dp"
-                android:paddingLeft="4dp">
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:paddingRight="8dp"
+                android:paddingLeft="8dp">
 
                 <TextView
                     android:id="@+id/item_name"
@@ -46,6 +46,9 @@
                     android:id="@+id/item_group"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="?attr/colorSecondary"
                     android:text="@string/holder_text" />
 
                 <LinearLayout

@@ -83,7 +83,9 @@ interface ProductDao {
                     WHEN 1 THEN doc_order.quantity > 0 OR product.is_group = 1 OR product.quantity > 0
                     ELSE 1=1
                 END
-        ORDER BY :sorting
+        ORDER BY product.is_group DESC,
+            CASE WHEN :sortByName = 1 THEN product.description_lc END ASC,
+            CASE WHEN :sortByName = 0 THEN product.sorting END ASC
     """)
     fun getProducts(
         dbGuid: String,
@@ -91,7 +93,7 @@ interface ProductDao {
         group: String,
         order: String,
         restOnly: Int,
-        sorting: String,
+        sortByName: Int,
         type: String,
     ): Flow<List<LProduct>>
 
@@ -168,7 +170,9 @@ interface ProductDao {
                         product.guid IN (SELECT product_guid FROM rests WHERE quantity>0 AND company_guid=:company AND store_guid=:store)
                     ELSE 1=1
                 END
-        ORDER BY :sorting
+        ORDER BY product.is_group DESC,
+            CASE WHEN :sortByName = 1 THEN product.description_lc END ASC,
+            CASE WHEN :sortByName = 0 THEN product.sorting END ASC
     """)
     fun getProductsWithRests(
         dbGuid: String,
@@ -176,7 +180,7 @@ interface ProductDao {
         group: String,
         order: String,
         restOnly: Int,
-        sorting: String,
+        sortByName: Int,
         type: String,
         company: String,
         store: String,

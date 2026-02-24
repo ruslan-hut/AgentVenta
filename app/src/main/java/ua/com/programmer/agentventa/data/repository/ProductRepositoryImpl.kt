@@ -44,7 +44,7 @@ class ProductRepositoryImpl @Inject constructor(
                 group = parameters.groupGuid,
                 order = parameters.docGuid,
                 restOnly = parameters.restsOnly.asInt(),
-                sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
+                sortByName = parameters.sortByName.asInt(),
                 type = parameters.priceType,
                 dbGuid = parameters.currentAccount,
                 company = parameters.companyGuid,
@@ -56,7 +56,7 @@ class ProductRepositoryImpl @Inject constructor(
                 group = parameters.groupGuid,
                 order = parameters.docGuid,
                 restOnly = parameters.restsOnly.asInt(),
-                sorting = if (parameters.sortByName) "product.description_lc" else "product.sorting",
+                sortByName = parameters.sortByName.asInt(),
                 type = parameters.priceType,
                 dbGuid = parameters.currentAccount,
             )

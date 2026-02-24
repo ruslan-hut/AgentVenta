@@ -100,8 +100,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             return false
         }
 
-        logger.d(TAG, "Backend host: ${apiKeyProvider.backendHost}")
-        logger.d(TAG, "API key: ${apiKeyProvider.getMaskedWebSocketApiKey()}")
+        // Backend host and API key available via apiKeyProvider (not logged to reduce noise)
 
         currentAccount = account
         reconnectAttempt = 0
@@ -326,18 +325,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             )
             val url = "$baseUrl?app_parameters=$appParamsBase64"
 
-            logger.d(TAG, "Connecting to: $backendHost")
-            logger.d(TAG, "Device UUID: $deviceUuid")
-            logger.d(TAG, "API Key present: ${apiKey.isNotEmpty()}, length: ${apiKey.length}")
-            logger.d(TAG, "Auth token format: Bearer <${apiKey.length} chars>:<${deviceUuid.length} chars>")
-
             val request = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $authToken")
                 .build()
 
             webSocket = okHttpClient.newWebSocket(request, WebSocketListener())
-            logger.d(TAG, "Connection initiated: $url")
             return true
         } catch (e: Exception) {
             logger.e(TAG, "Connection error: ${e.message}")
@@ -365,7 +358,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         cancelReconnection()
 
         val delay = calculateBackoffDelay(reconnectAttempt)
-        logger.d(TAG, "Reconnecting in ${delay}ms (attempt $reconnectAttempt)")
+        // Reconnection delay and attempt tracked via WebSocketState.Reconnecting
 
         _connectionState.value = WebSocketState.Reconnecting(delay, reconnectAttempt)
 
@@ -396,7 +389,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 val accountData = buildPingAccountData()
                 val pingMessage = WebSocketMessageFactory.createPingMessage(accountData)
                 webSocket?.send(pingMessage)
-                logger.d(TAG, "Initial ping sent with account data")
             } catch (e: Exception) {
                 logger.e(TAG, "Initial ping error: ${e.message}")
             }
@@ -407,7 +399,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                     val accountData = buildPingAccountData()
                     val pingMessage = WebSocketMessageFactory.createPingMessage(accountData)
                     webSocket?.send(pingMessage)
-                    logger.d(TAG, "Ping sent with account data")
                 } catch (e: Exception) {
                     logger.e(TAG, "Ping error: ${e.message}")
                 }
@@ -539,7 +530,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 }
 
                 Constants.WEBSOCKET_MESSAGE_TYPE_PONG -> {
-                    logger.d(TAG, "Pong received")
                     handlePongMessage(message)
                 }
 
@@ -1062,7 +1052,6 @@ class WebSocketRepositoryImpl @Inject constructor(
     private inner class WebSocketListener : okhttp3.WebSocketListener() {
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            logger.d(TAG, "Connected successfully")
             reconnectAttempt = 0
             val deviceUuid = currentAccount?.guid ?: "unknown"
             _connectionState.value = WebSocketState.Connected(deviceUuid)

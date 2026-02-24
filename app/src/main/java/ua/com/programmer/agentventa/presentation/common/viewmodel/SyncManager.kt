@@ -126,7 +126,7 @@ class SyncManager @Inject constructor(
         lastConnectionState = state
 
         val event = when (state) {
-            is WebSocketState.Error -> WebSocketSnackbarEvent.ConnectionError(state.error)
+            is WebSocketState.Error -> null // Connection errors are not shown to user
             is WebSocketState.LicenseError -> WebSocketSnackbarEvent.LicenseError(state.reason)
             is WebSocketState.Pending -> WebSocketSnackbarEvent.PendingApproval
             // Skip non-error states

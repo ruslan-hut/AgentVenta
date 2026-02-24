@@ -158,8 +158,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSnackbar(event: WebSocketSnackbarEvent) {
         val (message, duration) = when (event) {
-            is WebSocketSnackbarEvent.ConnectionError ->
-                getString(R.string.snackbar_connection_error, event.error) to Snackbar.LENGTH_LONG
+            is WebSocketSnackbarEvent.ConnectionError -> return // Connection errors are not shown
 
             is WebSocketSnackbarEvent.LicenseError ->
                 getString(R.string.snackbar_license_error, event.reason) to Snackbar.LENGTH_LONG
