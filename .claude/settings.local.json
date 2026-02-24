@@ -4,7 +4,19 @@
       "Bash(./gradlew assembleDebug:*)",
       "Bash(ls:*)",
       "Bash(git branch:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:blog.jetbrains.com)",
+      "WebFetch(domain:agp-status.frybits.com)",
+      "Bash(grep:*)",
+      "WebFetch(domain:m3.material.io)",
+      "WebFetch(domain:medium.com)",
+      "Bash(head:*)",
+      "WebFetch(domain:proandroiddev.com)",
+      "Bash(chmod +x:*)",
+      "WebFetch(domain:www.droidcon.com)",
+      "WebFetch(domain:anvil.works)"
     ]
   }
 }
