@@ -41,6 +41,7 @@
 
                     <TextView
                         android:id="@+id/description"
+                        android:fontFamily="@font/fira_sans_condensed"
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"

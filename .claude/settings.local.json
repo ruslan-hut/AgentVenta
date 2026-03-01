@@ -21,7 +21,12 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(find:*)",
       "Bash(./gradlew app:dependencies:*)",
-      "Bash(./gradlew assembleBetaDebug:*)"
+      "Bash(./gradlew assembleBetaDebug:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:fonts.google.com)",
+      "WebFetch(domain:blog.mindorks.com)",
+      "WebFetch(domain:dev.to)"
     ]
   }
 }

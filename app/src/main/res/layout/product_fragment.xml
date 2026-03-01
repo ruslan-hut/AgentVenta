@@ -43,17 +43,27 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp" >
+                android:padding="8dp" >
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/block_title_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
+                    app:layout_constraintTop_toTopOf="parent">
 
                 <LinearLayout
                     android:id="@+id/block_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingBottom="16dp"
-                    app:layout_constraintTop_toTopOf="parent">
+                    android:padding="16dp">
 
                     <TextView
+                        android:fontFamily="@font/fira_sans_condensed"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingBottom="16dp"
@@ -188,12 +198,14 @@
 
                 </LinearLayout>
 
+                </com.google.android.material.card.MaterialCardView>
+
                 <LinearLayout
                     android:id="@+id/price_list_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    app:layout_constraintTop_toBottomOf="@id/block_title" >
+                    app:layout_constraintTop_toBottomOf="@id/block_title_card" >
 
                     <TextView
                         android:layout_width="wrap_content"

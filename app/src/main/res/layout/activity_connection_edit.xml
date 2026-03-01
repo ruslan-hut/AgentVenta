@@ -25,6 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="8dp"
+                app:boxBackgroundColor="?attr/colorSurfaceContainerLowest"
                 android:hint="@string/attr_description">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -59,6 +60,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/pref_title_server_address">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -75,6 +77,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/pref_title_base_name">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -91,6 +94,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/pref_title_username">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -107,6 +111,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
+                    app:boxBackgroundColor="?attr/colorSurfaceContainerLowest"
                     android:hint="@string/pref_title_password">
 
                     <com.google.android.material.textfield.TextInputEditText
