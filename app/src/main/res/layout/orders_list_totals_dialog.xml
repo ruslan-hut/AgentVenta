@@ -43,7 +43,7 @@
             android:textSize="20sp"
             android:layout_weight="1"
             android:textStyle="bold"
-            android:textColor="@color/secondaryText"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:text="8.88"
             android:layout_gravity="end"
             android:textAlignment="textEnd" />

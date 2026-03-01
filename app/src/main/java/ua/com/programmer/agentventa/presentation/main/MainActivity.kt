@@ -10,6 +10,8 @@ import android.view.KeyEvent
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.viewModels
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -60,6 +62,16 @@ class MainActivity : AppCompatActivity() {
     private var lastKeystrokeTime = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
         binding.lifecycleOwner = this
@@ -69,6 +81,11 @@ class MainActivity : AppCompatActivity() {
         sharedViewModel.setCacheDir(this.cacheDir)
 
         drawerLayout = binding.navigationDrawerLayout
+        drawerLayout.setStatusBarBackgroundColor(
+            com.google.android.material.color.MaterialColors.getColor(
+                drawerLayout, com.google.android.material.R.attr.colorSurface
+            )
+        )
 
         val appBarConfiguration = AppBarConfiguration(
             setOf(

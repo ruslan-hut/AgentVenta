@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:padding="4dp"
-        android:background="?attr/colorSurfaceVariant">
+        android:background="?attr/colorSurface">
 
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"

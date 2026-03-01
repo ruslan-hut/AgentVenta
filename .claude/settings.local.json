@@ -18,7 +18,10 @@
       "WebFetch(domain:www.droidcon.com)",
       "WebFetch(domain:anvil.works)",
       "WebFetch(domain:dt.in.th)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(find:*)",
+      "Bash(./gradlew app:dependencies:*)",
+      "Bash(./gradlew assembleBetaDebug:*)"
     ]
   }
 }

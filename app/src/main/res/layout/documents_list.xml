@@ -47,7 +47,7 @@
         android:id="@+id/documents_list_totals"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
+        android:background="?attr/colorPrimary"
         android:padding="2dp"
         android:layout_alignParentBottom="true">
         <TextView
@@ -57,13 +57,13 @@
             android:paddingEnd="4dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:textColor="?attr/colorOnPrimary"
             android:text="@string/title_documents_qty"/>
         <TextView
             android:id="@+id/documents_qty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/colorAccent"
+            android:textColor="?attr/colorOnPrimary"
             android:paddingLeft="4dp"
             android:paddingStart="4dp"
             android:paddingRight="4dp"
@@ -104,7 +104,7 @@
             android:id="@+id/documents_weight"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/secondaryText"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingLeft="4dp"
             android:textStyle="bold"
             android:text="@string/holder_number_decimal"/>
@@ -117,7 +117,7 @@
             android:id="@+id/documents_sum"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/secondaryText"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:paddingLeft="4dp"
             android:textStyle="bold"
             android:text="@string/holder_number_decimal"/>
@@ -134,7 +134,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        app:backgroundTint="@color/colorPrimary"
         app:srcCompat="@drawable/ic_edit_white_24dp" />
 
 </RelativeLayout>

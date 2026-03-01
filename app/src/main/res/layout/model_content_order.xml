@@ -15,11 +15,20 @@
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <LinearLayout
@@ -265,7 +274,6 @@
                     android:text="@string/doc_isreturn" />
 
                 <androidx.appcompat.widget.SwitchCompat
-                    android:background="?android:colorBackground"
                     android:id="@+id/doc_isReturn"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
@@ -344,6 +352,8 @@
 
 
         </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </ScrollView>
 </layout>

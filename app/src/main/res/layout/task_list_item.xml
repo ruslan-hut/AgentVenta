@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/listBackground"
+    android:background="?attr/colorSurface"
     android:paddingLeft="4dp"
     android:paddingRight="4dp">
 
@@ -14,7 +14,8 @@
         android:layout_gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        card_view:cardCornerRadius="0dp">
+        card_view:cardCornerRadius="0dp"
+        card_view:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,7 +27,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:layout_marginEnd="4dp"
-                android:background="@color/lightGray">
+                android:background="?attr/colorSurfaceContainerHigh">
                 <ImageView
                     android:id="@+id/icon_status"
                     android:paddingTop="2dp"
@@ -44,14 +45,14 @@
                 <TextView
                     android:id="@+id/description"
                     android:textSize="18sp"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/holder_text"/>
 
                 <TextView
                     android:id="@+id/client"
-                    android:textColor="@color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/holder_text"/>
@@ -64,7 +65,7 @@
 
                 <TextView
                     android:id="@+id/list_item_note"
-                    android:textColor="@color/colorPrimary2"
+                    android:textColor="?attr/colorSecondary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:lines="2"

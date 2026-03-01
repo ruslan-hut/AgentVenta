@@ -12,8 +12,19 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:fillViewport="true"
-        android:background="?attr/colorSurfaceVariant"
+        android:background="?attr/colorSurface"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -23,7 +34,6 @@
             <LinearLayout
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
-                android:background="?attr/colorSurface"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp"
                 android:paddingRight="8dp"
@@ -31,7 +41,6 @@
 
 
                 <ImageView
-                    android:background="?attr/colorSurface"
                     android:id="@+id/doc_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
@@ -201,6 +210,8 @@
 
 
         </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </ScrollView>
 </layout>

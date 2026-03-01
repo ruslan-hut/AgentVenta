@@ -14,7 +14,8 @@
         android:layout_marginEnd="4dp"
         android:layout_marginTop="4dp"
         app:cardElevation="@dimen/elevation_card"
-        app:strokeWidth="0dp">
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
             android:orientation="horizontal"
@@ -238,7 +239,7 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="?attr/colorPrimary"
                             android:gravity="center"
                             android:text="@string/holder_text" />
                     </LinearLayout>
@@ -263,7 +264,7 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="?attr/colorPrimary"
                             android:gravity="center"
                             android:text="@string/holder_text" />
                     </LinearLayout>
@@ -288,7 +289,7 @@
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="1"
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="?attr/colorPrimary"
                             android:gravity="center"
                             android:text="@string/holder_text" />
                     </LinearLayout>

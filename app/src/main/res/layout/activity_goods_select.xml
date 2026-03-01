@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?attr/colorSurfaceVariant"
+        android:background="?attr/colorSurface"
         android:paddingTop="4dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 

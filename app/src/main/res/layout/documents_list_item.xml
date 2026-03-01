@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/listBackground"
+    android:background="?attr/colorSurface"
     android:paddingLeft="4dp"
     android:paddingRight="4dp">
 
@@ -14,7 +14,8 @@
         android:layout_gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        card_view:cardCornerRadius="0dp">
+        card_view:cardCornerRadius="0dp"
+        card_view:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,7 +27,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:layout_marginEnd="4dp"
-                android:background="@color/lightGray">
+                android:background="?attr/colorSurfaceContainerHigh">
                 <ImageView
                     android:id="@+id/icon_upload"
                     android:paddingTop="2dp"
@@ -56,7 +57,7 @@
                 <TextView
                     android:id="@+id/list_item_client"
                     android:textSize="18sp"
-                    android:textColor="#000000"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/holder_text"/>
@@ -86,7 +87,7 @@
                         android:layout_gravity="end"
                         android:text="@string/holder_number_decimal"
                         android:textAlignment="viewEnd"
-                        android:textColor="@color/secondaryText"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -122,14 +123,14 @@
                     android:layout_height="wrap_content">
                     <TextView
                         android:id="@+id/list_item_note"
-                        android:textColor="@color/colorPrimary2"
+                        android:textColor="?attr/colorSecondary"
                         android:layout_weight="1"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text"/>
                     <TextView
                         android:id="@+id/list_item_status"
-                        android:textColor="#00B8D4"
+                        android:textColor="?attr/colorTertiary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text"/>
