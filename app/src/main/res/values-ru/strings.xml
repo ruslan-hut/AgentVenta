@@ -529,6 +529,7 @@
     <string name="fiscal_request_failed">Не удалось выполнить запрос</string>
     <!-- Client messages -->
     <string name="client_set_default_image_failed">Не удалось установить изображение по умолчанию</string>
+    <string name="marked_ready_to_send">Подготовлено к отправке</string>
 
     <!-- Sync settings -->
     <string name="pref_title_websocket_interval">Интервал синхронизации</string>

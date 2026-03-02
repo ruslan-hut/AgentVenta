@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OrderListViewModel @Inject constructor(
-    orderRepository: OrderRepository,
+    private val orderRepository: OrderRepository,
     userAccountRepository: UserAccountRepository,
     private val copyOrderUseCase: CopyOrderUseCase
 ): DocumentListViewModel<Order>(orderRepository, userAccountRepository) {
@@ -28,6 +28,18 @@ class OrderListViewModel @Inject constructor(
                 is Result.Success -> onResult(result.data.guid)
                 is Result.Error -> onResult("")
             }
+        }
+    }
+
+    fun markReadyToSend(document: Order, onResult: () -> Unit) {
+        viewModelScope.launch {
+            val updated = document.copy(
+                isSent = 0,
+                isProcessed = 1,
+                timeSaved = System.currentTimeMillis() / 1000
+            )
+            orderRepository.updateDocument(updated)
+            onResult()
         }
     }
 }

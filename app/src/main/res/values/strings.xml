@@ -589,5 +589,6 @@
     <string name="disconnect">Disconnect</string>
     <string name="manual_server_configuration">Manual Server Configuration</string>
     <string name="auto_connection">Auto Connection</string>
+    <string name="marked_ready_to_send">Marked ready to send</string>
 
 </resources>

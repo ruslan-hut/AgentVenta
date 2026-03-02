@@ -528,6 +528,7 @@
     <string name="fiscal_request_failed">Не вдалося виконати запит</string>
     <!-- Client messages -->
     <string name="client_set_default_image_failed">Не вдалося встановити зображення за замовчуванням</string>
+    <string name="marked_ready_to_send">Підготовлено до відправлення</string>
 
     <!-- Sync settings -->
     <string name="pref_title_websocket_interval">Інтервал синхронізації</string>
