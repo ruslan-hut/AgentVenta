@@ -195,8 +195,10 @@ class TokenManagerImpl @Inject constructor(
                 Log.d("XBUG", "TokenManager: token OK, canRead=$canRead, license=${license.take(6)}, optionsLen=${options.toJson().length}")
                 logger.d(logTag, "$tag: Token received: ${newToken.trimForLog()}")
 
-                // Update account with new token
-                account?.let {
+                // Read fresh account from DB to avoid overwriting user-changed fields
+                // (e.g., useWebSocket) with stale values from the cached account
+                val freshAccount = userAccountRepository.getCurrent() ?: account
+                freshAccount?.let {
                     val updatedAccount = it.copy(
                         token = newToken,
                         options = options.toJson(),

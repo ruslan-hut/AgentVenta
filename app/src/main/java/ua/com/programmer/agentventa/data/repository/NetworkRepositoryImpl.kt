@@ -83,11 +83,9 @@ class NetworkRepositoryImpl @Inject constructor(
                     apiService = null
                 } else {
                     token = userAccount.token
-                    account = it.copy(
-                        token = userAccount.token,
-                        options = userAccount.options,
-                        license = userAccount.license
-                    )
+                    // Use userAccount (fresh from DB) as base to preserve all user-changed
+                    // fields like useWebSocket that connectionSettingsChanged() doesn't track
+                    account = userAccount
                     return@onEach
                 }
             }

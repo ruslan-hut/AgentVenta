@@ -113,6 +113,12 @@
 
             </LinearLayout>
 
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+
             <LinearLayout
                 android:id="@+id/titleCompany"
                 style="@style/DocumentElement"
@@ -132,6 +138,13 @@
                     style="@style/DocumentValue" />
 
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_company"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout
                 android:id="@+id/titleStore"
@@ -153,6 +166,13 @@
 
             </LinearLayout>
 
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_store"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+
             <LinearLayout
                 style="@style/DocumentElement"
                 android:layout_height="wrap_content"
@@ -172,6 +192,12 @@
 
             </LinearLayout>
 
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+
             <LinearLayout
                 android:id="@+id/element_discount"
                 style="@style/DocumentElement">
@@ -189,6 +215,12 @@
                     android:layout_width="0dp" />
 
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout
                 android:id="@+id/element_price_type"
@@ -209,6 +241,12 @@
                     android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
 
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout
                 android:id="@+id/element_payment_type"
@@ -265,6 +303,13 @@
 
 <!--            </LinearLayout>-->
 
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_before_returns"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+
             <LinearLayout
                 android:id="@+id/element_returns"
                 style="@style/DocumentElement">
@@ -279,6 +324,13 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1" />
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:id="@+id/divider_after_returns"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout style="@style/DocumentElement">
 
@@ -295,6 +347,12 @@
 
             </LinearLayout>
 
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
+
             <LinearLayout style="@style/DocumentElement">
 
                 <TextView
@@ -308,6 +366,12 @@
                     android:textAppearance="?android:textAppearanceLarge" />
 
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout style="@style/DocumentElement">
 
@@ -323,6 +387,12 @@
                     android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp" />
 
             <LinearLayout
                 style="@style/DocumentElement"

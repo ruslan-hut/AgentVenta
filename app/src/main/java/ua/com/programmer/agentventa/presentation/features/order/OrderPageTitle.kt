@@ -98,9 +98,13 @@ class OrderPageTitle: Fragment() {
                 docNotes.text = order.notes
 
                 titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
+                dividerCompany.visibility = titleCompany.visibility
                 titleStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
+                dividerStore.visibility = titleStore.visibility
                 docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
                 elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
+                dividerBeforeReturns.visibility = elementReturns.visibility
+                dividerAfterReturns.visibility = elementReturns.visibility
 
                 if (order.isProcessed > 0) {
                     docClient.isClickable = false

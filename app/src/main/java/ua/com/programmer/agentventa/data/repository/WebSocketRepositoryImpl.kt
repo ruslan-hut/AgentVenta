@@ -842,7 +842,9 @@ class WebSocketRepositoryImpl @Inject constructor(
         messageId: String
     ) {
         try {
-            val account = currentAccount ?: run {
+            // Read fresh account from DB to avoid overwriting user-changed fields
+            // (e.g., useWebSocket) with stale values from the cached currentAccount
+            val account = userAccountRepository.getCurrent() ?: run {
                 logger.e(TAG, "No current account for options update")
                 sendError(messageId, "options", "No current account")
                 return
@@ -861,9 +863,6 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             Log.d("XBUG", "WS: <- options received (${optionsJson.length} chars), license=${license.take(6)}")
             logger.d(TAG, "Updating options for account ${account.guid} (${optionsJson.length} chars)")
-//            if (license.isNotEmpty()) {
-//                logger.d(TAG, "License received: ${license.take(6)}...")
-//            }
 
             val updatedAccount = account.copy(
                 options = optionsJson,
@@ -872,6 +871,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             try {
                 userAccountRepository.saveAccount(updatedAccount)
+                currentAccount = updatedAccount
                 logger.d(TAG, "Options saved successfully")
                 sendAck(messageId, "options", 1)
             } catch (e: Exception) {
@@ -999,7 +999,9 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                val account = currentAccount ?: return@launch
+                // Read fresh account from DB to avoid overwriting user-changed fields
+                // (e.g., useWebSocket) with stale values from the cached currentAccount
+                val account = userAccountRepository.getCurrent() ?: return@launch
 
                 // Only update if license changed
                 if (account.license == licenseNumber) {
