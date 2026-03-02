@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import android.util.Log
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
 import ua.com.programmer.agentventa.extensions.trimForLog
@@ -176,6 +177,7 @@ class TokenManagerImpl @Inject constructor(
 
             try {
                 // Call API to refresh token
+                Log.d("XBUG", "TokenManager: HTTP check/$accountGuid")
                 val response = service.check(accountGuid)
                 val options = XMap(response as Map<*, *>)
 
@@ -184,11 +186,13 @@ class TokenManagerImpl @Inject constructor(
                 val license = options.getString("license")
 
                 if (newToken.isBlank()) {
+                    Log.w("XBUG", "TokenManager: empty token from server")
                     val message = "Received empty token from server"
                     logger.w(logTag, "$tag: $message")
                     return@withContext TokenManager.TokenResult.Error(message)
                 }
 
+                Log.d("XBUG", "TokenManager: token OK, canRead=$canRead, license=${license.take(6)}, optionsLen=${options.toJson().length}")
                 logger.d(logTag, "$tag: Token received: ${newToken.trimForLog()}")
 
                 // Update account with new token
@@ -212,6 +216,7 @@ class TokenManagerImpl @Inject constructor(
                 TokenManager.TokenResult.Success(newToken, canRead)
 
             } catch (e: Exception) {
+                Log.e("XBUG", "TokenManager: check FAILED: ${e.message}")
                 val message = "Token refresh failed: ${e.message}"
                 logger.e(logTag, "$tag: $message")
                 TokenManager.TokenResult.Error(message, e)

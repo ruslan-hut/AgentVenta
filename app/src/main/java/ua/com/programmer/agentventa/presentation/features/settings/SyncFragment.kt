@@ -13,13 +13,18 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.databinding.FragmentWebsocketTestBinding
 import ua.com.programmer.agentventa.databinding.SyncFragmentBinding
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
+import ua.com.programmer.agentventa.presentation.common.viewmodel.SyncEvent
 import ua.com.programmer.agentventa.presentation.features.websocket.WebSocketTestViewModel
 
 @AndroidEntryPoint
@@ -97,6 +102,18 @@ class SyncFragment: Fragment(), MenuProvider {
         }
         sharedViewModel.isRefreshing.observe(viewLifecycleOwner) {
             httpBinding?.progressBar?.visibility = if (it) View.VISIBLE else View.INVISIBLE
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.syncEvents.collect { event ->
+                    val (message, duration) = when (event) {
+                        is SyncEvent.Success -> getString(R.string.data_updated) to Snackbar.LENGTH_SHORT
+                        is SyncEvent.Error -> getString(R.string.snackbar_sync_error, event.message) to Snackbar.LENGTH_LONG
+                        is SyncEvent.Progress -> return@collect
+                    }
+                    view?.let { Snackbar.make(it, message, duration).show() }
+                }
+            }
         }
     }
 

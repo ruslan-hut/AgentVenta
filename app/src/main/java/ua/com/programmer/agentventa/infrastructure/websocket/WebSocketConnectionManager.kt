@@ -15,6 +15,7 @@ import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
@@ -135,11 +136,15 @@ class WebSocketConnectionManager @Inject constructor(
      * Triggers data sync if there is pending data.
      */
     private suspend fun handleConnectionSuccess() {
+        Log.d("XBUG", "WsManager: connection success, checking pending data")
         logger.d(TAG, "Connection established, checking for pending data")
         updatePendingDataSummary()
 
-        if (_pendingDataSummary.value.hasPendingData) {
+        val pending = _pendingDataSummary.value
+        Log.d("XBUG", "WsManager: pendingData=${pending.hasPendingData} (orders=${pending.ordersCount}, cash=${pending.cashCount})")
+        if (pending.hasPendingData) {
             _lastSyncTime.value = System.currentTimeMillis()
+            Log.d("XBUG", "WsManager: triggering data sync")
             triggerDataSync()
         }
     }
@@ -185,11 +190,13 @@ class WebSocketConnectionManager @Inject constructor(
         updatePendingDataSummary()
 
         if (!shouldConnect()) {
+            Log.d("XBUG", "WsManager: checkAndConnect - shouldConnect=false")
             return
         }
 
         val account = currentAccount ?: return
 
+        Log.d("XBUG", "WsManager: checkAndConnect - connecting, account=${account.guid.take(8)}, useWs=${account.useWebSocket}")
         // Cancel any existing connection attempt
         connectionJob?.cancel()
 

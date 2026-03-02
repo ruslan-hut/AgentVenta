@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.data.repository
 
 import android.util.Base64
+import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import okhttp3.*
@@ -184,15 +185,18 @@ class WebSocketRepositoryImpl @Inject constructor(
                 pendingMessages[messageId] = pending
             }
 
+            Log.d("XBUG", "WS: -> sendMessage type=$type, id=$messageId${if (documentGuid != null) ", doc=$documentGuid" else ""}")
             val sent = webSocket?.send(message) ?: false
             if (sent) {
                 resultFlow.emit(SendResult.Sent(messageId))
                 logger.d(TAG, "Message sent: type=$type, id=$messageId${if (documentGuid != null) ", doc=$documentGuid" else ""}")
             } else {
+                Log.w("XBUG", "WS: -> sendMessage FAILED (send returned false)")
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
                 pendingMessages.remove(messageId)
             }
         } catch (e: Exception) {
+            Log.e("XBUG", "WS: -> sendMessage ERROR: ${e.message}")
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
             logger.e(TAG, "Send error: ${e.message}")
         }
@@ -325,6 +329,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             )
             val url = "$baseUrl?app_parameters=$appParamsBase64"
 
+            Log.d("XBUG", "WS: connecting to $baseUrl, device=${deviceUuid.take(8)}")
             val request = Request.Builder()
                 .url(url)
                 .addHeader("Authorization", "Bearer $authToken")
@@ -333,6 +338,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             webSocket = okHttpClient.newWebSocket(request, WebSocketListener())
             return true
         } catch (e: Exception) {
+            Log.e("XBUG", "WS: connection error: ${e.message}")
             logger.e(TAG, "Connection error: ${e.message}")
             _connectionState.value = WebSocketState.Error(e.message ?: "Connection failed", canRetry = true)
             scheduleReconnection()
@@ -540,6 +546,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
                         // Check if device is pending approval
                         if (errorMessage.status == Constants.DEVICE_STATUS_PENDING) {
+                            Log.w("XBUG", "WS: device PENDING approval")
                             logger.w(TAG, "Device is pending approval - stopping reconnection attempts")
                             isPendingDevice = true  // Set flag to prevent reconnection
                             val deviceUuid = currentAccount?.guid ?: "unknown"
@@ -551,6 +558,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
                         // Check if device is denied
                         if (errorMessage.status == Constants.DEVICE_STATUS_DENIED) {
+                            Log.e("XBUG", "WS: device DENIED")
                             logger.e(TAG, "Device access has been denied")
                             _connectionState.value = WebSocketState.Error(
                                 error = "Device access denied",
@@ -851,6 +859,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             val gson = Gson()
             val optionsJson = gson.toJson(optionsObject)
 
+            Log.d("XBUG", "WS: <- options received (${optionsJson.length} chars), license=${license.take(6)}")
             logger.d(TAG, "Updating options for account ${account.guid} (${optionsJson.length} chars)")
 //            if (license.isNotEmpty()) {
 //                logger.d(TAG, "License received: ${license.take(6)}...")
@@ -1052,6 +1061,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     private inner class WebSocketListener : okhttp3.WebSocketListener() {
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            Log.d("XBUG", "WS: CONNECTED (onOpen)")
             reconnectAttempt = 0
             val deviceUuid = currentAccount?.guid ?: "unknown"
             _connectionState.value = WebSocketState.Connected(deviceUuid)
@@ -1059,14 +1069,17 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
+            Log.d("XBUG", "WS: <- message (${text.length} chars): ${text.take(120)}")
             handleIncomingMessage(text)
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+            Log.d("XBUG", "WS: CLOSING code=$code reason=$reason")
             logger.d(TAG, "Closing: $code - $reason")
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            Log.d("XBUG", "WS: CLOSED code=$code reason=$reason")
             logger.d(TAG, "Closed: $code - $reason")
             cancelPing()
 
@@ -1091,6 +1104,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            Log.e("XBUG", "WS: FAILURE: ${t.message}, response=${response?.code}")
             logger.e(TAG, "Connection failed: ${t.message}")
             cancelPing()
 
