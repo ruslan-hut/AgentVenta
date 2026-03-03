@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
+import ua.com.programmer.agentventa.data.local.entity.sanitizeConnectionSettings
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.utility.Constants
 import javax.inject.Inject
@@ -14,6 +15,7 @@ class UserAccountRepositoryImpl @Inject constructor(
 ): UserAccountRepository {
 
     override val currentAccount = userAccountDao.watchCurrent()
+        .map { it?.sanitizeConnectionSettings() }
 
     override val currentAccountGuid: Flow<String> = currentAccount
         .map { it?.guid ?: "" }
@@ -21,9 +23,10 @@ class UserAccountRepositoryImpl @Inject constructor(
     override val priceTypes = userAccountDao.getPriceTypes()
 
     override suspend fun saveAccount(account: UserAccount): Long {
-        val upd = userAccountDao.update(account)
+        val sanitized = account.sanitizeConnectionSettings()
+        val upd = userAccountDao.update(sanitized)
         if (upd > 0) return upd.toLong()
-        return userAccountDao.insert(account)
+        return userAccountDao.insert(sanitized)
     }
 
     override fun getAll(): Flow<List<UserAccount>> {
@@ -53,7 +56,7 @@ class UserAccountRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCurrent(): UserAccount? {
-        return userAccountDao.getCurrent()
+        return userAccountDao.getCurrent()?.sanitizeConnectionSettings()
     }
 
     override suspend fun hasAccounts(): Boolean {

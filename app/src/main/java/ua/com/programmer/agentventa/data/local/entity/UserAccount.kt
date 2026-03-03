@@ -45,6 +45,15 @@ data class UserAccount(
     }
 }
 
+// Fixes invalid setting combinations that may occur after app update.
+// HTTP_service data format is incompatible with WebSocket data exchange.
+fun UserAccount.sanitizeConnectionSettings(): UserAccount {
+    if (dataFormat == Constants.SYNC_FORMAT_HTTP && useWebSocket) {
+        return copy(useWebSocket = false)
+    }
+    return this
+}
+
 fun UserAccount.equalTo(account: UserAccount): Boolean {
     return this.guid == account.guid &&
             this.isCurrent == account.isCurrent &&
@@ -183,6 +192,10 @@ fun UserAccount.getWebSocketUrl(backendHost: String): String {
 
 // Determines if this account should use WebSocket instead of HTTP
 // This is now the preferred way to check connection mode throughout the app
+// NOTE: HTTP_service data format is incompatible with WebSocket data exchange.
+// Some users ended up with data_format=HTTP_service + use_websocket=true after
+// app update, so we guard against that invalid combination here.
 fun UserAccount.shouldUseWebSocket(): Boolean {
+    if (dataFormat == Constants.SYNC_FORMAT_HTTP) return false
     return useWebSocket
 }

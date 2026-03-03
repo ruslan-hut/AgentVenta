@@ -26,7 +26,8 @@
       "WebFetch(domain:developers.google.com)",
       "WebFetch(domain:fonts.google.com)",
       "WebFetch(domain:blog.mindorks.com)",
-      "WebFetch(domain:dev.to)"
+      "WebFetch(domain:dev.to)",
+      "Bash(./gradlew compileStandartDebugKotlin:*)"
     ]
   }
 }
