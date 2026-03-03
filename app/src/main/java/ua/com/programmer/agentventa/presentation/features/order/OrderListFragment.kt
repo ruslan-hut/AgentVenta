@@ -88,11 +88,10 @@ class OrderListFragment: Fragment(), MenuProvider {
         }
 
         val documentListAdapter = OrderListAdapter (
-            onDocumentClicked = { openDocument(it.guid) },
-            onDocumentLongClicked = { copyDocument(it) }
+            onDocumentClicked = { openDocument(it.guid) }
         )
         recyclerView?.adapter = documentListAdapter
-        setupSwipeToResend(recyclerView, documentListAdapter)
+        setupSwipeActions(recyclerView, documentListAdapter)
         viewModel.documents.observe(this.viewLifecycleOwner) {
             documentListAdapter.submitList(it)
         }
@@ -109,9 +108,9 @@ class OrderListFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun setupSwipeToResend(recyclerView: RecyclerView?, adapter: OrderListAdapter) {
+    private fun setupSwipeActions(recyclerView: RecyclerView?, adapter: OrderListAdapter) {
         val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
-            0, ItemTouchHelper.RIGHT
+            0, ItemTouchHelper.RIGHT or ItemTouchHelper.LEFT
         ) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -122,12 +121,20 @@ class OrderListFragment: Fragment(), MenuProvider {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.absoluteAdapterPosition
                 val order = adapter.currentList[position]
-                if (order.isSent == 1) {
-                    viewModel.markReadyToSend(order) {
-                        Toast.makeText(requireContext(), R.string.marked_ready_to_send, Toast.LENGTH_SHORT).show()
+                when (direction) {
+                    ItemTouchHelper.RIGHT -> {
+                        if (order.isSent == 1) {
+                            viewModel.markReadyToSend(order) {
+                                Toast.makeText(requireContext(), R.string.marked_ready_to_send, Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            adapter.notifyItemChanged(position)
+                        }
                     }
-                } else {
-                    adapter.notifyItemChanged(position)
+                    ItemTouchHelper.LEFT -> {
+                        adapter.notifyItemChanged(position)
+                        copyDocument(order)
+                    }
                 }
             }
 
@@ -137,7 +144,9 @@ class OrderListFragment: Fragment(), MenuProvider {
             ): Int {
                 val position = viewHolder.absoluteAdapterPosition
                 val order = adapter.currentList.getOrNull(position) ?: return 0
-                return if (order.isSent == 1) super.getSwipeDirs(recyclerView, viewHolder) else 0
+                var dirs = ItemTouchHelper.LEFT
+                if (order.isSent == 1) dirs = dirs or ItemTouchHelper.RIGHT
+                return dirs
             }
 
             override fun onChildDraw(
@@ -151,38 +160,68 @@ class OrderListFragment: Fragment(), MenuProvider {
             ) {
                 super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
 
-                if (dX <= 0) return
+                if (dX == 0f) return
 
                 val itemView = viewHolder.itemView
                 val cornerRadius = 8f * resources.displayMetrics.density
-                val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_cloud_upload_24) ?: return
-                val backgroundColor = ContextCompat.getColor(requireContext(), android.R.color.holo_blue_dark)
 
-                val paint = Paint().apply {
-                    color = backgroundColor
-                    isAntiAlias = true
+                if (dX > 0) {
+                    // Right swipe - mark to send (blue)
+                    val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_cloud_upload_24) ?: return
+                    val paint = Paint().apply {
+                        color = ContextCompat.getColor(requireContext(), android.R.color.holo_blue_dark)
+                        isAntiAlias = true
+                    }
+
+                    val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
+                    val iconTop = itemView.top + iconMargin
+                    val iconBottom = iconTop + icon.intrinsicHeight
+                    val iconLeft = itemView.left + iconMargin
+                    val iconRight = iconLeft + icon.intrinsicWidth
+                    icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+
+                    val background = RectF(
+                        itemView.left.toFloat(),
+                        itemView.top.toFloat(),
+                        itemView.left + dX,
+                        itemView.bottom.toFloat()
+                    )
+                    c.drawRoundRect(background, cornerRadius, cornerRadius, paint)
+
+                    icon.colorFilter = PorterDuffColorFilter(
+                        ContextCompat.getColor(requireContext(), android.R.color.white),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    icon.draw(c)
+                } else {
+                    // Left swipe - copy (green)
+                    val icon = ContextCompat.getDrawable(requireContext(), R.drawable.baseline_content_copy_24) ?: return
+                    val paint = Paint().apply {
+                        color = ContextCompat.getColor(requireContext(), android.R.color.holo_green_dark)
+                        isAntiAlias = true
+                    }
+
+                    val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
+                    val iconTop = itemView.top + iconMargin
+                    val iconBottom = iconTop + icon.intrinsicHeight
+                    val iconRight = itemView.right - iconMargin
+                    val iconLeft = iconRight - icon.intrinsicWidth
+                    icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
+
+                    val background = RectF(
+                        itemView.right + dX,
+                        itemView.top.toFloat(),
+                        itemView.right.toFloat(),
+                        itemView.bottom.toFloat()
+                    )
+                    c.drawRoundRect(background, cornerRadius, cornerRadius, paint)
+
+                    icon.colorFilter = PorterDuffColorFilter(
+                        ContextCompat.getColor(requireContext(), android.R.color.white),
+                        PorterDuff.Mode.SRC_IN
+                    )
+                    icon.draw(c)
                 }
-
-                val iconMargin = (itemView.height - icon.intrinsicHeight) / 2
-                val iconTop = itemView.top + iconMargin
-                val iconBottom = iconTop + icon.intrinsicHeight
-                val iconLeft = itemView.left + iconMargin
-                val iconRight = iconLeft + icon.intrinsicWidth
-                icon.setBounds(iconLeft, iconTop, iconRight, iconBottom)
-
-                val background = RectF(
-                    itemView.left.toFloat(),
-                    itemView.top.toFloat(),
-                    itemView.left + dX,
-                    itemView.bottom.toFloat()
-                )
-                c.drawRoundRect(background, cornerRadius, cornerRadius, paint)
-
-                icon.colorFilter = PorterDuffColorFilter(
-                    ContextCompat.getColor(requireContext(), android.R.color.white),
-                    PorterDuff.Mode.SRC_IN
-                )
-                icon.draw(c)
             }
         }
 
