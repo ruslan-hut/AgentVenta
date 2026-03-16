@@ -112,13 +112,34 @@ Retrieve data sent by devices.
 
 ### Outgoing Data Types (1C → Device)
 
-#### Settings/Options (CHECK response)
+Data is sent as a **flat array of objects** in the `data` field of the push request. Each object is identified by its `value_id` field. Different data types can be mixed in a single array.
+
+**Example push request:**
+```json
+{
+  "device_uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "data": [
+    { "value_id": "options", "token": "abc123", "write": true, "read": true, "currency": "грн" },
+    { "value_id": "item", "guid": "prod-001", "description": "Молоко 2.5%", "price": 45.50 },
+    { "value_id": "item", "guid": "prod-002", "description": "Хліб білий", "price": 22.00 },
+    { "value_id": "client", "guid": "client-001", "description": "ТОВ Продукти", "phone": "+380501234567" },
+    { "value_id": "price", "item_guid": "prod-001", "price_type": "1", "price_name": "Роздріб", "price": 45.50 },
+    { "value_id": "debt", "client_guid": "client-001", "doc_id": "ЗАМ-001", "sum": 1250.75 }
+  ]
+}
+```
+
+**Important:** There are no nested wrappers like `catalog_type` + `items`. Each object is a standalone item with its own `value_id`.
+
+---
+
+#### Options (`value_id: "options"`)
 
 Push user settings to device.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| settings_type | string | Value: `"options"` |
+| value_id | string | Value: `"options"` |
 | token | string | Session authentication token |
 | read | boolean | Read permissions enabled |
 | write | boolean | Write permissions enabled |
@@ -145,14 +166,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Goods
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"goods"` |
-| items | array | Array of product records |
-
-**Item Fields:**
+#### Product (`value_id: "item"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -175,33 +189,19 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Prices
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"prices"` |
-| items | array | Array of price records |
-
-**Item Fields:**
+#### Price (`value_id: "price"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
 | value_id | string | Value: `"price"` |
 | item_guid | string | Product identifier |
-| price_type | number | Price type number |
+| price_type | string | Price type number |
 | price_name | string | Price type name |
 | price | number | Product price |
 
 ---
 
-#### Catalog: Clients
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"clients"` |
-| items | array | Array of client records |
-
-**Item Fields:**
+#### Client (`value_id: "client"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -220,14 +220,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Companies
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"companies"` |
-| items | array | Array of company records |
-
-**Item Fields:**
+#### Company (`value_id: "company"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -238,14 +231,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Stores
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"stores"` |
-| items | array | Array of store records |
-
-**Item Fields:**
+#### Store (`value_id: "store"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -256,14 +242,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Rests
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"rests"` |
-| items | array | Array of stock records |
-
-**Item Fields:**
+#### Stock Level (`value_id: "rest"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -275,14 +254,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Debts
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"debts"` |
-| items | array | Array of debt records |
-
-**Item Fields:**
+#### Debt (`value_id: "debt"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -298,14 +270,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Clients Locations (coordinates)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"clients_locations"` |
-| items | array | Array of location records |
-
-**Item Fields:**
+#### Client Location (`value_id: "client_location"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -316,14 +281,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Clients Directions (addresses)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"clients_directions"` |
-| items | array | Array of direction records |
-
-**Item Fields:**
+#### Client Direction (`value_id: "client_direction"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -340,14 +298,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Clients Goods
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"clients_goods"` |
-| items | array | Array of client product records |
-
-**Item Fields:**
+#### Client Product (`value_id: "client_goods_item"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -361,14 +312,7 @@ Push user settings to device.
 
 ---
 
-#### Catalog: Images
-
-| Field | Type | Description |
-|-------|------|-------------|
-| catalog_type | string | Value: `"images"` |
-| items | array | Array of image records |
-
-**Item Fields:**
+#### Product Image (`value_id: "image"`)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -380,6 +324,18 @@ Push user settings to device.
 | url | string | Image file URL |
 | description | string | File description |
 | type | string | File type |
+
+---
+
+#### Payment Type (`value_id: "payment_type"`)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| value_id | string | Value: `"payment_type"` |
+| payment_type | string | Payment type identifier |
+| description | string | Payment type name |
+| is_fiscal | number | Fiscal flag (1/0) |
+| is_default | number | Default flag (1/0) |
 
 ---
 
@@ -534,6 +490,7 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0 | 2026-03-16 | Fixed data format: flat array with value_id, removed nested catalog_type+items wrappers. Added payment_type. |
 | 2.1 | 2025-01-15 | Converted to table format with exact field specifications |
 | 2.0 | 2025-01-15 | Rewritten for relay server architecture |
 | 1.0 | 2025-01-15 | Initial HTTP service specification |
