@@ -116,8 +116,8 @@ class PickerFragment: Fragment(), MenuProvider {
         binding?.apply {
             editQuantity.requestFocus()
             editQuantity.postDelayed({
-                val inputMethodManager = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                inputMethodManager.showSoftInput(this.editQuantity, InputMethodManager.SHOW_IMPLICIT)
+                val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(this.editQuantity, InputMethodManager.SHOW_IMPLICIT)
             }, 200)
         }
     }

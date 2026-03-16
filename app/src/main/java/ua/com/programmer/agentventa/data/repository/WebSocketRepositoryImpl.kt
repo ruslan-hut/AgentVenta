@@ -681,34 +681,39 @@ class WebSocketRepositoryImpl @Inject constructor(
                 // Use full sync timestamp if active, otherwise current time
                 val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
 
-                // Convert data to XMap format (same as HTTP sync uses)
-                val xMapList = data.mapNotNull { item ->
-                    try {
-                        val itemMap = item as? Map<*, *> ?: return@mapNotNull null
+                // Save in batches to reduce memory pressure
+                val batchSize = 500
+                val batch = ArrayList<XMap>(batchSize)
+                var savedCount = 0
+
+                try {
+                    for (item in data) {
+                        val itemMap = item as? Map<*, *> ?: continue
                         val xMap = XMap(itemMap)
                         xMap.setDatabaseId(accountGuid)
                         xMap.setTimestamp(timestamp)
-                        xMap
-                    } catch (e: Exception) {
-                        logger.e(TAG, "Error converting catalog item: ${e.message}")
-                        null
+                        batch.add(xMap)
+
+                        if (batch.size >= batchSize) {
+                            dataExchangeRepository.saveData(batch)
+                            savedCount += batch.size
+                            batch.clear()
+                        }
                     }
-                }
 
-                if (xMapList.isEmpty()) {
-                    logger.w(TAG, "No valid catalog items to save")
-                    // Still send ACK even if no items
-                    sendCatalogAck(messageId, catalogType, 0)
-                    return@launch
-                }
+                    if (batch.isNotEmpty()) {
+                        dataExchangeRepository.saveData(batch)
+                        savedCount += batch.size
+                        batch.clear()
+                    }
 
-                // Save catalog data using existing DataExchangeRepository
-                try {
-                    dataExchangeRepository.saveData(xMapList)
-                    logger.d(TAG, "Saved ${xMapList.size} items for catalog: $catalogType")
-
-                    // Send acknowledgment to server
-                    sendCatalogAck(messageId, catalogType, xMapList.size)
+                    if (savedCount > 0) {
+                        logger.d(TAG, "Saved $savedCount items for catalog: $catalogType")
+                        sendCatalogAck(messageId, catalogType, savedCount)
+                    } else {
+                        logger.w(TAG, "No valid catalog items to save")
+                        sendCatalogAck(messageId, catalogType, 0)
+                    }
                 } catch (e: Exception) {
                     logger.e(TAG, "Error saving catalog data: ${e.message}")
                     sendCatalogError(messageId, catalogType, e.message ?: "Save failed")
@@ -791,11 +796,12 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                // Separate items by value_id
                 val optionsItems = mutableListOf<com.google.gson.JsonObject>()
-                val catalogItems = mutableListOf<XMap>()
                 val counters = mutableMapOf<String, Int>()
                 val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
+                val batchSize = 500
+                val batch = ArrayList<XMap>(batchSize)
+                val gson = Gson()
 
                 for (i in 0 until dataArray.size()) {
                     try {
@@ -809,24 +815,33 @@ class WebSocketRepositoryImpl @Inject constructor(
 
                         when (valueId) {
                             Constants.VALUE_ID_OPTIONS -> {
-                                // Collect options items for processing
                                 optionsItems.add(item)
                             }
                             else -> {
-                                // Catalog items (clients, goods, debts, etc.)
-                                val gson = Gson()
                                 val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
                                 val xMap = XMap(itemMap)
                                 xMap.setDatabaseId(accountGuid)
                                 xMap.setTimestamp(timestamp)
-                                catalogItems.add(xMap)
+                                batch.add(xMap)
                             }
                         }
 
                         counters[valueId] = (counters[valueId] ?: 0) + 1
+
+                        // Save in batches to avoid holding all items in memory
+                        if (batch.size >= batchSize) {
+                            dataExchangeRepository.saveData(batch)
+                            batch.clear()
+                        }
                     } catch (e: Exception) {
                         logger.e(TAG, "Error processing item $i: ${e.message}")
                     }
+                }
+
+                // Save remaining items
+                if (batch.isNotEmpty()) {
+                    dataExchangeRepository.saveData(batch)
+                    batch.clear()
                 }
 
                 // Process options items
@@ -834,13 +849,11 @@ class WebSocketRepositoryImpl @Inject constructor(
                     processOptionsItems(optionsItems, dataMessage.messageId)
                 }
 
-                // Process catalog items
-                if (catalogItems.isNotEmpty()) {
-                    processCatalogItems(catalogItems, counters, dataMessage.messageId)
-                }
-
-                // If nothing to process
-                if (optionsItems.isEmpty() && catalogItems.isEmpty()) {
+                val totalItems = counters.values.sum() - optionsItems.size
+                if (totalItems > 0 || optionsItems.isNotEmpty()) {
+                    logger.d(TAG, "Saved $totalItems catalog items: $counters")
+                    sendAck(dataMessage.messageId, "catalog", totalItems)
+                } else {
                     logger.w(TAG, "No valid items in unified payload")
                     sendAck(dataMessage.messageId, "unified", 0)
                 }
@@ -945,42 +958,50 @@ class WebSocketRepositoryImpl @Inject constructor(
                 // Use full sync timestamp if active, otherwise current time
                 val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
 
-                // Convert data array to XMap format
-                val xMapList = mutableListOf<XMap>()
+                // Save in batches to reduce memory pressure
+                val batchSize = 500
+                val batch = ArrayList<XMap>(batchSize)
                 val counters = mutableMapOf<String, Int>()
+                val gson = Gson()
+                var savedCount = 0
 
-                for (i in 0 until dataArray.size()) {
-                    try {
-                        val item = dataArray.get(i).asJsonObject
-                        val gson = Gson()
-                        val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
-
-                        val xMap = XMap(itemMap)
-                        xMap.setDatabaseId(accountGuid)
-                        xMap.setTimestamp(timestamp)
-                        xMapList.add(xMap)
-
-                        // Count by value_id
-                        val valueId = xMap.getValueId()
-                        counters[valueId] = (counters[valueId] ?: 0) + 1
-                    } catch (e: Exception) {
-                        logger.e(TAG, "Error converting catalog item: ${e.message}")
-                    }
-                }
-
-                if (xMapList.isEmpty()) {
-                    logger.w(TAG, "No valid items in unified catalog update")
-                    sendAck(dataMessage.messageId, "catalog", 0)
-                    return@launch
-                }
-
-                // Save catalog data using existing DataExchangeRepository
                 try {
-                    dataExchangeRepository.saveData(xMapList)
-                    logger.d(TAG, "Saved ${xMapList.size} unified catalog items: $counters")
+                    for (i in 0 until dataArray.size()) {
+                        try {
+                            val item = dataArray.get(i).asJsonObject
+                            val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
 
-                    // Send acknowledgment to server
-                    sendAck(dataMessage.messageId, "catalog", xMapList.size)
+                            val xMap = XMap(itemMap)
+                            xMap.setDatabaseId(accountGuid)
+                            xMap.setTimestamp(timestamp)
+                            batch.add(xMap)
+
+                            val valueId = xMap.getValueId()
+                            counters[valueId] = (counters[valueId] ?: 0) + 1
+
+                            if (batch.size >= batchSize) {
+                                dataExchangeRepository.saveData(batch)
+                                savedCount += batch.size
+                                batch.clear()
+                            }
+                        } catch (e: Exception) {
+                            logger.e(TAG, "Error converting catalog item: ${e.message}")
+                        }
+                    }
+
+                    if (batch.isNotEmpty()) {
+                        dataExchangeRepository.saveData(batch)
+                        savedCount += batch.size
+                        batch.clear()
+                    }
+
+                    if (savedCount > 0) {
+                        logger.d(TAG, "Saved $savedCount unified catalog items: $counters")
+                        sendAck(dataMessage.messageId, "catalog", savedCount)
+                    } else {
+                        logger.w(TAG, "No valid items in unified catalog update")
+                        sendAck(dataMessage.messageId, "catalog", 0)
+                    }
                 } catch (e: Exception) {
                     logger.e(TAG, "Error saving unified catalog data: ${e.message}")
                     sendError(dataMessage.messageId, "catalog", e.message ?: "Save failed")

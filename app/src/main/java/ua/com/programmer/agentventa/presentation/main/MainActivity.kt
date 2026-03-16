@@ -211,7 +211,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startLocationUpdatesService() {
-        startService(Intent(this, LocationUpdatesService::class.java))
+        try {
+            startService(Intent(this, LocationUpdatesService::class.java))
+        } catch (e: IllegalStateException) {
+            // Android 12+: not allowed to start service from background
+            // Will be retried when the activity is fully in foreground
+        }
     }
 
     private fun requestPermissions() {

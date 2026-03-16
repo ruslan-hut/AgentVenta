@@ -146,9 +146,9 @@ class ProductListFragment: Fragment(), MenuProvider {
 
         sharedModel.sharedParams.observe(this.viewLifecycleOwner) { params ->
             params?.let {
-                menu.findItem(R.id.sorting).isChecked = it.sortByName
-                menu.findItem(R.id.show_rests).isChecked = it.restsOnly
-                menu.findItem(R.id.client_goods).isChecked = it.clientProducts
+                menu.findItem(R.id.sorting)?.isChecked = it.sortByName
+                menu.findItem(R.id.show_rests)?.isChecked = it.restsOnly
+                menu.findItem(R.id.client_goods)?.isChecked = it.clientProducts
             }
         }
 

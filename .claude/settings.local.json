@@ -35,7 +35,9 @@
       "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"FAILED\" | grep -v \"^>\" | sed 's/ >.*//' | sort -u)",
       "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \" > \" | grep -v FAILED | head -20)",
       "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"PASSED\" | head -20)",
-      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"tests completed\")"
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"tests completed\")",
+      "Bash(git:*)",
+      "Bash(cd:*)"
     ]
   }
 }

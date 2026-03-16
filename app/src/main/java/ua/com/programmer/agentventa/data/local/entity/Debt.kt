@@ -18,7 +18,7 @@ data class Debt(
     @ColumnInfo(name = "sum_in") val sumIn: Double = 0.0,
     @ColumnInfo(name = "sum_out") val sumOut: Double = 0.0,
     @ColumnInfo(name = "is_total") val isTotal: Int = 0,
-    val sorting: Int = 0,
+    val sorting: Long = 0,
     val timestamp: Long = 0
 ){
     companion object Builder {
@@ -37,7 +37,7 @@ data class Debt(
                 sumIn = data.getDouble("sum_in"),
                 sumOut = data.getDouble("sum_out"),
                 isTotal = if (docId.isBlank()) 1 else 0,
-                sorting = data.getInt("sorting"),
+                sorting = data.getLong("sorting"),
                 timestamp = data.getTimestamp()
             )
         }
