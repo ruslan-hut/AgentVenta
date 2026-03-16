@@ -27,7 +27,15 @@
       "WebFetch(domain:fonts.google.com)",
       "WebFetch(domain:blog.mindorks.com)",
       "WebFetch(domain:dev.to)",
-      "Bash(./gradlew compileStandartDebugKotlin:*)"
+      "Bash(./gradlew compileStandartDebugKotlin:*)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | tail -15)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | tail -40)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | tail -30)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"FAILED\" | grep -v \"^>\" | head -30)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"FAILED\" | grep -v \"^>\" | sed 's/ >.*//' | sort -u)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \" > \" | grep -v FAILED | head -20)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"PASSED\" | head -20)",
+      "Bash(./gradlew testStandartDebugUnitTest 2>&1 | grep \"tests completed\")"
     ]
   }
 }

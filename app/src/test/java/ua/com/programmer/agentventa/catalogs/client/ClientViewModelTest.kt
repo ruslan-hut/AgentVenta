@@ -83,6 +83,7 @@ class ClientViewModelTest {
         }
 
         viewModel = ClientViewModel(
+            resourceProvider = mock(),
             clientRepository = clientRepository,
             filesRepository = filesRepository
         )

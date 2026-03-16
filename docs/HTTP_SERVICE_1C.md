@@ -63,6 +63,77 @@ The API key is provided when the license is created. See [API_1C_CONNECTION.md](
 
 ---
 
+## Sync Modes
+
+The mobile app supports two sync modes: **differential** (incremental) and **full** (complete replacement). Both modes use the same `POST /api/v1/push` endpoint with the same data format — the difference is in **what** 1C sends and **how** the app handles it.
+
+### Differential Sync (default)
+
+1C sends only changed data since the last sync. The app upserts received items into the local database. No items are deleted — only new or updated records are applied.
+
+**Use case:** Regular periodic sync (every few minutes).
+
+### Full Sync (complete catalog replacement)
+
+1C sends **all** catalog data for the device. The app uses a timestamp-based mechanism to detect and remove stale items:
+
+1. Before the sync starts, the app records a timestamp `T`
+2. Every item received during the sync is stamped with `T`
+3. After all data is received, the app deletes all catalog items where `timestamp < T`
+
+This means any item that was **not** included in the full sync batch gets automatically removed from the device.
+
+**Use case:** Initial setup, periodic full refresh, data corrections.
+
+### What 1C Must Do for Full Sync
+
+Send **all** active catalog records for the device in one or more `POST /api/v1/push` calls. The critical requirement is **completeness** — every item that should remain on the device must be included.
+
+**Required data types to send:**
+
+| Data type | value_id | Required | Condition |
+|-----------|----------|----------|-----------|
+| Options | `options` | Yes | Always — controls device permissions and features |
+| Clients | `client` | Yes | All active clients for the agent |
+| Products | `item` | Yes | All active products |
+| Prices | `price` | Yes | All price records for available price types |
+| Debts | `debt` | Yes | All current debt documents |
+| Payment types | `payment_type` | Yes | All available payment types |
+| Companies | `company` | Conditional | When `useCompanies: true` in options |
+| Stores | `store` | Conditional | When `useStores: true` in options |
+| Stock levels | `rest` | Conditional | When `useStores: true` in options |
+| Client locations | `client_location` | Conditional | When `clientsLocations: true` in options |
+| Client directions | `client_direction` | Conditional | When `clientsDirections: true` in options |
+| Client products | `client_goods_item` | Conditional | When `clientsProducts: true` in options |
+| Product images | `image` | Conditional | When `loadImages: true` in options |
+
+**Key parameters in options object:**
+
+| Parameter | Type | Effect |
+|-----------|------|--------|
+| `write` | boolean | Device can create/send documents |
+| `read` | boolean | Device can receive catalog data |
+| `useCompanies` | boolean | Send company data |
+| `useStores` | boolean | Send store and stock level data |
+| `clientsLocations` | boolean | Send client GPS coordinates |
+| `clientsDirections` | boolean | Send client address lists |
+| `clientsProducts` | boolean | Send per-client product lists |
+| `loadImages` | boolean | Send product images |
+
+**Example: full sync push sequence**
+
+```
+1. POST /push → options + clients (batch 1)
+2. POST /push → products + prices (batch 2)
+3. POST /push → debts + payment_types + companies + stores + rests (batch 3)
+```
+
+Splitting into multiple push calls is fine — all items within the same full sync session receive the same timestamp on the device. The relay server queues each push and delivers them in order.
+
+**Important:** Options should be sent first or together with the first batch, because `useCompanies`, `useStores`, and other flags determine which catalog types the app expects.
+
+---
+
 ## Push Endpoint
 
 ### `POST /api/v1/push`
@@ -490,6 +561,7 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2026-03-16 | Added Sync Modes section: full sync flow, required data types, key options parameters. |
 | 3.0 | 2026-03-16 | Fixed data format: flat array with value_id, removed nested catalog_type+items wrappers. Added payment_type. |
 | 2.1 | 2025-01-15 | Converted to table format with exact field specifications |
 | 2.0 | 2025-01-15 | Rewritten for relay server architecture |

@@ -67,6 +67,10 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val pendingMessages = ConcurrentHashMap<String, PendingMessage>()
     private val messageResults = ConcurrentHashMap<String, MutableSharedFlow<SendResult>>()
 
+    // Full sync mode: when set, all incoming catalog data uses this timestamp
+    @Volatile
+    private var fullSyncTimestamp: Long? = null
+
     override suspend fun connect(account: UserAccount): Boolean {
         if (isConnected()) {
             logger.d(TAG, "Already connected")
@@ -288,6 +292,20 @@ class WebSocketRepositoryImpl @Inject constructor(
     override suspend fun clearPendingMessages() {
         pendingMessages.clear()
         messageResults.clear()
+    }
+
+    override fun startFullSync(timestamp: Long) {
+        fullSyncTimestamp = timestamp
+        logger.d(TAG, "Full sync started with timestamp: $timestamp")
+    }
+
+    override fun stopFullSync(): Long? {
+        val ts = fullSyncTimestamp
+        fullSyncTimestamp = null
+        if (ts != null) {
+            logger.d(TAG, "Full sync stopped, timestamp was: $ts")
+        }
+        return ts
     }
 
     // Private implementation methods
@@ -660,8 +678,8 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                // Get current timestamp for catalog update
-                val timestamp = System.currentTimeMillis()
+                // Use full sync timestamp if active, otherwise current time
+                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
 
                 // Convert data to XMap format (same as HTTP sync uses)
                 val xMapList = data.mapNotNull { item ->
@@ -777,7 +795,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 val optionsItems = mutableListOf<com.google.gson.JsonObject>()
                 val catalogItems = mutableListOf<XMap>()
                 val counters = mutableMapOf<String, Int>()
-                val timestamp = System.currentTimeMillis()
+                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
 
                 for (i in 0 until dataArray.size()) {
                     try {
@@ -924,8 +942,8 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                // Get current timestamp for catalog update
-                val timestamp = System.currentTimeMillis()
+                // Use full sync timestamp if active, otherwise current time
+                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
 
                 // Convert data array to XMap format
                 val xMapList = mutableListOf<XMap>()

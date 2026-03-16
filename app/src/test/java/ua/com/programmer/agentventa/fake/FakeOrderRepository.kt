@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.data.local.entity.*
 import ua.com.programmer.agentventa.data.local.entity.DocumentTotals
+import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import java.util.*
 
@@ -214,6 +215,10 @@ open class FakeOrderRepository(
             storeGuid = store.guid,
             store = store.description
         ))
+    }
+
+    override suspend fun getPreviousOrderContent(clientGuid: String): List<PreviousOrderContent> {
+        return emptyList()
     }
 
     override suspend fun setClient(guid: String, client: Client) {

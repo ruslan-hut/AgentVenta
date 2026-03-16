@@ -265,7 +265,54 @@ class NetworkRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateAll(): Flow<Result> = flow {
-        Log.d("XBUG", "updateAll: START (full sync)")
+        val currentAccount = account
+        Log.d("XBUG", "updateAll: START (full sync), useWebSocket=${currentAccount?.useWebSocket}")
+
+        // WebSocket full sync path
+        if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
+            Log.d("XBUG", "updateAll: using WebSocket path")
+            logger.d(logTag, "Using WebSocket full sync")
+            _timestamp = System.currentTimeMillis()
+            _options = UserOptionsBuilder.build(currentAccount)
+            val accountGuid = currentAccount.guid
+
+            // Start full sync mode — all incoming catalog data will use this timestamp
+            webSocketRepository.startFullSync(_timestamp)
+
+            try {
+                // 1. Upload unsent documents
+                sendDocumentsViaWebSocket(accountGuid).collect {
+                    emit(it)
+                }
+
+                // 2. Request full catalog download
+                emit(Result.Progress("Requesting full catalog download..."))
+                downloadCatalogsViaWebSocket(fullSync = true).collect {
+                    emit(it)
+                }
+            } catch (e: Exception) {
+                webSocketRepository.stopFullSync()
+                Log.e("XBUG", "updateAll: WebSocket error: ${e.message}")
+                logger.e(logTag, "WebSocket full sync error: $e")
+                emit(Result.Error(e.message ?: "WebSocket full sync failed"))
+                return@flow
+            }
+
+            // 3. Stop full sync mode and clean up old data
+            webSocketRepository.stopFullSync()
+            dataRepository.cleanUp(accountGuid, _timestamp)
+            userAccountRepository.saveAccount(currentAccount)
+
+            val timeSpent = showTime(_timestamp, System.currentTimeMillis())
+            Log.d("XBUG", "updateAll: WebSocket DONE in $timeSpent")
+            logger.d(logTag, "WebSocket full sync finish: $timeSpent")
+            emit(Result.Progress("finish: $timeSpent"))
+            emit(Result.Success(""))
+            return@flow
+        }
+
+        // HTTP full sync path
+        Log.d("XBUG", "updateAll: using HTTP path")
 
         runCatching {
             prepare.collect {

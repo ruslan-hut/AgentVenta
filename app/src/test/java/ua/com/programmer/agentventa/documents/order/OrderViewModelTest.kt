@@ -22,12 +22,14 @@ import ua.com.programmer.agentventa.data.local.entity.PaymentType
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.GenerateOrderPrintUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
 import ua.com.programmer.agentventa.fake.FakeProductRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.infrastructure.printer.WebhookPrintService
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 import java.util.*
@@ -57,6 +59,8 @@ class OrderViewModelTest {
     private lateinit var validateOrderUseCase: ValidateOrderUseCase
     private lateinit var saveOrderUseCase: SaveOrderUseCase
     private lateinit var enableOrderEditUseCase: EnableOrderEditUseCase
+    private lateinit var generateOrderPrintUseCase: GenerateOrderPrintUseCase
+    private lateinit var webhookPrintService: WebhookPrintService
     private lateinit var logger: Logger
     private lateinit var viewModel: OrderViewModel
 
@@ -65,6 +69,8 @@ class OrderViewModelTest {
         orderRepository = FakeOrderRepository(TestFixtures.TEST_DB_GUID)
         productRepository = FakeProductRepository(TestFixtures.TEST_DB_GUID)
         logger = mock()
+        generateOrderPrintUseCase = mock()
+        webhookPrintService = mock()
 
         // Real use cases (they're simple enough)
         validateOrderUseCase = ValidateOrderUseCase()
@@ -77,6 +83,8 @@ class OrderViewModelTest {
             validateOrderUseCase = validateOrderUseCase,
             saveOrderUseCase = saveOrderUseCase,
             enableOrderEditUseCase = enableOrderEditUseCase,
+            generateOrderPrintUseCase = generateOrderPrintUseCase,
+            webhookPrintService = webhookPrintService,
             logger = logger
         )
     }

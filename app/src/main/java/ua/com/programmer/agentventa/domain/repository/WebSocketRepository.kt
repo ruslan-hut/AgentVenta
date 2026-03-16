@@ -103,4 +103,19 @@ interface WebSocketRepository {
      * Use with caution - only for manual intervention.
      */
     suspend fun clearPendingMessages()
+
+    /**
+     * Starts full sync mode. All incoming catalog data will be stamped with the
+     * provided timestamp. After sync completes, call [stopFullSync] to end the mode.
+     * Items with timestamps older than this value can then be cleaned up.
+     *
+     * @param timestamp Timestamp to apply to all received items during full sync
+     */
+    fun startFullSync(timestamp: Long)
+
+    /**
+     * Stops full sync mode. Returns the timestamp that was used for the sync,
+     * or null if full sync was not active.
+     */
+    fun stopFullSync(): Long?
 }
