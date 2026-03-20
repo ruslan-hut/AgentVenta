@@ -14,7 +14,6 @@
         android:layout_marginTop="@dimen/card_margin_vertical"
         app:cardCornerRadius="@dimen/card_corner_radius"
         app:cardElevation="@dimen/elevation_card"
-        app:strokeWidth="0dp"
         app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout

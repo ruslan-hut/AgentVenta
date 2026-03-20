@@ -92,5 +92,8 @@
 
         <!-- FAB style: vibrant tertiary for strong accent contrast -->
         <item name="floatingActionButtonStyle">@style/Widget.App.FloatingActionButton</item>
+
+        <!-- Card: subtle border for definition -->
+        <item name="materialCardViewStyle">@style/Widget.App.CardView</item>
     </style>
 </resources>

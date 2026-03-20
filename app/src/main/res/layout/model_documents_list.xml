@@ -71,7 +71,6 @@
             android:visibility="@{viewModel.totalsVisibility}"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
-            app:strokeWidth="0dp"
             app:cardBackgroundColor="?attr/colorSurface">
 
         <LinearLayout

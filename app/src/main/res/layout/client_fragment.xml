@@ -35,8 +35,7 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="4dp"
                         app:cardElevation="0dp"
-                        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
-                        app:strokeWidth="0dp">
+                        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
                         <LinearLayout
                             android:layout_width="match_parent"
