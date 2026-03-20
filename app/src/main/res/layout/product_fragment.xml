@@ -67,7 +67,8 @@
                         android:layout_height="wrap_content"
                         android:paddingBottom="16dp"
                         android:text="@{product.description}"
-                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -128,7 +129,8 @@
                             android:id="@+id/rest"
                             android:layout_weight="2"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:textStyle="bold" />
 
                     </LinearLayout>
 
@@ -154,6 +156,7 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/row_base_price"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
@@ -175,6 +178,7 @@
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/row_min_price"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">

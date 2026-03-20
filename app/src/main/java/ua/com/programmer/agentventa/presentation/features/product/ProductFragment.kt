@@ -83,7 +83,9 @@ class ProductFragment: Fragment() {
         binding.apply {
             rest.text = product.rest.formatAsInt(3, "--", product.unit)
             packageValue.text = product.packageValue.formatAsInt(3, "--", product.unit)
+            rowBasePrice.visibility = if (product.basePrice > 0) View.VISIBLE else View.GONE
             basePrice.text = product.basePrice.format(2, "--")
+            rowMinPrice.visibility = if (product.minPrice > 0) View.VISIBLE else View.GONE
             minPrice.text = product.minPrice.format(2, "--")
         }
         if (product.hasImageData()) {
