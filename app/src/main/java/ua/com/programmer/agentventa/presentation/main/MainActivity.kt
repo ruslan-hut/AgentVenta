@@ -106,11 +106,24 @@ class MainActivity : AppCompatActivity() {
         NavigationUI.setupWithNavController(binding.navigationView, navController)
         NavigationUI.setupWithNavController(binding.bottomNavigation, navController)
 
-        // Show bottom nav only on top-level destinations (not in selection mode)
+        // Handle select mode: hide bottom nav, lock drawer, show back arrow
         navController.addOnDestinationChangedListener { _, destination, arguments ->
             val isSelectMode = arguments?.getBoolean("modeSelect", false) == true
+            val isTopLevel = destination.id in topLevelDestinations
+
             binding.bottomNavigation.visibility =
-                if (destination.id in topLevelDestinations && !isSelectMode) View.VISIBLE else View.GONE
+                if (isTopLevel && !isSelectMode) View.VISIBLE else View.GONE
+
+            if (isTopLevel && isSelectMode) {
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                binding.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
+                binding.toolbar.setNavigationOnClickListener { navController.popBackStack() }
+            } else {
+                drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+                binding.toolbar.setNavigationOnClickListener {
+                    NavigationUI.navigateUp(navController, appBarConfiguration)
+                }
+            }
         }
 
         onBackPressedDispatcher.addCallback(this) {
