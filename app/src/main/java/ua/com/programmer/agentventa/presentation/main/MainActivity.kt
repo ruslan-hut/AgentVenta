@@ -106,15 +106,17 @@ class MainActivity : AppCompatActivity() {
         NavigationUI.setupWithNavController(binding.navigationView, navController)
         NavigationUI.setupWithNavController(binding.bottomNavigation, navController)
 
-        // Handle select mode: hide bottom nav, lock drawer, show back arrow
+        // Handle select mode and group navigation: hide bottom nav, lock drawer, show back arrow
         navController.addOnDestinationChangedListener { _, destination, arguments ->
             val isSelectMode = arguments?.getBoolean("modeSelect", false) == true
+            val isInGroup = arguments?.getString("groupGuid")?.isNotEmpty() == true
             val isTopLevel = destination.id in topLevelDestinations
+            val showAsNested = isSelectMode || isInGroup
 
             binding.bottomNavigation.visibility =
-                if (isTopLevel && !isSelectMode) View.VISIBLE else View.GONE
+                if (isTopLevel && !showAsNested) View.VISIBLE else View.GONE
 
-            if (isTopLevel && isSelectMode) {
+            if (isTopLevel && showAsNested) {
                 drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
                 binding.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
                 binding.toolbar.setNavigationOnClickListener { navController.popBackStack() }
