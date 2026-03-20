@@ -115,6 +115,7 @@ class OrderPageTitle: Fragment() {
                     docClient.isEnabled = false
                     docDeliveryDate.isEnabled = false
                     docPriceType.isEnabled = false
+                    elementPriceType.isEnabled = false
                     docPaymentType.isEnabled = false
                     docIsReturn.isEnabled = false
                     docNotes.isEnabled = false
@@ -123,6 +124,7 @@ class OrderPageTitle: Fragment() {
                     docClient.isEnabled = true
                     docDeliveryDate.isEnabled = true
                     docPriceType.isEnabled = options.allowPriceTypeChoose
+                    elementPriceType.isEnabled = options.allowPriceTypeChoose
                     docPaymentType.isEnabled = true
                     docIsReturn.isEnabled = true
                     docNotes.isEnabled = true
