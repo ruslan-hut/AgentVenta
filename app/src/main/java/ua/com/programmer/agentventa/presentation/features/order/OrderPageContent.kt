@@ -36,7 +36,7 @@ class OrderPageContent: Fragment() {
         setupPaymentDropdown()
 
         binding.fabAddGoods.setOnClickListener {
-            (parentFragment?.parentFragment as? OrderFragment)?.openProductList()
+            (parentFragment as? OrderFragment)?.openProductList()
         }
 
         return binding.root

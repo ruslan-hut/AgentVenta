@@ -80,7 +80,7 @@ class OrderPageTitle: Fragment() {
         setupPaymentDropdown()
 
         binding.fabSave.setOnClickListener {
-            (parentFragment?.parentFragment as? OrderFragment)?.saveDocument()
+            (parentFragment as? OrderFragment)?.saveDocument()
         }
 
         return binding.root
