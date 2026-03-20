@@ -8,7 +8,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -104,12 +103,14 @@ class CashFragment: Fragment(), MenuProvider {
                     docNotes.isEnabled = false
                     isFiscal.isEnabled = false
                     docParentDocument.isEnabled = false
+                    fabSave.visibility = View.GONE
                 } else {
                     docCompany.isEnabled = true
                     docClient.isEnabled = true
                     docSum.isEnabled = true
                     docNotes.isEnabled = true
                     isFiscal.isEnabled = true
+                    fabSave.visibility = View.VISIBLE
                 }
             }
         }
@@ -119,10 +120,13 @@ class CashFragment: Fragment(), MenuProvider {
         binding.docClient.setOnClickListener {
             openClients()
         }
-        binding.docNotes.setOnClickListener {
-            editNotes()
+        binding.docNotes.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                viewModel.onEditNotes(binding.docNotes.text.toString())
+            }
         }
         binding.docSum.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+        binding.fabSave.setOnClickListener { saveDocument() }
 
         viewModel.saveResult.observe(this.viewLifecycleOwner) {
             it ?: return@observe
@@ -169,14 +173,11 @@ class CashFragment: Fragment(), MenuProvider {
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_document, menu)
+        menuInflater.inflate(R.menu.menu_document_fab, menu)
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
-            R.id.save_document -> {
-                saveDocument()
-            }
             R.id.edit_document -> viewModel.enableEdit()
             R.id.delete_document -> {
                 AlertDialog.Builder(requireContext())
@@ -231,51 +232,5 @@ class CashFragment: Fragment(), MenuProvider {
         return false
     }
 
-    private fun editNotes() {
-        val alertDialog = AlertDialog.Builder(requireContext())
-
-        val padding = (16 * resources.displayMetrics.density).toInt()
-        val container = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(padding, padding, padding, 0)
-        }
-
-        val inputLayout = com.google.android.material.textfield.TextInputLayout(
-            requireContext(),
-            null,
-            com.google.android.material.R.attr.textInputOutlinedStyle
-        ).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            hint = getString(R.string.doc_notes)
-        }
-
-        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setText(viewModel.document.value?.notes ?: "")
-        }
-
-        inputLayout.addView(editText)
-        container.addView(inputLayout)
-
-        alertDialog.setTitle(R.string.doc_notes)
-        alertDialog.setView(container)
-
-        alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
-            viewModel.onEditNotes(editText.text.toString())
-            dialog.dismiss()
-        }
-
-        alertDialog.setNegativeButton(R.string.cancel) { dialog, _ ->
-            dialog.cancel()
-        }
-
-        alertDialog.show()
-    }
 
 }

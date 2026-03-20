@@ -85,6 +85,7 @@ class TaskFragment: Fragment(), MenuProvider {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.fabSave.setOnClickListener { saveDocument() }
         viewModel.document.observe(viewLifecycleOwner) {
             binding.apply {
                 dateCreated.text = it.date
@@ -129,14 +130,11 @@ class TaskFragment: Fragment(), MenuProvider {
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        menuInflater.inflate(R.menu.menu_document, menu)
+        menuInflater.inflate(R.menu.menu_document_fab, menu)
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
-            R.id.save_document -> {
-                saveDocument()
-            }
             R.id.edit_document -> viewModel.enableEdit()
             R.id.delete_document -> {
                 AlertDialog.Builder(requireContext())
@@ -180,50 +178,4 @@ class TaskFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun editNotes() {
-        val alertDialog = AlertDialog.Builder(requireContext())
-
-        val padding = (16 * resources.displayMetrics.density).toInt()
-        val container = android.widget.LinearLayout(requireContext()).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(padding, padding, padding, 0)
-        }
-
-        val inputLayout = com.google.android.material.textfield.TextInputLayout(
-            requireContext(),
-            null,
-            com.google.android.material.R.attr.textInputOutlinedStyle
-        ).apply {
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            hint = getString(R.string.doc_notes)
-        }
-
-        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            setText(viewModel.document.value?.notes ?: "")
-        }
-
-        inputLayout.addView(editText)
-        container.addView(inputLayout)
-
-        alertDialog.setTitle(R.string.doc_notes)
-        alertDialog.setView(container)
-
-        alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
-            viewModel.onEditNotes(editText.text.toString())
-            dialog.dismiss()
-        }
-
-        alertDialog.setNegativeButton(R.string.cancel) { dialog, _ ->
-            dialog.cancel()
-        }
-
-        alertDialog.show()
-    }
 }

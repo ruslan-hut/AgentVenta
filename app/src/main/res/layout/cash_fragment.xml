@@ -6,6 +6,10 @@
 
     </data>
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -200,7 +204,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Notes - clickable to edit -->
+            <!-- Notes - editable text field -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -209,18 +213,15 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/doc_notes"
-                app:endIconMode="custom"
-                app:endIconDrawable="@drawable/baseline_edit_24"
-                app:endIconContentDescription="@string/doc_notes">
+                android:hint="@string/doc_notes">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/doc_notes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:focusable="false"
-                    android:cursorVisible="false"
-                    android:inputType="none" />
+                    android:inputType="textMultiLine"
+                    android:minLines="1"
+                    android:maxLines="4" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -229,4 +230,16 @@
         </com.google.android.material.card.MaterialCardView>
 
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/save"
+        app:icon="@drawable/baseline_save_24" />
+
+    </FrameLayout>
 </layout>
