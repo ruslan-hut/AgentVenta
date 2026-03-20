@@ -55,7 +55,7 @@ class ProductListAdapter(
                 itemCode.text = product.code
                 itemPrice.text = product.price.format(2, "--")
                 itemVendorCode.text = product.vendorCode
-                val perPackage = product.packageValue.formatAsInt(3,"-")
+                val perPackage = product.packageValue.formatAsInt(3)
                 if (perPackage.isNotEmpty()) {
                     itemPackageValue.text = perPackage
                     packageLine.visibility = android.view.View.VISIBLE
@@ -98,7 +98,7 @@ class ProductListAdapter(
                     itemQuantityDelimiter.visibility = android.view.View.GONE
                 }
 
-                val perPackage = product.packageValue.formatAsInt(3,"-")
+                val perPackage = product.packageValue.formatAsInt(3)
                 if (perPackage.isNotEmpty()) {
                     itemPackageValue.text = perPackage
                     packageLine.visibility = android.view.View.VISIBLE

@@ -71,7 +71,7 @@
                         android:id="@+id/item_rest"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:textStyle="bold"
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp"

@@ -46,7 +46,9 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/documents_recycler" />
+                android:id="@+id/documents_recycler"
+                android:paddingBottom="72dp"
+                android:clipToPadding="false" />
 
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
