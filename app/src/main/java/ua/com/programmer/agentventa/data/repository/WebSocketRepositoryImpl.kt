@@ -54,6 +54,10 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val _documentAcks = MutableSharedFlow<DocumentAck>(replay = 0, extraBufferCapacity = 100)
     override val documentAcks: SharedFlow<DocumentAck> = _documentAcks.asSharedFlow()
 
+    // Batch complete stream: server signals all catalog data has been pushed
+    private val _batchComplete = MutableSharedFlow<Long>(replay = 0, extraBufferCapacity = 10)
+    override val batchComplete: SharedFlow<Long> = _batchComplete.asSharedFlow()
+
     // WebSocket connection and state
     private var webSocket: WebSocket? = null
     private var currentAccount: UserAccount? = null
@@ -67,9 +71,9 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val pendingMessages = ConcurrentHashMap<String, PendingMessage>()
     private val messageResults = ConcurrentHashMap<String, MutableSharedFlow<SendResult>>()
 
-    // Full sync mode: when set, all incoming catalog data uses this timestamp
+    // Current account GUID for tagging incoming data
     @Volatile
-    private var fullSyncTimestamp: Long? = null
+    private var currentAccountGuid: String? = null
 
     override suspend fun connect(account: UserAccount): Boolean {
         if (isConnected()) {
@@ -294,18 +298,9 @@ class WebSocketRepositoryImpl @Inject constructor(
         messageResults.clear()
     }
 
-    override fun startFullSync(timestamp: Long) {
-        fullSyncTimestamp = timestamp
-        logger.d(TAG, "Full sync started with timestamp: $timestamp")
-    }
-
-    override fun stopFullSync(): Long? {
-        val ts = fullSyncTimestamp
-        fullSyncTimestamp = null
-        if (ts != null) {
-            logger.d(TAG, "Full sync stopped, timestamp was: $ts")
-        }
-        return ts
+    override fun setCurrentAccountGuid(guid: String) {
+        currentAccountGuid = guid
+        logger.d(TAG, "Current account GUID set: ${guid.take(8)}...")
     }
 
     // Private implementation methods
@@ -673,15 +668,14 @@ class WebSocketRepositoryImpl @Inject constructor(
                 logger.d(TAG, "Received catalog update: $catalogType (${data.size} items)")
 
                 // Get current account guid for database operations
-                val accountGuid = currentAccount?.guid ?: run {
+                val accountGuid = currentAccountGuid ?: currentAccount?.guid ?: run {
                     logger.e(TAG, "No current account for catalog update")
                     return@launch
                 }
 
-                // Use full sync timestamp if active, otherwise current time
-                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
-
                 // Save in batches to reduce memory pressure
+                // 1C embeds a UTC timestamp in every data element;
+                // XMap picks it up from the map automatically.
                 val batchSize = 500
                 val batch = ArrayList<XMap>(batchSize)
                 var savedCount = 0
@@ -691,7 +685,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                         val itemMap = item as? Map<*, *> ?: continue
                         val xMap = XMap(itemMap)
                         xMap.setDatabaseId(accountGuid)
-                        xMap.setTimestamp(timestamp)
                         batch.add(xMap)
 
                         if (batch.size >= batchSize) {
@@ -791,21 +784,31 @@ class WebSocketRepositoryImpl @Inject constructor(
                 }
 
                 // Get current account guid for database operations
-                val accountGuid = currentAccount?.guid ?: run {
+                val accountGuid = currentAccountGuid ?: currentAccount?.guid ?: run {
                     logger.e(TAG, "No current account for unified payload")
                     return@launch
                 }
 
                 val optionsItems = mutableListOf<com.google.gson.JsonObject>()
                 val counters = mutableMapOf<String, Int>()
-                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
                 val batchSize = 500
                 val batch = ArrayList<XMap>(batchSize)
                 val gson = Gson()
+                var batchCompleteTimestamp: Long? = null
 
                 for (i in 0 until dataArray.size()) {
                     try {
                         val item = dataArray.get(i).asJsonObject
+
+                        // Check for batch_complete sentinel from server
+                        val itemType = item.get("type")?.asString
+                        if (itemType == Constants.VALUE_ID_BATCH_COMPLETE) {
+                            batchCompleteTimestamp = item.get("timestamp")?.asLong
+                            Log.d("XBUG", "WS: <- batch_complete received, timestamp=$batchCompleteTimestamp")
+                            logger.d(TAG, "Batch complete signal received, timestamp=$batchCompleteTimestamp")
+                            continue
+                        }
+
                         val valueId = item.get("value_id")?.asString
 
                         if (valueId.isNullOrEmpty()) {
@@ -818,10 +821,12 @@ class WebSocketRepositoryImpl @Inject constructor(
                                 optionsItems.add(item)
                             }
                             else -> {
+                                // 1C embeds a UTC timestamp in every data element;
+                                // XMap picks it up from the map automatically.
+                                // We only set databaseId (account GUID) here.
                                 val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
                                 val xMap = XMap(itemMap)
                                 xMap.setDatabaseId(accountGuid)
-                                xMap.setTimestamp(timestamp)
                                 batch.add(xMap)
                             }
                         }
@@ -853,9 +858,17 @@ class WebSocketRepositoryImpl @Inject constructor(
                 if (totalItems > 0 || optionsItems.isNotEmpty()) {
                     logger.d(TAG, "Saved $totalItems catalog items: $counters")
                     sendAck(dataMessage.messageId, "catalog", totalItems)
-                } else {
+                } else if (batchCompleteTimestamp == null) {
                     logger.w(TAG, "No valid items in unified payload")
                     sendAck(dataMessage.messageId, "unified", 0)
+                } else {
+                    sendAck(dataMessage.messageId, "batch_complete", 0)
+                }
+
+                // Emit batch_complete event after all data is saved and ACKed
+                if (batchCompleteTimestamp != null) {
+                    _batchComplete.emit(batchCompleteTimestamp)
+                    logger.d(TAG, "Batch complete emitted with timestamp: $batchCompleteTimestamp")
                 }
 
             } catch (e: Exception) {
@@ -912,104 +925,6 @@ class WebSocketRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             logger.e(TAG, "Error processing options: ${e.message}")
             sendError(messageId, "options", e.message ?: "Failed to process")
-        }
-    }
-
-    /**
-     * Processes catalog items from unified payload.
-     */
-    private suspend fun processCatalogItems(
-        catalogItems: List<XMap>,
-        counters: Map<String, Int>,
-        messageId: String
-    ) {
-        try {
-            dataExchangeRepository.saveData(catalogItems)
-            logger.d(TAG, "Saved ${catalogItems.size} catalog items: $counters")
-            sendAck(messageId, "catalog", catalogItems.size)
-        } catch (e: Exception) {
-            logger.e(TAG, "Error saving catalog data: ${e.message}")
-            sendError(messageId, "catalog", e.message ?: "Save failed")
-        }
-    }
-
-    /**
-     * Legacy handler for catalog update (kept for backwards compatibility).
-     * @deprecated Use handleUnifiedPayload instead
-     */
-    @Deprecated("Use handleUnifiedPayload instead")
-    private fun handleUnifiedCatalogUpdate(dataMessage: IncomingDataMessage) {
-        scope.launch {
-            try {
-                // Extract data array from the message
-                val dataArray = dataMessage.data.getAsJsonArray("data")
-                if (dataArray == null || dataArray.size() == 0) {
-                    logger.w(TAG, "Empty data array in unified catalog update")
-                    sendAck(dataMessage.messageId, "catalog", 0)
-                    return@launch
-                }
-
-                // Get current account guid for database operations
-                val accountGuid = currentAccount?.guid ?: run {
-                    logger.e(TAG, "No current account for unified catalog update")
-                    return@launch
-                }
-
-                // Use full sync timestamp if active, otherwise current time
-                val timestamp = fullSyncTimestamp ?: System.currentTimeMillis()
-
-                // Save in batches to reduce memory pressure
-                val batchSize = 500
-                val batch = ArrayList<XMap>(batchSize)
-                val counters = mutableMapOf<String, Int>()
-                val gson = Gson()
-                var savedCount = 0
-
-                try {
-                    for (i in 0 until dataArray.size()) {
-                        try {
-                            val item = dataArray.get(i).asJsonObject
-                            val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
-
-                            val xMap = XMap(itemMap)
-                            xMap.setDatabaseId(accountGuid)
-                            xMap.setTimestamp(timestamp)
-                            batch.add(xMap)
-
-                            val valueId = xMap.getValueId()
-                            counters[valueId] = (counters[valueId] ?: 0) + 1
-
-                            if (batch.size >= batchSize) {
-                                dataExchangeRepository.saveData(batch)
-                                savedCount += batch.size
-                                batch.clear()
-                            }
-                        } catch (e: Exception) {
-                            logger.e(TAG, "Error converting catalog item: ${e.message}")
-                        }
-                    }
-
-                    if (batch.isNotEmpty()) {
-                        dataExchangeRepository.saveData(batch)
-                        savedCount += batch.size
-                        batch.clear()
-                    }
-
-                    if (savedCount > 0) {
-                        logger.d(TAG, "Saved $savedCount unified catalog items: $counters")
-                        sendAck(dataMessage.messageId, "catalog", savedCount)
-                    } else {
-                        logger.w(TAG, "No valid items in unified catalog update")
-                        sendAck(dataMessage.messageId, "catalog", 0)
-                    }
-                } catch (e: Exception) {
-                    logger.e(TAG, "Error saving unified catalog data: ${e.message}")
-                    sendError(dataMessage.messageId, "catalog", e.message ?: "Save failed")
-                }
-
-            } catch (e: Exception) {
-                logger.e(TAG, "Error handling unified catalog update: ${e.message}")
-            }
         }
     }
 

@@ -124,7 +124,6 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE = "upload_image";
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION = "upload_location";
     public static final String WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS = "download_catalogs";
-    public static final String WEBSOCKET_MESSAGE_TYPE_SYNC_COMPLETE = "sync_complete";
 
     /**
      * WebSocket data types (for payload.data_type field)
@@ -152,6 +151,7 @@ public final class Constants {
     public static final String VALUE_ID_CLIENTS_DIRECTIONS = "clients_directions";
     public static final String VALUE_ID_CLIENTS_GOODS = "clients_goods";
     public static final String VALUE_ID_IMAGES = "images";
+    public static final String VALUE_ID_BATCH_COMPLETE = "batch_complete";
 
     /**
      * Device status values from server

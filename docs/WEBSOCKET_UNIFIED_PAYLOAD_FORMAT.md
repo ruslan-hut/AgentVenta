@@ -200,11 +200,13 @@ Send catalog items (clients, products, debts, etc.) in a single message or mixed
 1. Receives message with `data_type: "catalog"`
 2. Extracts data array
 3. For each item:
-   - Converts to `XMap` (preserves all fields including `value_id`)
+   - Checks for `batch_complete` sentinel (item with `type: "batch_complete"`) — see section 5
+   - Converts to `XMap` (preserves all fields including `value_id` and `timestamp` from 1C)
    - Adds `databaseId` (current account GUID)
-   - Adds `timestamp`
+   - **Does NOT overwrite `timestamp`** — uses the UTC millisecond value embedded by 1C
 4. Saves all items via `DataExchangeRepository.saveData()`
 5. Sends ACK with count summary
+6. If `batch_complete` was found, emits `batchComplete(timestamp)` to trigger cleanup
 
 **Supported `value_id` values:**
 - `clients`
@@ -221,7 +223,50 @@ Send catalog items (clients, products, debts, etc.) in a single message or mixed
 
 ---
 
-## 3. Legacy Format Support
+## 3. Batch Complete (Full Sync Finish Signal)
+
+### Backend → Android
+
+After 1C finishes pushing all catalog data for a device, it calls `POST /api/v1/push/complete` with a UTC millisecond timestamp. The relay server queues a sentinel item that arrives as part of a regular data message.
+
+**Timestamp Convention:**
+- 1C generates a UTC millisecond timestamp **before** starting the batch
+- 1C embeds this same timestamp in every data element it pushes (as the `timestamp` field)
+- 1C sends the same timestamp in the `push/complete` call
+- The app saves data items with the timestamp already in the data (does NOT overwrite it)
+- On `batch_complete`, the app deletes all local catalog items where `timestamp < T`
+
+```json
+{
+  "type": "data",
+  "message_id": "507f1f77bcf86cd799439011",
+  "timestamp": "2026-03-16T10:00:00Z",
+  "status": "approved",
+  "payload": [
+    {
+      "type": "batch_complete",
+      "timestamp": 1710583200000
+    }
+  ]
+}
+```
+
+**Android Processing:**
+1. `handleUnifiedPayload()` detects item with `type: "batch_complete"`
+2. Extracts `timestamp` (UTC milliseconds from 1C)
+3. Sends ACK to relay server
+4. Emits `batchComplete(timestamp)` via `WebSocketRepository.batchComplete` SharedFlow
+5. `NetworkRepositoryImpl` observes `batchComplete` and calls `DataExchangeRepository.cleanUp(accountGuid, timestamp)`
+6. Cleanup deletes all catalog rows where `timestamp < T` for the current account
+
+**Constants:**
+```java
+public static final String VALUE_ID_BATCH_COMPLETE = "batch_complete";
+```
+
+---
+
+## 4. Legacy Format Support
 
 The system still supports the old single-object format for backwards compatibility:
 
@@ -256,7 +301,7 @@ This is automatically converted internally to:
 
 ---
 
-## 4. Response Messages
+## 5. Response Messages
 
 ### ACK (Android → Backend)
 
@@ -310,25 +355,30 @@ public static final String VALUE_ID_CLIENTS_LOCATIONS = "clients_locations";
 public static final String VALUE_ID_CLIENTS_DIRECTIONS = "clients_directions";
 public static final String VALUE_ID_CLIENTS_GOODS = "clients_goods";
 public static final String VALUE_ID_IMAGES = "images";
+public static final String VALUE_ID_BATCH_COMPLETE = "batch_complete";
 ```
 
 ### Processing Flow
 
-**WebSocketRepositoryImpl.kt:340-365**
+**WebSocketRepositoryImpl.kt — handleIncomingMessage:**
 ```kotlin
 when (dataMessage.dataType) {
-    Constants.WEBSOCKET_DATA_TYPE_OPTIONS -> {
-        handleOptionsUpdate(dataMessage)
-    }
     Constants.WEBSOCKET_DATA_TYPE_CATALOG -> {
-        handleUnifiedCatalogUpdate(dataMessage)
+        // Unified format: routes by value_id, detects batch_complete
+        handleUnifiedPayload(dataMessage)
     }
     else -> {
-        // Legacy format - emit to subscribers
+        // Legacy format or specific handlers
+        sendAck(dataMessage.messageId)
         _incomingMessages.emit(dataMessage)
     }
 }
 ```
+
+**handleUnifiedPayload** processes each item:
+- `type == "batch_complete"` → extract timestamp, emit `batchComplete`
+- `value_id == "options"` → update UserAccount.options
+- Other `value_id` values → save as catalog data via `DataExchangeRepository`
 
 ---
 
@@ -473,10 +523,10 @@ when (dataMessage.dataType) {
 
 ## Performance Considerations
 
-1. **Batch Size**: Recommended max 100 items per message
-2. **Mixed Types**: Grouping same types together is more efficient
+1. **Batch Size**: Server chunks at 1000 items max per WebSocket frame
+2. **Mixed Types**: Grouping same types together is more efficient for the app's separator logic
 3. **Acknowledgment**: Wait for ACK before sending next batch
-4. **Timestamps**: Use server timestamp for consistency
+4. **Timestamps**: 1C generates a UTC millisecond timestamp and embeds it in every data element. The app preserves this value — does not overwrite it. The same timestamp is sent in `batch_complete` for cleanup.
 5. **Message IDs**: Must be unique for tracking
 
 ---

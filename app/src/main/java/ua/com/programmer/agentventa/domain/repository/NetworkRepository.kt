@@ -7,7 +7,6 @@ import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.ProductImage
 import ua.com.programmer.agentventa.data.remote.Result
-import ua.com.programmer.agentventa.data.websocket.WebSocketSyncResult
 import java.io.File
 
 interface NetworkRepository {
@@ -51,18 +50,4 @@ interface NetworkRepository {
      */
     suspend fun uploadLocationsViaWebSocket(locations: List<LocationHistory>): Flow<Result>
 
-    /**
-     * Download all catalogs via WebSocket
-     * Catalogs include: clients, products, debts, companies, stores, rests, prices, images
-     * @param fullSync If true, download all data; if false, only changes since last sync
-     * @return Flow emitting download progress and result
-     */
-    suspend fun downloadCatalogsViaWebSocket(fullSync: Boolean = false): Flow<Result>
-
-    /**
-     * Perform full document sync via WebSocket
-     * Uploads all unsent documents and downloads catalog updates
-     * @return Flow emitting sync progress and final result
-     */
-    suspend fun syncViaWebSocket(): Flow<Result>
 }

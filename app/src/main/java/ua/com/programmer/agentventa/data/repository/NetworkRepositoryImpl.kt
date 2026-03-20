@@ -144,6 +144,20 @@ class NetworkRepositoryImpl @Inject constructor(
                 logger.e(logTag, "Error marking document as sent: ${e.message}")
             }
         }.launchIn(CoroutineScope(Dispatchers.IO))
+
+        // Subscribe to batch_complete signals from server to clean up stale catalog data.
+        // The server sends batch_complete with a UTC timestamp after all catalog data
+        // has been pushed. We use that timestamp to delete items not refreshed in this sync.
+        webSocketRepository.batchComplete.onEach { serverTimestamp ->
+            val accountGuid = currentSystemAccount?.guid ?: return@onEach
+            try {
+                Log.d("XBUG", "batchComplete: cleaning up data older than $serverTimestamp for $accountGuid")
+                logger.d(logTag, "Batch complete received — cleaning up stale data (timestamp=$serverTimestamp)")
+                dataRepository.cleanUp(accountGuid, serverTimestamp)
+            } catch (e: Exception) {
+                logger.e(logTag, "Error during batch_complete cleanup: ${e.message}")
+            }
+        }.launchIn(CoroutineScope(Dispatchers.IO))
     }
 
     private suspend fun onConnectionError() {
@@ -268,44 +282,30 @@ class NetworkRepositoryImpl @Inject constructor(
         val currentAccount = account
         Log.d("XBUG", "updateAll: START (full sync), useWebSocket=${currentAccount?.useWebSocket}")
 
-        // WebSocket full sync path
+        // WebSocket sync path: only upload documents.
+        // Catalog data is pushed by the server asynchronously;
+        // batch_complete signal triggers cleanup via batchComplete observer.
         if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
             Log.d("XBUG", "updateAll: using WebSocket path")
-            logger.d(logTag, "Using WebSocket full sync")
+            logger.d(logTag, "Using WebSocket sync — uploading documents")
             _timestamp = System.currentTimeMillis()
-            _options = UserOptionsBuilder.build(currentAccount)
             val accountGuid = currentAccount.guid
-
-            // Start full sync mode — all incoming catalog data will use this timestamp
-            webSocketRepository.startFullSync(_timestamp)
+            webSocketRepository.setCurrentAccountGuid(accountGuid)
 
             try {
-                // 1. Upload unsent documents
                 sendDocumentsViaWebSocket(accountGuid).collect {
                     emit(it)
                 }
-
-                // 2. Request full catalog download
-                emit(Result.Progress("Requesting full catalog download..."))
-                downloadCatalogsViaWebSocket(fullSync = true).collect {
-                    emit(it)
-                }
             } catch (e: Exception) {
-                webSocketRepository.stopFullSync()
                 Log.e("XBUG", "updateAll: WebSocket error: ${e.message}")
-                logger.e(logTag, "WebSocket full sync error: $e")
-                emit(Result.Error(e.message ?: "WebSocket full sync failed"))
+                logger.e(logTag, "WebSocket sync error: $e")
+                emit(Result.Error(e.message ?: "WebSocket sync failed"))
                 return@flow
             }
 
-            // 3. Stop full sync mode and clean up old data
-            webSocketRepository.stopFullSync()
-            dataRepository.cleanUp(accountGuid, _timestamp)
-            userAccountRepository.saveAccount(currentAccount)
-
             val timeSpent = showTime(_timestamp, System.currentTimeMillis())
             Log.d("XBUG", "updateAll: WebSocket DONE in $timeSpent")
-            logger.d(logTag, "WebSocket full sync finish: $timeSpent")
+            logger.d(logTag, "WebSocket sync finish: $timeSpent")
             emit(Result.Progress("finish: $timeSpent"))
             emit(Result.Success(""))
             return@flow
@@ -386,6 +386,7 @@ class NetworkRepositoryImpl @Inject constructor(
             Log.d("XBUG", "updateDiff: using WebSocket path")
             logger.d(logTag, "Using WebSocket differential sync")
             _timestamp = System.currentTimeMillis()
+            webSocketRepository.setCurrentAccountGuid(currentAccount.guid)
 
             try {
                 sendDocumentsViaWebSocket(currentAccount.guid).collect {
@@ -1074,109 +1075,4 @@ class NetworkRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Download all catalogs via WebSocket
-     *
-     * Note: This method sends a request to the server to push catalog updates.
-     * The actual catalog data will be received via WebSocket messages and handled
-     * by the WebSocketRepository's message handler.
-     */
-    override suspend fun downloadCatalogsViaWebSocket(fullSync: Boolean): Flow<Result> = flow {
-        try {
-            emit(Result.Progress("Requesting catalogs via WebSocket..."))
-
-            // Get last sync timestamp
-            val lastSyncTimestamp = if (fullSync) null else _timestamp
-
-            // Create catalog request payload
-            val catalogTypes = listOf(
-                "clients",
-                "products",
-                "debts",
-                "companies",
-                "stores",
-                "rests",
-                "prices",
-                "images"
-            )
-
-            val payloadMap = mapOf(
-                "catalog_types" to catalogTypes,
-                "full_sync" to fullSync,
-                "last_sync_timestamp" to lastSyncTimestamp
-            )
-            val payloadJson = Gson().toJson(payloadMap)
-
-            // Send catalog request via WebSocket and collect the result
-            val sendResult = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS,
-                payload = payloadJson
-            ).first()
-
-            when (sendResult) {
-                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
-                    logger.d(logTag, "Catalog request sent successfully via WebSocket")
-                    emit(Result.Progress("Catalog request sent, waiting for server response..."))
-                    // Note: Actual catalog data will be received via WebSocket messages
-                    // and processed by WebSocketRepository message handlers
-                    emit(Result.Success("Catalog request sent"))
-                }
-                is WebSocketSendResult.Failed -> {
-                    logger.e(logTag, "Failed to request catalogs via WebSocket: ${sendResult.error}")
-                    emit(Result.Error(sendResult.error))
-                }
-                is WebSocketSendResult.Pending -> {
-                    logger.d(logTag, "Catalog request queued")
-                    emit(Result.Progress("Catalog request queued"))
-                }
-            }
-        } catch (e: Exception) {
-            logger.e(logTag, "Error requesting catalogs via WebSocket: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
-    }
-
-    /**
-     * Perform full document sync via WebSocket
-     * Uploads all unsent documents and requests catalog updates
-     *
-     * Note: This method is simplified - marking documents as sent is handled by
-     * the WebSocket message handlers when they receive confirmation from the server
-     */
-    override suspend fun syncViaWebSocket(): Flow<Result> = flow {
-        try {
-            emit(Result.Progress("Starting WebSocket sync..."))
-
-            val currentAccount = account
-            if (currentAccount == null) {
-                emit(Result.Error("No current account"))
-                return@flow
-            }
-
-            // Use the existing sendDocumentsViaWebSocket which handles all document uploads
-            sendDocumentsViaWebSocket(currentAccount.guid).collect { result ->
-                emit(result)
-            }
-
-            // Request catalog updates
-            emit(Result.Progress("Requesting catalog updates..."))
-            downloadCatalogsViaWebSocket(fullSync = false).collect { result ->
-                when (result) {
-                    is Result.Progress -> emit(result)
-                    is Result.Success -> {
-                        logger.d(logTag, "Catalog request sent")
-                        emit(Result.Success("WebSocket sync complete"))
-                    }
-                    is Result.Error -> {
-                        logger.e(logTag, "Failed to request catalogs: ${result.message}")
-                        emit(result)
-                    }
-                }
-            }
-
-        } catch (e: Exception) {
-            logger.e(logTag, "Error during WebSocket sync: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
-    }
 }

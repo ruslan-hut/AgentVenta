@@ -179,19 +179,4 @@ class FakeNetworkRepository : NetworkRepository {
         }
     }
 
-    override suspend fun downloadCatalogsViaWebSocket(fullSync: Boolean): Flow<Result> = flow {
-        if (shouldSucceed) {
-            emit(Result.Success("Catalogs downloaded via WebSocket"))
-        } else {
-            emit(Result.Error(errorMessage))
-        }
-    }
-
-    override suspend fun syncViaWebSocket(): Flow<Result> = flow {
-        if (shouldSucceed) {
-            emit(Result.Success("WebSocket sync completed"))
-        } else {
-            emit(Result.Error(errorMessage))
-        }
-    }
 }

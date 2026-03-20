@@ -75,11 +75,13 @@ The mobile app supports two sync modes: **differential** (incremental) and **ful
 
 ### Full Sync (complete catalog replacement)
 
-1C sends **all** catalog data for the device. The app uses a timestamp-based mechanism to detect and remove stale items:
+1C sends **all** catalog data for the device. The timestamp-based mechanism ensures stale items are removed:
 
-1. Before the sync starts, the app records a timestamp `T`
-2. Every item received during the sync is stamped with `T`
-3. After all data is received, the app deletes all catalog items where `timestamp < T`
+1. 1C generates a UTC millisecond timestamp `T` before starting the batch
+2. 1C embeds `T` as the `timestamp` field in every data element it sends
+3. The app saves each item with the `timestamp` value from the data (does not overwrite it)
+4. When 1C finishes, it calls `POST /api/v1/push/complete` with the same `T`
+5. The app receives the `batch_complete` sentinel and deletes all catalog items where `timestamp < T`
 
 This means any item that was **not** included in the full sync batch gets automatically removed from the device.
 
@@ -87,7 +89,12 @@ This means any item that was **not** included in the full sync batch gets automa
 
 ### What 1C Must Do for Full Sync
 
-Send **all** active catalog records for the device in one or more `POST /api/v1/push` calls. The critical requirement is **completeness** — every item that should remain on the device must be included.
+1. Generate a UTC millisecond timestamp (`T`) before starting the batch
+2. Include `"timestamp": T` in every data element sent via `POST /api/v1/push`
+3. Send **all** active catalog records for the device in one or more `POST /api/v1/push` calls
+4. If all pushes succeed, call `POST /api/v1/push/complete` with `{"device_uuid": "...", "timestamp": T}`
+
+The critical requirement is **completeness** — every item that should remain on the device must be included. The `push/complete` call tells the device the batch is finished so it can delete items not refreshed in this sync.
 
 **Required data types to send:**
 
@@ -123,12 +130,14 @@ Send **all** active catalog records for the device in one or more `POST /api/v1/
 **Example: full sync push sequence**
 
 ```
-1. POST /push → options + clients (batch 1)
-2. POST /push → products + prices (batch 2)
-3. POST /push → debts + payment_types + companies + stores + rests (batch 3)
+0. T = current UTC time in milliseconds (e.g. 1710583200000)
+1. POST /push → options + clients (each item has "timestamp": T)
+2. POST /push → products + prices (each item has "timestamp": T)
+3. POST /push → debts + payment_types + companies + stores + rests (each item has "timestamp": T)
+4. POST /push/complete → { "device_uuid": "...", "timestamp": T }
 ```
 
-Splitting into multiple push calls is fine — all items within the same full sync session receive the same timestamp on the device. The relay server queues each push and delivers them in order.
+Splitting into multiple push calls is fine — 1C embeds the same timestamp in every data element, so they are consistent regardless of how many push calls are used. The relay server queues each push and delivers them in order. The final `push/complete` call sends a `batch_complete` sentinel to the device so it knows the batch is finished.
 
 **Important:** Options should be sent first or together with the first batch, because `useCompanies`, `useStores`, and other flags determine which catalog types the app expects.
 

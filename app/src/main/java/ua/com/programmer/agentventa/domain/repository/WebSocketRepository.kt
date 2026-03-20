@@ -35,6 +35,14 @@ interface WebSocketRepository {
     val documentAcks: SharedFlow<DocumentAck>
 
     /**
+     * Flow of batch_complete events from the server.
+     * Emits the UTC timestamp (millis) when the server signals that all catalog
+     * data for a full sync has been pushed. Observers should use this timestamp
+     * to clean up stale data.
+     */
+    val batchComplete: SharedFlow<Long>
+
+    /**
      * Connects to the relay server using the provided user account.
      * Automatically handles reconnection with exponential backoff.
      *
@@ -105,17 +113,8 @@ interface WebSocketRepository {
     suspend fun clearPendingMessages()
 
     /**
-     * Starts full sync mode. All incoming catalog data will be stamped with the
-     * provided timestamp. After sync completes, call [stopFullSync] to end the mode.
-     * Items with timestamps older than this value can then be cleaned up.
-     *
-     * @param timestamp Timestamp to apply to all received items during full sync
+     * Sets the current account GUID for database operations on incoming data.
+     * Must be called before data can be received and saved.
      */
-    fun startFullSync(timestamp: Long)
-
-    /**
-     * Stops full sync mode. Returns the timestamp that was used for the sync,
-     * or null if full sync was not active.
-     */
-    fun stopFullSync(): Long?
+    fun setCurrentAccountGuid(guid: String)
 }

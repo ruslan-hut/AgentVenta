@@ -136,9 +136,15 @@ Manual migrations defined (MIGRATION_13_14, etc.). Schema location: `app/schemas
 - HttpAuthInterceptor: Adds Basic Auth headers from UserAccount credentials
 - TokenRefresh: Automatic token renewal on 401/403 responses
 
-**Sync Strategy:**
-1. **Full Sync**: Download all catalogs (clients, goods, debts, payment_types, companies, stores, rests, images) based on UserOptions. Cleans old data (60-day retention).
+**Sync Strategy (HTTP mode):**
+1. **Full Sync**: Download all catalogs (clients, goods, debts, payment_types, companies, stores, rests, images) based on UserOptions. Cleans old data via timestamp comparison.
 2. **Differential Sync**: Upload unsent documents (orders, cash, images, locations), receive sync results.
+
+**Sync Strategy (WebSocket mode):**
+1. **Document Upload**: App uploads unsent documents (orders, cash, images, locations) via WebSocket relay.
+2. **Catalog Receipt**: Fully passive — 1C pushes catalog data through the relay server at its own initiative. Each data element contains a UTC millisecond `timestamp` field set by 1C.
+3. **Batch Complete**: When 1C finishes pushing all data, it sends `POST /api/v1/push/complete` with the same timestamp. The relay delivers a `batch_complete` sentinel to the app.
+4. **Cleanup**: On receiving `batch_complete`, the app deletes all local catalog data where `timestamp < T` (the 1C timestamp), removing items not refreshed in the current batch.
 
 **Progress Tracking:** Flow<Result> with Progress/Success/Error states.
 
@@ -187,7 +193,11 @@ Each UserAccount represents a connection to a 1C database with its own data part
 **Key Point:** Never use `UserAccount.license` for authorization. It's metadata received from backend for display purposes only.
 
 #### Offline-First Sync
-All data stored locally in Room. Documents created offline marked with `isSent=0`. Sync uploads unsent documents and downloads catalog updates. Timestamp-based change tracking ensures data consistency.
+All data stored locally in Room. Documents created offline marked with `isSent=0`. Sync uploads unsent documents via HTTP or WebSocket.
+
+**HTTP mode:** App pulls catalog data from 1C server, stamps items with local timestamp, cleans up stale data after download completes.
+
+**WebSocket mode:** Catalog data is pushed by 1C through the relay server — the app does not request it. 1C generates a UTC millisecond timestamp, embeds it in every data element, and sends `batch_complete` with the same timestamp when done. The app saves items with the 1C timestamp (already in the data) and uses the `batch_complete` timestamp for cleanup (`DELETE WHERE timestamp < T`). The `batchComplete` flow in `WebSocketRepository` triggers cleanup in `NetworkRepositoryImpl`.
 
 #### Document-Content Pattern
 Orders use header-lines structure: Order (header) + OrderContent (lines). Cascade delete operations. Totals calculated via DAO aggregations with real-time Flow<DocumentTotals>.
