@@ -13,23 +13,31 @@
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:contentDescription="@string/cd_add_item"
         android:src="@drawable/baseline_add_circle_24"/>
     <ImageView
         android:layout_weight="1"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:contentDescription="@string/cd_remove_item"
         android:src="@drawable/baseline_remove_circle_24"/>
     <ImageView
         android:layout_weight="1"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:contentDescription="@string/cd_toggle_packed"
         android:src="@drawable/baseline_check_box_24"/>
     <ImageView
         android:layout_weight="1"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:contentDescription="@string/cd_edit_item"
         android:src="@drawable/baseline_edit_24"/>
 </LinearLayout>

@@ -68,12 +68,10 @@ class OrderListFragment: Fragment(), MenuProvider {
 
         recyclerView?.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (dy > 0 || recyclerView.computeVerticalScrollOffset() > 0) {
-                    // Scrolling down or already scrolled, hide the FAB
-                    binding?.fab?.hide()
-                } else {
-                    // Scrolling up, show the FAB
-                    binding?.fab?.show()
+                if (dy > 0) {
+                    binding?.fab?.shrink()
+                } else if (dy < 0) {
+                    binding?.fab?.extend()
                 }
             }
         })

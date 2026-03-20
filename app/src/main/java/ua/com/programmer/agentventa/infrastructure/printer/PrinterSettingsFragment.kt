@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,13 +53,13 @@ class PrinterSettingsFragment: Fragment() {
         binding?.let {
             it.bluetoothPrintEnabled.isChecked = viewModel.isBluetoothPrintEnabled()
             it.bluetoothPrintEnabled.setOnClickListener { view ->
-                viewModel.saveBluetoothPrintEnabled((view as androidx.appcompat.widget.AppCompatCheckBox).isChecked) }
+                viewModel.saveBluetoothPrintEnabled((view as android.widget.CompoundButton).isChecked) }
             it.useInFiscalService.isChecked = viewModel.useInFiscalService()
             it.useInFiscalService.setOnClickListener { view ->
-                viewModel.saveUseInFiscalService((view as androidx.appcompat.widget.AppCompatCheckBox).isChecked) }
+                viewModel.saveUseInFiscalService((view as android.widget.CompoundButton).isChecked) }
             it.autoPrintSavedOrders.isChecked = viewModel.autoPrint()
             it.autoPrintSavedOrders.setOnClickListener { view ->
-                viewModel.saveAutoPrint((view as androidx.appcompat.widget.AppCompatCheckBox).isChecked) }
+                viewModel.saveAutoPrint((view as android.widget.CompoundButton).isChecked) }
             it.printAreaWidth.setText(viewModel.readPrintAreaWidth().toString())
             it.printAreaWidth.setOnFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) {
@@ -71,18 +70,21 @@ class PrinterSettingsFragment: Fragment() {
         }
 
         viewModel.devices.observe(viewLifecycleOwner) {
-            setupDeviceSpinner(it)
+            setupDeviceDropdown(it)
         }
 
-        viewModel.currentDeviceIndex.observe(viewLifecycleOwner) {
-            binding?.deviceSpinner?.setSelection(it)
+        viewModel.currentDeviceIndex.observe(viewLifecycleOwner) { index ->
+            val adapter = binding?.deviceDropdown?.adapter
+            if (adapter != null && index < adapter.count) {
+                binding?.deviceDropdown?.setText(adapter.getItem(index).toString(), false)
+            }
         }
 
         viewModel.progress.observe(viewLifecycleOwner) { isProgress ->
             binding?.let {
                 it.progressBar.visibility = if (isProgress) View.VISIBLE else View.INVISIBLE
                 it.testButton.isEnabled = !isProgress
-                it.deviceSpinner.isEnabled = !isProgress
+                it.deviceDropdown.isEnabled = !isProgress
             }
         }
 
@@ -135,23 +137,19 @@ class PrinterSettingsFragment: Fragment() {
                 }
             }
 
-            // Initialize HTTP method spinner
+            // Initialize HTTP method dropdown
             val methods = resources.getStringArray(R.array.webhook_method_entries)
-            val methodAdapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, methods)
-            methodAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-            b.webhookMethodSpinner.adapter = methodAdapter
+            val methodAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, methods)
+            b.webhookMethodDropdown.setAdapter(methodAdapter)
 
             val currentMethod = webhookPrintService.getMethod()
             val methodIndex = methods.indexOf(currentMethod)
             if (methodIndex >= 0) {
-                b.webhookMethodSpinner.setSelection(methodIndex)
+                b.webhookMethodDropdown.setText(methods[methodIndex], false)
             }
 
-            b.webhookMethodSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                    webhookPrintService.setMethod(methods[position])
-                }
-                override fun onNothingSelected(parent: AdapterView<*>) {}
+            b.webhookMethodDropdown.setOnItemClickListener { _, _, position, _ ->
+                webhookPrintService.setMethod(methods[position])
             }
 
             // Initialize auth checkbox
@@ -259,22 +257,14 @@ class PrinterSettingsFragment: Fragment() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun setupDeviceSpinner(devices: List<BluetoothDevice>) {
+    private fun setupDeviceDropdown(devices: List<BluetoothDevice>) {
+        val deviceNames = devices.map { it.name }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, deviceNames)
+        binding?.deviceDropdown?.setAdapter(adapter)
 
-        val spinnerList = devices.map { it.name }
-        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
-        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-        binding?.deviceSpinner?.adapter = adapter
-
-        binding?.deviceSpinner?.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val description = spinnerList[position]
-                viewModel.onDeviceSelected(description)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Another interface callback
-            }
+        binding?.deviceDropdown?.setOnItemClickListener { _, _, position, _ ->
+            val description = deviceNames[position]
+            viewModel.onDeviceSelected(description)
         }
     }
 

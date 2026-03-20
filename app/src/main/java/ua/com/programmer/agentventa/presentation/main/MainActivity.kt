@@ -26,6 +26,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
+import android.view.View
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -87,18 +88,30 @@ class MainActivity : AppCompatActivity() {
             )
         )
 
-        val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.orderListFragment,
-                R.id.cashListFragment,
-                R.id.taskListFragment
-            ), drawerLayout)
+        val topLevelDestinations = setOf(
+            R.id.orderListFragment,
+            R.id.cashListFragment,
+            R.id.taskListFragment,
+            R.id.clientListFragment,
+            R.id.productListFragment,
+            R.id.syncFragment
+        )
+
+        val appBarConfiguration = AppBarConfiguration(topLevelDestinations, drawerLayout)
 
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_container) as NavHostFragment
         val navController = navHostFragment.navController
 
         NavigationUI.setupWithNavController(binding.toolbar, navController, appBarConfiguration)
         NavigationUI.setupWithNavController(binding.navigationView, navController)
+        NavigationUI.setupWithNavController(binding.bottomNavigation, navController)
+
+        // Show bottom nav only on top-level destinations (not in selection mode)
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
+            val isSelectMode = arguments?.getBoolean("modeSelect", false) == true
+            binding.bottomNavigation.visibility =
+                if (destination.id in topLevelDestinations && !isSelectMode) View.VISIBLE else View.GONE
+        }
 
         onBackPressedDispatcher.addCallback(this) {
             if (navController.previousBackStackEntry == null) {

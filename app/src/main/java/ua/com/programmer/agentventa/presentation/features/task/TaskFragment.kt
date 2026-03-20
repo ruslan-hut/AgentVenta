@@ -7,8 +7,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuHost
@@ -49,13 +47,13 @@ class TaskFragment: Fragment(), MenuProvider {
 
         binding.editDescription.setOnFocusChangeListener { v, hasFocus ->
             if(!hasFocus) {
-                viewModel.onEditDescription((v as EditText).text.toString())
+                viewModel.onEditDescription((v as android.widget.EditText).text.toString())
             }
         }
 
         binding.editNotes.setOnFocusChangeListener { v, hasFocus ->
             if(!hasFocus) {
-                viewModel.onEditNotes((v as EditText).text.toString())
+                viewModel.onEditNotes((v as android.widget.EditText).text.toString())
                 //editNotes()
             }
         }
@@ -184,16 +182,38 @@ class TaskFragment: Fragment(), MenuProvider {
 
     private fun editNotes() {
         val alertDialog = AlertDialog.Builder(requireContext())
-        val editText = EditText(requireContext())
+
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, 0)
+        }
+
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(
+            requireContext(),
+            null,
+            com.google.android.material.R.attr.textInputOutlinedStyle
+        ).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            hint = getString(R.string.doc_notes)
+        }
+
+        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(viewModel.document.value?.notes ?: "")
+        }
+
+        inputLayout.addView(editText)
+        container.addView(inputLayout)
 
         alertDialog.setTitle(R.string.doc_notes)
-
-        val lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT)
-        editText.layoutParams = lp
-        editText.setText(viewModel.document.value?.notes ?: "")
-        alertDialog.setView(editText)
+        alertDialog.setView(container)
 
         alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
             viewModel.onEditNotes(editText.text.toString())

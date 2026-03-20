@@ -8,7 +8,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -85,12 +84,12 @@ class CashFragment: Fragment(), MenuProvider {
             binding.apply {
                 docNumber.text = it.number.toString()
                 docDate.text = it.date
-                docCompany.text = it.company
-                docClient.text = it.client
+                docCompany.setText(it.company)
+                docClient.setText(it.client)
                 isFiscal.text = "" //it.fiscalNumber.toString()
                 isFiscal.isChecked = it.isFiscal > 0
-                docParentDocument.text = it.referenceGuid
-                docNotes.text = it.notes
+                docParentDocument.setText(it.referenceGuid)
+                docNotes.setText(it.notes)
 
                 if (it.sum > 0) {
                     docSum.setText(it.getSumFormatted())
@@ -234,16 +233,38 @@ class CashFragment: Fragment(), MenuProvider {
 
     private fun editNotes() {
         val alertDialog = AlertDialog.Builder(requireContext())
-        val editText = EditText(requireContext())
+
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, 0)
+        }
+
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(
+            requireContext(),
+            null,
+            com.google.android.material.R.attr.textInputOutlinedStyle
+        ).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            hint = getString(R.string.doc_notes)
+        }
+
+        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(viewModel.document.value?.notes ?: "")
+        }
+
+        inputLayout.addView(editText)
+        container.addView(inputLayout)
 
         alertDialog.setTitle(R.string.doc_notes)
-
-        val lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT)
-        editText.layoutParams = lp
-        editText.setText(viewModel.document.value?.notes ?: "")
-        alertDialog.setView(editText)
+        alertDialog.setView(container)
 
         alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
             viewModel.onEditNotes(editText.text.toString())

@@ -8,9 +8,13 @@
             type="ua.com.programmer.agentventa.presentation.features.order.OrderViewModel" />
     </data>
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -31,22 +35,28 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Header: number, distance, date -->
             <LinearLayout
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:gravity="center_vertical"
-                android:padding="8dp">
+                android:paddingTop="16dp"
+                android:paddingBottom="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <TextView
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/doc_number" />
 
                 <TextView
                     android:id="@+id/doc_number"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"/>
 
@@ -65,6 +75,7 @@
                     android:id="@+id/distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorSecondary" />
 
                 <TextView
@@ -75,18 +86,21 @@
                 <TextView
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/doc_date" />
 
                 <TextView
                     android:id="@+id/doc_date"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"/>
 
             </LinearLayout>
 
+            <!-- Fiscal badge -->
             <TextView
                 android:id="@+id/doc_is_fiscal"
                 android:layout_width="match_parent"
@@ -95,335 +109,313 @@
                 android:gravity="center_horizontal"
                 android:background="?attr/colorTertiaryContainer" />
 
-            <LinearLayout
-                style="@style/DocumentElement"
+            <!-- Delivery date - clickable selector -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="8dp">
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/doc_delivery_date"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/sharp_event_24"
+                app:endIconContentDescription="@string/doc_delivery_date">
 
-                <TextView
-                    style="@style/DocumentName"
-                    android:layout_height="wrap_content"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/doc_delivery_date" />
-
-                <TextView
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/doc_delivery_date"
-                    style="@style/DocumentValue" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:inputType="none" />
 
-            </LinearLayout>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
+            <!-- Company - clickable selector -->
+            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/titleCompany"
-                style="@style/DocumentElement"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="8dp">
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/company"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/baseline_arrow_right_24"
+                app:endIconContentDescription="@string/company">
 
-                <TextView
-                    style="@style/DocumentName"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/doc_company_title"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/company" />
-
-                <TextView
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/doc_company"
-                    style="@style/DocumentValue" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:inputType="none" />
 
-            </LinearLayout>
+            </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.divider.MaterialDivider
-                android:id="@+id/divider_company"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
+            <!-- Store - clickable selector -->
+            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/titleStore"
-                style="@style/DocumentElement"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingBottom="8dp">
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/store"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/baseline_arrow_right_24"
+                app:endIconContentDescription="@string/store">
 
-                <TextView
-                    style="@style/DocumentName"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/doc_store_title"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/store" />
-
-                <TextView
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/doc_store"
-                    style="@style/DocumentValue" />
-
-            </LinearLayout>
-
-            <com.google.android.material.divider.MaterialDivider
-                android:id="@+id/divider_store"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
-                style="@style/DocumentElement"
-                android:layout_height="wrap_content"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    style="@style/DocumentName"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/doc_client_title"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/doc_client" />
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:inputType="none" />
 
-                <TextView
-                    android:id="@+id/doc_client"
-                    style="@style/DocumentValue" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            </LinearLayout>
-
-            <com.google.android.material.divider.MaterialDivider
+            <!-- Client - clickable selector -->
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/doc_client"
+                app:endIconMode="custom"
+                app:endIconDrawable="@drawable/baseline_arrow_right_24"
+                app:endIconContentDescription="@string/doc_client">
 
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/doc_client"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="false"
+                    android:cursorVisible="false"
+                    android:inputType="none" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Price type - dropdown selector (already outlined) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/element_price_type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/price_type">
+
+                <AutoCompleteTextView
+                    android:id="@+id/doc_price_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Payment type - dropdown selector (already outlined) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/element_payment_type"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:hint="@string/payment_type">
+
+                <AutoCompleteTextView
+                    android:id="@+id/doc_payment_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Return switch -->
+            <LinearLayout
+                android:id="@+id/element_returns"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:text="@string/doc_isreturn" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/doc_isReturn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <!-- Discount -->
             <LinearLayout
                 android:id="@+id/element_discount"
-                style="@style/DocumentElement">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:minHeight="40dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:layout_marginTop="8dp">
 
                 <TextView
                     android:id="@+id/doc_discount_title"
-                    style="@style/DocumentName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/attr_discount" />
 
                 <TextView
                     android:id="@+id/doc_discount"
-                    style="@style/DocumentValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:gravity="end"
-                    android:layout_weight="1"
-                    android:layout_width="0dp" />
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textStyle="bold" />
 
             </LinearLayout>
 
-            <com.google.android.material.divider.MaterialDivider
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
+            <!-- Total price -->
             <LinearLayout
-                android:id="@+id/element_price_type"
-                style="@style/DocumentElement">
-
-                <TextView
-                    android:id="@+id/doc_price_type_title"
-                    style="@style/DocumentName"
-                    android:layout_weight="1"
-                    android:text="@string/price_type" />
-
-                <Spinner
-                    android:id="@+id/doc_price_type"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical|end"
-                    android:layout_weight="3"
-                    android:layout_width="0dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
-
-            </LinearLayout>
-
-            <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
-                android:id="@+id/element_payment_type"
-                style="@style/DocumentElement">
-
-                <TextView
-                    android:id="@+id/doc_payment_type_title"
-                    style="@style/DocumentName"
-                    android:layout_weight="1"
-                    android:text="@string/payment_type" />
-
-                <Spinner
-                    android:id="@+id/doc_payment_type"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical|end"
-                    android:layout_weight="3"
-                    android:layout_width="0dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
-
-            </LinearLayout>
-
-<!--            <LinearLayout-->
-<!--                android:id="@+id/element_rest_type"-->
-<!--                style="@style/DocumentElement">-->
-
-<!--                <TextView-->
-<!--                    android:id="@+id/doc_rest_type_title"-->
-<!--                    style="@style/DocumentName"-->
-<!--                    android:text="@string/rest_type" />-->
-
-<!--                <Spinner-->
-<!--                    android:id="@+id/doc_rest_type"-->
-<!--                    style="@style/DocumentValue"-->
-<!--                    android:gravity="end"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:layout_width="0dp" />-->
-
-<!--            </LinearLayout>-->
-
-<!--            <LinearLayout-->
-<!--                android:id="@+id/element_cash"-->
-<!--                style="@style/DocumentElement">-->
-
-<!--                <TextView-->
-<!--                    style="@style/DocumentName"-->
-<!--                    android:text="@string/doc_payment" />-->
-
-<!--                <androidx.appcompat.widget.SwitchCompat-->
-<!--                    android:background="?android:colorBackground"-->
-<!--                    android:id="@+id/doc_isCash"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    android:layout_weight="1" />-->
-
-<!--            </LinearLayout>-->
-
-            <com.google.android.material.divider.MaterialDivider
-                android:id="@+id/divider_before_returns"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout
-                android:id="@+id/element_returns"
-                style="@style/DocumentElement">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:layout_marginTop="4dp">
 
                 <TextView
-                    style="@style/DocumentName"
-                    android:text="@string/doc_isreturn" />
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/doc_isReturn"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1" />
-            </LinearLayout>
-
-            <com.google.android.material.divider.MaterialDivider
-                android:id="@+id/divider_after_returns"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout style="@style/DocumentElement">
-
-                <TextView
-                    style="@style/DocumentName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/doc_total_price" />
 
                 <TextView
                     android:id="@+id/doc_total_price"
-                    style="@style/DocumentValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:gravity="end"
-                    android:textAppearance="?android:textAppearanceLarge"
-                    android:textColor="?attr/colorTertiary" />
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorTertiary"
+                    android:textStyle="bold" />
 
             </LinearLayout>
 
-            <com.google.android.material.divider.MaterialDivider
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout style="@style/DocumentElement">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:minHeight="40dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <TextView
-                    style="@style/DocumentName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/doc_total_quantity" />
 
                 <TextView
                     android:id="@+id/doc_total_quantity"
-                    style="@style/DocumentValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:gravity="end"
-                    android:textAppearance="?android:textAppearanceLarge" />
+                    android:textAppearance="?attr/textAppearanceTitleLarge" />
 
             </LinearLayout>
 
-            <com.google.android.material.divider.MaterialDivider
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
-
-            <LinearLayout style="@style/DocumentElement">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:minHeight="40dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp">
 
                 <TextView
-                    style="@style/DocumentName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/doc_next_payment" />
 
                 <TextView
                     android:id="@+id/doc_next_payment"
-                    style="@style/DocumentValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:gravity="end"
-                    android:textAppearance="?android:textAppearanceLarge"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
                     android:textColor="?attr/colorPrimary" />
 
             </LinearLayout>
 
-            <com.google.android.material.divider.MaterialDivider
+            <!-- Notes - clickable to edit -->
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:hint="@string/doc_notes">
 
-            <LinearLayout
-                style="@style/DocumentElement"
-                android:gravity="center_vertical"
-                android:minHeight="48dp"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    style="@style/DocumentName"
-                    android:text="@string/doc_notes" />
-
-                <TextView
+                <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/doc_notes"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?android:textAppearanceMedium" />
+                    android:inputType="textMultiLine"
+                    android:minLines="1"
+                    android:maxLines="4" />
 
-            </LinearLayout>
-
-            <!--<TextView-->
-            <!--android:id="@+id/buttonEditGoods"-->
-            <!--style="@style/ButtonStyle"-->
-
-            <!--android:drawableRight="@drawable/ic_shopping_cart_white_24dp"-->
-            <!--android:text="@string/select_goods" />-->
-
+            </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fab_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/save"
+        app:icon="@drawable/baseline_save_24" />
+
+    </FrameLayout>
 </layout>

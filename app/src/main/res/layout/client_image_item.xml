@@ -16,6 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/cd_client_photo"
         android:src="@drawable/baseline_no_photography_24"/>
 
     <TextView
@@ -25,8 +26,11 @@
         android:layout_marginStart="2dp"
         android:layout_marginTop="2dp"
         android:maxLines="1"
-        android:textColor="@color/white"
-        android:shadowColor="@color/black"
+        android:textColor="?attr/colorOnPrimary"
+        android:shadowColor="@color/md_theme_scrim"
+        android:shadowRadius="4"
+        android:shadowDx="1"
+        android:shadowDy="1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -37,6 +41,7 @@
         android:padding="1dp"
         android:layout_margin="@dimen/card_margin"
         android:background="?attr/colorTertiaryContainer"
+        android:contentDescription="@string/cd_default_image"
         android:src="@drawable/baseline_check_box_24"
         app:layout_constraintBottom_toBottomOf="@+id/imageView"
         app:layout_constraintStart_toStartOf="parent" />
@@ -48,6 +53,7 @@
         android:padding="1dp"
         android:layout_margin="@dimen/card_margin"
         android:background="?attr/colorTertiaryContainer"
+        android:contentDescription="@string/cd_sent_status"
         android:src="@drawable/baseline_cloud_upload_24"
         app:layout_constraintBottom_toBottomOf="@+id/imageView"
         app:layout_constraintEnd_toEndOf="parent" />

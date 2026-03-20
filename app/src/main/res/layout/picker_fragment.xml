@@ -20,7 +20,7 @@
             android:textColor="?attr/colorOnSecondaryContainer"
             android:text="@string/holder_text"
             android:maxLines="1"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:paddingTop="16dp"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
@@ -33,45 +33,46 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorSecondaryContainer"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:paddingBottom="4dp"
+            android:paddingBottom="8dp"
             app:layout_constraintTop_toBottomOf="@+id/item_description" />
 
-        <LinearLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/item_quantity"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="8dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:hint="@string/attr_quantity"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/item_unit"
             app:layout_constraintTop_toBottomOf="@+id/item_code">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                android:text="@string/attr_quantity"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-
-            <EditText
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edit_quantity"
-                android:layout_weight="1"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/item_unit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/holder_text"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-        </LinearLayout>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/item_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/holder_text"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/item_quantity"
+            app:layout_constraintTop_toTopOf="@+id/item_quantity" />
 
         <LinearLayout
             android:id="@+id/available_quantity_view"
@@ -80,6 +81,7 @@
             android:orientation="horizontal"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
+            android:layout_marginTop="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/item_quantity">
@@ -93,6 +95,7 @@
                 android:id="@+id/available_quantity_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:text="@string/available_quantity" />
 
             <TextView
@@ -102,11 +105,13 @@
                 android:paddingRight="4dp"
                 android:paddingLeft="4dp"
                 android:text="@string/holder_number_decimal"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textStyle="bold" />
             <TextView
                 android:id="@+id/rest_unit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:text="@string/holder_text" />
             <TextView
                 android:layout_width="8dp"
@@ -118,6 +123,7 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="2dp"
                 android:paddingRight="2dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:text="@string/attr_per_package"/>
             <TextView
                 android:id="@+id/package_info"
@@ -125,43 +131,43 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="2dp"
                 android:paddingRight="2dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:text="@string/holder_number" />
         </LinearLayout>
 
-        <LinearLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/item_price"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:hint="@string/attr_price"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/price_unit"
             app:layout_constraintTop_toBottomOf="@+id/available_quantity_view">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                android:text="@string/attr_price"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-
-            <EditText
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edit_price"
-                android:layout_weight="1"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/price_unit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/holder_text"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
-        </LinearLayout>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/price_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/holder_text"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/item_price"
+            app:layout_constraintTop_toTopOf="@+id/item_price" />
 
         <LinearLayout
             android:id="@+id/item_is_packed"
@@ -170,6 +176,8 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="16dp"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/item_price">
@@ -179,9 +187,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="@string/flag_package"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-            <CheckBox
+            <com.google.android.material.checkbox.MaterialCheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/box_is_packed" />
@@ -192,8 +200,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="16dp"
+            android:minHeight="48dp"
+            android:gravity="center_vertical"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/item_is_packed">
@@ -203,9 +213,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="2"
                 android:text="@string/demand"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-            <CheckBox
+            <com.google.android.material.checkbox.MaterialCheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/box_is_demand" />
@@ -226,11 +236,14 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp" >
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:text="@string/price_variants" />
 
                 <TextView
@@ -240,7 +253,9 @@
                 <TextView
                     android:id="@+id/price_list_title_unit"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
@@ -265,6 +280,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:text="@string/attr_base_price" />
 
                 <TextView
@@ -273,6 +289,8 @@
                     android:layout_height="wrap_content"
                     android:paddingRight="4dp"
                     android:paddingLeft="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textStyle="bold"
                     android:text="@string/holder_number_decimal" />
             </LinearLayout>
 
@@ -295,6 +313,8 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:text="@string/competitor_price_list_title"
                 />
 
@@ -317,42 +337,27 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             android:orientation="horizontal"
+            android:gravity="end"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/block_competitor_price_list">
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_cancel"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
-                android:paddingLeft="16dp"
-                android:paddingTop="8dp"
-                android:paddingRight="16dp"
-                android:paddingBottom="8dp"
-                android:text="@string/cancel"
-                android:textAllCaps="true" />
+                android:layout_marginEnd="8dp"
+                android:text="@string/cancel" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_yes"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
-                android:background="@drawable/background_rounded_corner_light"
-                android:paddingLeft="16dp"
-                android:paddingTop="8dp"
-                android:paddingRight="16dp"
-                android:paddingBottom="8dp"
-                android:text="@string/save"
-                android:textAllCaps="true" />
+                android:text="@string/save" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

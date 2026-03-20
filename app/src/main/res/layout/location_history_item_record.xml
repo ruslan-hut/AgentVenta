@@ -1,9 +1,14 @@
 <com.google.android.material.card.MaterialCardView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp"
+    android:layout_marginStart="@dimen/card_margin_horizontal"
+    android:layout_marginEnd="@dimen/card_margin_horizontal"
+    android:layout_marginTop="@dimen/card_margin_vertical"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/elevation_card"
+    app:strokeWidth="0dp"
     app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
     <LinearLayout
@@ -21,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold"
-                android:textSize="16sp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:text="@string/holder_number_decimal"/>
             <TextView
                 android:layout_weight="1"
@@ -42,7 +47,7 @@
                 android:id="@+id/latitude"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:text="@string/holder_number_decimal"/>
             <TextView
@@ -53,7 +58,7 @@
                 android:id="@+id/longitude"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:text="@string/holder_number_decimal"/>
             <TextView

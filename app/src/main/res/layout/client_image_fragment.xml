@@ -35,6 +35,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="2dp"
+                    android:contentDescription="@string/cd_default_image"
                     android:src="@drawable/baseline_check_box_24" />
 
                 <ImageView
@@ -42,6 +43,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="2dp"
+                    android:contentDescription="@string/cd_sent_status"
                     android:src="@drawable/baseline_cloud_upload_24" />
             </LinearLayout>
 
@@ -50,10 +52,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="4dp"
-                android:textColor="@color/white"
-                android:shadowColor="@color/black"
+                android:textColor="?attr/colorOnPrimary"
+                android:shadowColor="@color/md_theme_scrim"
+                android:shadowRadius="4"
+                android:shadowDx="1"
+                android:shadowDy="1"
                 android:text="@{image.description}"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
         </LinearLayout>
 

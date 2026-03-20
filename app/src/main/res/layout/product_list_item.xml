@@ -10,8 +10,12 @@
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="@dimen/card_margin"
+        android:layout_marginStart="@dimen/card_margin_horizontal"
+        android:layout_marginEnd="@dimen/card_margin_horizontal"
+        android:layout_marginTop="@dimen/card_margin_vertical"
+        app:cardCornerRadius="@dimen/card_corner_radius"
         app:cardElevation="@dimen/elevation_card"
+        app:strokeWidth="0dp"
         app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
@@ -41,7 +45,7 @@
                     android:fontFamily="@font/fira_sans_condensed"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:text="@string/holder_text" />
 
                 <TextView
@@ -74,7 +78,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="bottom"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textStyle="bold"
                         android:paddingStart="4dp"
                         android:paddingEnd="4dp"
@@ -90,7 +94,7 @@
                         android:textColor="?attr/colorTertiary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:textStyle="bold"
                         android:text="@string/holder_number_decimal"
                         android:textAlignment="viewEnd"

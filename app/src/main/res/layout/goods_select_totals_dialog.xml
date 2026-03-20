@@ -19,7 +19,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:layout_gravity="center_vertical"
                 android:text="@string/doc_total_price"
                 android:gravity="center_vertical" />
@@ -28,7 +28,7 @@
                 android:id="@+id/total_price"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:textStyle="bold"
                 android:layout_weight="1"
                 android:text="@string/holder_number_decimal"
@@ -50,13 +50,13 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center_vertical"
                 android:text="@string/attr_discount"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
                 android:id="@+id/total_discount"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_weight="1"
                 android:text="@string/holder_number_decimal"
                 android:layout_gravity="end"
@@ -72,7 +72,7 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
                 android:text="@string/doc_total_quantity"
@@ -82,7 +82,7 @@
                 android:id="@+id/total_quantity"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_weight="1"
                 android:text="@string/holder_number"
                 android:layout_gravity="end"
@@ -98,7 +98,7 @@
 
             <TextView
                 android:layout_width="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
                 android:text="@string/weight"
@@ -108,7 +108,7 @@
                 android:id="@+id/total_weight"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_weight="1"
                 android:text="@string/holder_number"
                 android:layout_gravity="end"

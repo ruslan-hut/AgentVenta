@@ -42,28 +42,28 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:paddingBottom="8dp"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:text="@string/current_account_for_sync"/>
                     <TextView
                         android:id="@+id/description"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textStyle="bold"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_domain_24" />
                     <TextView
                         android:id="@+id/server"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_link_24" />
                     <TextView
                         android:id="@+id/format"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:text="@string/events_log"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_numbers_24" />
@@ -71,14 +71,14 @@
                         android:id="@+id/database"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_folder_24" />
                     <TextView
                         android:id="@+id/user"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_person_24" />
                     <TextView
@@ -87,7 +87,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="?attr/colorTertiary"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:drawablePadding="4dp"
                         app:drawableStartCompat="@drawable/baseline_device_unknown_24" />
 

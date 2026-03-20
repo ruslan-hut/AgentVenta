@@ -68,7 +68,7 @@
                         android:layout_height="wrap_content"
                         android:paddingBottom="16dp"
                         android:text="@{product.description}"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
 
                     <LinearLayout
                         android:layout_width="match_parent"

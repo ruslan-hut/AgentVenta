@@ -32,7 +32,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/holder_text"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold" />
 
             <ImageView
@@ -142,7 +142,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/sum"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
                 android:layout_width="8dp"
@@ -154,7 +154,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/holder_text"
                 android:textColor="?attr/colorTertiary"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold" />
 
         </LinearLayout>

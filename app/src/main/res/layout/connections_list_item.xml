@@ -8,11 +8,12 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginStart="@dimen/card_margin_horizontal"
+        android:layout_marginEnd="@dimen/card_margin_horizontal"
+        android:layout_marginTop="@dimen/card_margin_vertical"
+        app:cardCornerRadius="@dimen/card_corner_radius"
         app:cardElevation="@dimen/elevation_card"
+        app:strokeWidth="0dp"
         app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
         <LinearLayout
@@ -48,14 +49,14 @@
                         android:maxLines="1"
                         android:text="@string/holder_text"
                         android:textStyle="bold"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
                     <TextView
                         android:id="@+id/guid"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:text="@string/holder_text"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"/>
+                        android:textAppearance="?attr/textAppearanceTitleMedium"/>
                 </LinearLayout>
                 <LinearLayout
                     android:layout_width="match_parent"

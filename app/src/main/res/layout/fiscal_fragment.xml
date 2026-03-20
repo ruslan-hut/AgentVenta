@@ -33,7 +33,7 @@
                     android:layout_height="wrap_content"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:text="@string/holder_text" />
 
             </LinearLayout>
@@ -54,7 +54,7 @@
                     android:layout_height="wrap_content"
                     android:paddingStart="4dp"
                     android:paddingEnd="4dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:text="@string/holder_text" />
 
             </LinearLayout>
@@ -74,12 +74,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_active"
                     android:src="@drawable/dot_green" />
                 <ImageView
                     android:id="@+id/auth_red"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_inactive"
                     android:src="@drawable/dot_red" />
 
             </LinearLayout>
@@ -99,12 +101,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_active"
                     android:src="@drawable/dot_green" />
                 <ImageView
                     android:id="@+id/online_red"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_inactive"
                     android:src="@drawable/dot_red" />
 
             </LinearLayout>
@@ -130,12 +134,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_active"
                     android:src="@drawable/dot_green" />
                 <ImageView
                     android:id="@+id/shift_red"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/cd_status_inactive"
                     android:src="@drawable/dot_red" />
 
             </LinearLayout>
@@ -156,7 +162,7 @@
             <!--            android:layout_height="wrap_content"-->
             <!--            android:gravity="center_horizontal"-->
             <!--            android:textColor="?attr/colorError"-->
-            <!--            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />-->
+            <!--            android:textAppearance="?attr/textAppearanceTitleMedium" />-->
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/progress_bar"

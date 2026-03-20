@@ -542,4 +542,35 @@
         <item>45 хвилин</item>
         <item>60 хвилин</item>
     </string-array>
+
+    <!-- Accessibility content descriptions -->
+    <string name="cd_sync_status">Статус синхронізації</string>
+    <string name="cd_return_status">Статус повернення</string>
+    <string name="cd_cash_status">Статус оплати</string>
+    <string name="cd_document_status">Статус документа</string>
+    <string name="cd_packed_status">Статус пакування</string>
+    <string name="cd_demand_status">Статус замовлення</string>
+    <string name="cd_default_image">Основне зображення</string>
+    <string name="cd_sent_status">Статус відправки</string>
+    <string name="cd_status_active">Статус: активний</string>
+    <string name="cd_status_inactive">Статус: неактивний</string>
+    <string name="cd_returns_count">Кількість повернень</string>
+    <string name="cd_total_weight">Загальна вага</string>
+    <string name="cd_total_sum">Загальна сума</string>
+    <string name="cd_add_item">Додати елемент</string>
+    <string name="cd_remove_item">Видалити елемент</string>
+    <string name="cd_toggle_packed">Позначити пакування</string>
+    <string name="cd_edit_item">Редагувати</string>
+    <string name="cd_client_photo">Фото клієнта</string>
+
+    <!-- FAB Labels -->
+    <string name="fab_new">Новий</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_orders">Замовлення</string>
+    <string name="nav_cash">Каса</string>
+    <string name="nav_clients">Клієнти</string>
+    <string name="nav_products">Товари</string>
+    <string name="nav_sync">Обмін</string>
+
 </resources>

@@ -31,7 +31,7 @@
                 android:layout_weight="5"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:text="@string/holder_text"/>
             <TextView
                 android:id="@+id/element_2"
@@ -39,7 +39,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:gravity="end"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
                 android:text="@string/holder_number"/>
 
         </LinearLayout>

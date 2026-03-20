@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/orderListFragment"
+        android:icon="@drawable/baseline_format_list_bulleted_24"
+        android:title="@string/nav_orders" />
+
+    <item
+        android:id="@+id/cashListFragment"
+        android:icon="@drawable/baseline_attach_money_24"
+        android:title="@string/nav_cash" />
+
+    <item
+        android:id="@+id/clientListFragment"
+        android:icon="@drawable/baseline_people_24"
+        android:title="@string/nav_clients" />
+
+    <item
+        android:id="@+id/productListFragment"
+        android:icon="@drawable/baseline_shopping_cart_24"
+        android:title="@string/nav_products" />
+
+</menu>

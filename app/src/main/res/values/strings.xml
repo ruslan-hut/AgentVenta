@@ -591,4 +591,34 @@
     <string name="auto_connection">Auto Connection</string>
     <string name="marked_ready_to_send">Marked ready to send</string>
 
+    <!-- Accessibility content descriptions -->
+    <string name="cd_sync_status">Sync status</string>
+    <string name="cd_return_status">Return status</string>
+    <string name="cd_cash_status">Cash status</string>
+    <string name="cd_document_status">Document status</string>
+    <string name="cd_packed_status">Packed status</string>
+    <string name="cd_demand_status">Demand status</string>
+    <string name="cd_default_image">Default image</string>
+    <string name="cd_sent_status">Sent status</string>
+    <string name="cd_status_active">Status: active</string>
+    <string name="cd_status_inactive">Status: inactive</string>
+    <string name="cd_returns_count">Returns count</string>
+    <string name="cd_total_weight">Total weight</string>
+    <string name="cd_total_sum">Total sum</string>
+    <string name="cd_add_item">Add item</string>
+    <string name="cd_remove_item">Remove item</string>
+    <string name="cd_toggle_packed">Toggle packed</string>
+    <string name="cd_edit_item">Edit item</string>
+    <string name="cd_client_photo">Client photo</string>
+
+    <!-- FAB Labels -->
+    <string name="fab_new">New</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_orders">Orders</string>
+    <string name="nav_cash">Cash</string>
+    <string name="nav_clients">Clients</string>
+    <string name="nav_products">Products</string>
+    <string name="nav_sync">Sync</string>
+
 </resources>

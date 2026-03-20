@@ -11,13 +11,16 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     
     <!-- Component specific -->
-    <dimen name="card_margin">2dp</dimen>
+    <dimen name="card_margin">4dp</dimen>
+    <dimen name="card_margin_horizontal">8dp</dimen>
+    <dimen name="card_margin_vertical">4dp</dimen>
     <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_corner_radius">12dp</dimen>
     <dimen name="list_item_padding">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
-    
-    <!-- Elevation (Material Design 3) -->
-    <dimen name="elevation_card">1dp</dimen>
+
+    <!-- Elevation (Material Design 3 - tonal preferred) -->
+    <dimen name="elevation_card">0dp</dimen>
     <dimen name="elevation_fab">6dp</dimen>
     <dimen name="elevation_dialog">24dp</dimen>
     

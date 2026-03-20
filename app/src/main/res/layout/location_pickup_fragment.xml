@@ -44,14 +44,14 @@
                     android:id="@+id/coordinates"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:text="@string/holder_text" />
 
                 <TextView
                     android:id="@+id/description"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textStyle="bold"
                     android:text="@string/holder_text" />
             </LinearLayout>

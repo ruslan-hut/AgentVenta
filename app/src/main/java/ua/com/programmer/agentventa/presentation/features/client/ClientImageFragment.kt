@@ -7,9 +7,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
@@ -137,16 +135,38 @@ class ClientImageFragment: Fragment(), MenuProvider{
 
     private fun changeDescription() {
         val alertDialog = AlertDialog.Builder(requireContext())
-        val editText = EditText(requireContext())
+
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, 0)
+        }
+
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(
+            requireContext(),
+            null,
+            com.google.android.material.R.attr.textInputOutlinedStyle
+        ).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            hint = getString(R.string.description)
+        }
+
+        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(viewModel.image.value?.description ?: "")
+        }
+
+        inputLayout.addView(editText)
+        container.addView(inputLayout)
 
         alertDialog.setTitle(R.string.description)
-
-        val lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT)
-        editText.layoutParams = lp
-        editText.setText(viewModel.image.value?.description ?: "")
-        alertDialog.setView(editText)
+        alertDialog.setView(container)
 
         alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
             viewModel.changeDescription(editText.text.toString())

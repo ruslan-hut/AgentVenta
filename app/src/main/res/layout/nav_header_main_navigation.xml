@@ -77,7 +77,7 @@
             android:layout_weight="1"
             android:textColor="?attr/colorOnSurface"
             android:text="@string/pref_title_offline_mode"/>
-        <androidx.appcompat.widget.SwitchCompat
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/offline_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>

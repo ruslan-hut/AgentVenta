@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold"
                 android:text="@string/attr_debt" />
 

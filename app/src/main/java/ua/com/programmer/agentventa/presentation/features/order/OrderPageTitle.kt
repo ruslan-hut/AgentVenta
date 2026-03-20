@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -71,8 +70,18 @@ class OrderPageTitle: Fragment() {
             viewModel.onIsReturnClick(isChecked)
         }
 
-        setupPriceSpinner()
-        setupPaymentSpinner()
+        binding.docNotes.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                viewModel.onEditNotes(binding.docNotes.text.toString())
+            }
+        }
+
+        setupPriceDropdown()
+        setupPaymentDropdown()
+
+        binding.fabSave.setOnClickListener {
+            (parentFragment?.parentFragment as? OrderFragment)?.saveDocument()
+        }
 
         return binding.root
     }
@@ -86,40 +95,38 @@ class OrderPageTitle: Fragment() {
                 docNumber.text = order.number.toString()
                 docDate.text = order.date
                 distance.text = order.distance.toString()
-                docDeliveryDate.text = order.deliveryDate
-                docCompany.text = order.company
-                docStore.text = order.store
-                docClient.text = order.clientDescription
+                docDeliveryDate.setText(order.deliveryDate)
+                docCompany.setText(order.company)
+                docStore.setText(order.store)
+                docClient.setText(order.clientDescription)
                 docDiscount.text = order.discount.toString()
                 docIsReturn.isChecked = order.isReturn == 1
                 docTotalPrice.text = order.price.format(2)
                 docTotalQuantity.text = order.quantity.formatAsInt(3)
                 docNextPayment.text = order.nextPayment.format(2)
-                docNotes.text = order.notes
+                docNotes.setText(order.notes)
 
                 titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
-                dividerCompany.visibility = titleCompany.visibility
                 titleStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
-                dividerStore.visibility = titleStore.visibility
                 docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
                 elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
-                dividerBeforeReturns.visibility = elementReturns.visibility
-                dividerAfterReturns.visibility = elementReturns.visibility
 
                 if (order.isProcessed > 0) {
-                    docClient.isClickable = false
-                    docDeliveryDate.isClickable = false
+                    docClient.isEnabled = false
+                    docDeliveryDate.isEnabled = false
                     docPriceType.isEnabled = false
                     docPaymentType.isEnabled = false
-                    docIsReturn.isClickable = false
-                    docNextPayment.isClickable = false
+                    docIsReturn.isEnabled = false
+                    docNotes.isEnabled = false
+                    fabSave.visibility = View.GONE
                 } else {
-                    docClient.isClickable = true
-                    docDeliveryDate.isClickable = true
+                    docClient.isEnabled = true
+                    docDeliveryDate.isEnabled = true
                     docPriceType.isEnabled = options.allowPriceTypeChoose
                     docPaymentType.isEnabled = true
-                    docIsReturn.isClickable = true
-                    docNextPayment.isClickable = true
+                    docIsReturn.isEnabled = true
+                    docNotes.isEnabled = true
+                    fabSave.visibility = View.VISIBLE
                 }
 
                 if (order.hasLocation()) {
@@ -141,50 +148,40 @@ class OrderPageTitle: Fragment() {
 
     private fun setSelectedPriceValue(value: String) {
         val position = sharedModel.priceTypes.indexOfFirst { it.priceType == value }
-        binding.docPriceType.setSelection(position)
+        if (position >= 0) {
+            val descriptions = sharedModel.priceTypes.map { it.description }
+            binding.docPriceType.setText(descriptions[position], false)
+        }
     }
 
-    private fun setupPriceSpinner() {
+    private fun setupPriceDropdown() {
+        val descriptions = sharedModel.priceTypes.map { it.description }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, descriptions)
+        binding.docPriceType.setAdapter(adapter)
 
-        val spinnerList = sharedModel.priceTypes.map { it.description }
-        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
-        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-        binding.docPriceType.adapter = adapter
-
-        binding.docPriceType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val description = spinnerList[position]
-                val code = sharedModel.getPriceTypeCode(description)
-                viewModel.onPriceTypeSelected(code, description)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Another interface callback
-            }
+        binding.docPriceType.setOnItemClickListener { _, _, position, _ ->
+            val description = descriptions[position]
+            val code = sharedModel.getPriceTypeCode(description)
+            viewModel.onPriceTypeSelected(code, description)
         }
     }
 
     private fun setSelectedPaymentType(value: String) {
         val position = sharedModel.paymentTypes.indexOfFirst { it.paymentType == value }
-        binding.docPaymentType.setSelection(position)
+        if (position >= 0) {
+            val descriptions = sharedModel.paymentTypes.map { it.description }
+            binding.docPaymentType.setText(descriptions[position], false)
+        }
     }
 
-    private fun setupPaymentSpinner() {
+    private fun setupPaymentDropdown() {
+        val descriptions = sharedModel.paymentTypes.map { it.description }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, descriptions)
+        binding.docPaymentType.setAdapter(adapter)
 
-        val spinnerList = sharedModel.paymentTypes.map { it.description }
-        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
-        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-        binding.docPaymentType.adapter = adapter
-
-        binding.docPaymentType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val type = sharedModel.getPaymentType(spinnerList[position])
-                viewModel.onPaymentTypeSelected(type)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Another interface callback
-            }
+        binding.docPaymentType.setOnItemClickListener { _, _, position, _ ->
+            val type = sharedModel.getPaymentType(descriptions[position])
+            viewModel.onPaymentTypeSelected(type)
         }
     }
 

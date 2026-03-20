@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigation"
     app:startDestination="@id/orderListFragment">
+
+    <!-- Default transition animations for all actions -->
+    <action
+        android:id="@+id/action_global_default"
+        app:enterAnim="@android:anim/fade_in"
+        app:exitAnim="@android:anim/fade_out"
+        app:popEnterAnim="@android:anim/fade_in"
+        app:popExitAnim="@android:anim/fade_out" />
 
     <fragment
         android:id="@+id/orderListFragment"
@@ -10,7 +19,11 @@
         android:label="@string/header_orders_list" >
         <action
             android:id="@+id/action_orderListFragment_to_orderFragment"
-            app:destination="@id/orderFragment" />
+            app:destination="@id/orderFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
     </fragment>
     <fragment
         android:id="@+id/orderFragment"
@@ -81,7 +94,11 @@
             app:destination="@id/pickerFragment" />
         <action
             android:id="@+id/action_productListFragment_to_productFragment"
-            app:destination="@id/productFragment" />
+            app:destination="@id/productFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
         <action
             android:id="@+id/action_productListFragment_to_productImageFragment"
             app:destination="@id/productImageFragment" />
@@ -99,7 +116,11 @@
             app:destination="@id/clientListFragment" />
         <action
             android:id="@+id/action_clientListFragment_to_clientMenuFragment"
-            app:destination="@id/clientMenuFragment" />
+            app:destination="@id/clientMenuFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
         <argument
             android:name="modeSelect"
             app:argType="boolean"
@@ -163,7 +184,11 @@
         android:label="@string/header_cash_list" >
         <action
             android:id="@+id/action_cashListFragment_to_cashFragment"
-            app:destination="@id/cashFragment" />
+            app:destination="@id/cashFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
     </fragment>
     <fragment
         android:id="@+id/cashFragment"
@@ -190,7 +215,11 @@
         android:label="@string/header_tasks_list" >
         <action
             android:id="@+id/action_taskListFragment_to_taskFragment"
-            app:destination="@id/taskFragment" />
+            app:destination="@id/taskFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out"
+            app:popEnterAnim="@android:anim/fade_in"
+            app:popExitAnim="@android:anim/fade_out" />
     </fragment>
     <fragment
         android:id="@+id/taskFragment"

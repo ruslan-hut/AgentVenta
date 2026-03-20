@@ -13,12 +13,12 @@
         android:layout_gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="2dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="@dimen/card_margin_horizontal"
+        android:layout_marginEnd="@dimen/card_margin_horizontal"
+        android:layout_marginTop="@dimen/card_margin_vertical"
+        app:cardCornerRadius="@dimen/card_corner_radius"
         app:cardElevation="@dimen/elevation_card"
-        app:strokeWidth="1dp"
-        app:strokeColor="?attr/colorOutlineVariant"
+        app:strokeWidth="0dp"
         app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
             <LinearLayout
@@ -38,6 +38,7 @@
                         android:paddingTop="2dp"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
+                        android:contentDescription="@string/cd_sync_status"
                         android:src="@drawable/baseline_cloud_download_24"
                         app:tint="?attr/colorOnSecondary" />
 
@@ -46,6 +47,7 @@
                         android:paddingTop="2dp"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
+                        android:contentDescription="@string/cd_document_status"
                         android:src="@drawable/baseline_receipt_24"
                         app:tint="?attr/colorOnSecondary" />
 
@@ -54,6 +56,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:paddingTop="2dp"
+                        android:contentDescription="@string/cd_return_status"
                         android:src="@drawable/baseline_replay_24"
                         app:tint="?attr/colorOnSecondary" />
 
@@ -62,6 +65,7 @@
                         android:paddingTop="2dp"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
+                        android:contentDescription="@string/cd_cash_status"
                         android:src="@drawable/baseline_attach_money_24"
                         app:tint="?attr/colorOnSecondary" />
 
@@ -76,21 +80,21 @@
                     <TextView
                         android:id="@+id/list_item_client"
                         android:fontFamily="@font/fira_sans_condensed"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text" />
 
                     <TextView
                         android:id="@+id/list_item_company"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text" />
 
                     <TextView
                         android:id="@+id/list_item_store"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/holder_text" />
@@ -121,7 +125,7 @@
                             android:text="@string/holder_number_decimal"
                             android:textAlignment="viewEnd"
                             android:textColor="?attr/colorTertiary"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
                             android:textStyle="bold" />
                     </LinearLayout>
 

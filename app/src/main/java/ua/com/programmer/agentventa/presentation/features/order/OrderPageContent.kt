@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -34,7 +33,11 @@ class OrderPageContent: Fragment() {
         _binding = ModelContentOrderGoodsBinding.inflate(inflater,container,false)
         binding.lifecycleOwner = viewLifecycleOwner
 
-        setupPaymentSpinner()
+        setupPaymentDropdown()
+
+        binding.fabAddGoods.setOnClickListener {
+            (parentFragment?.parentFragment as? OrderFragment)?.openProductList()
+        }
 
         return binding.root
     }
@@ -59,12 +62,14 @@ class OrderPageContent: Fragment() {
             adapter.submitList(it )
         }
         viewModel.document.observe(viewLifecycleOwner) {
+            val editable = it.isProcessed == 0
             binding.apply {
                 orderTotalPrice.text = it.price.format(2)
                 orderTotalWeight.text = it.weight.format(3)
-                docPaymentType.isEnabled = it.isProcessed == 0
+                docPaymentType.isEnabled = editable
+                fabAddGoods.visibility = if (editable) View.VISIBLE else View.GONE
             }
-            adapter.setClickable(it.isProcessed == 0)
+            adapter.setClickable(editable)
             setSelectedPaymentType(it.paymentType)
         }
 
@@ -72,25 +77,20 @@ class OrderPageContent: Fragment() {
 
     private fun setSelectedPaymentType(value: String) {
         val position = sharedModel.paymentTypes.indexOfFirst { it.paymentType == value }
-        binding.docPaymentType.setSelection(position)
+        if (position >= 0) {
+            val descriptions = sharedModel.paymentTypes.map { it.description }
+            binding.docPaymentType.setText(descriptions[position], false)
+        }
     }
 
-    private fun setupPaymentSpinner() {
+    private fun setupPaymentDropdown() {
+        val descriptions = sharedModel.paymentTypes.map { it.description }
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, descriptions)
+        binding.docPaymentType.setAdapter(adapter)
 
-        val spinnerList = sharedModel.paymentTypes.map { it.description }
-        val adapter = ArrayAdapter(requireContext(), R.layout.simple_spinner_item, spinnerList)
-        adapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
-        binding.docPaymentType.adapter = adapter
-
-        binding.docPaymentType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                val type = sharedModel.getPaymentType(spinnerList[position])
-                viewModel.onPaymentTypeSelected(type)
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>) {
-                // Another interface callback
-            }
+        binding.docPaymentType.setOnItemClickListener { _, _, position, _ ->
+            val type = sharedModel.getPaymentType(descriptions[position])
+            viewModel.onPaymentTypeSelected(type)
         }
     }
 

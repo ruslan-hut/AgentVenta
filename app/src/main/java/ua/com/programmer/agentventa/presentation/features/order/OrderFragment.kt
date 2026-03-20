@@ -12,8 +12,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
-import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -78,10 +76,6 @@ class OrderFragment: Fragment(), MenuProvider {
         val adapter = OrderViewPagerAdapter(this)
 
         binding?.apply {
-            menuSelectClient.setOnClickListener { openClientList() }
-            menuSelectGoods.setOnClickListener { openProductList() }
-            menuEditNotes.setOnClickListener { editNotes() }
-
             container.adapter = adapter
             TabLayoutMediator(orderTabs, container) { tab, position ->
                 when (position) {
@@ -90,9 +84,6 @@ class OrderFragment: Fragment(), MenuProvider {
                     else -> tab.text = getString(R.string.title_attributes)
                 }
             }.attach()
-        }
-        binding?.menuSave?.setOnClickListener {
-            saveDocument()
         }
 
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
@@ -106,11 +97,7 @@ class OrderFragment: Fragment(), MenuProvider {
 
             sharedModel.setDocumentGuid(Constants.DOCUMENT_ORDER, guid, order.companyGuid, order.storeGuid)
 
-            if (isProcessed) {
-                binding?.orderBottomBar?.visibility = View.GONE
-            } else {
-                binding?.orderBottomBar?.visibility = View.VISIBLE
-            }
+            // FAB visibility is handled by child fragments via ViewModel
             // will run once if document has GUID an client is not already set
             viewModel.setClient(navigationArgs.clientGuid)
         }
@@ -166,7 +153,7 @@ class OrderFragment: Fragment(), MenuProvider {
 
     }
 
-    private fun saveDocument() {
+    fun saveDocument() {
         // check if document is ready to process
         if (notReadyToProcess()) return
         // check if fiscal service is ready if document is fiscal
@@ -179,7 +166,7 @@ class OrderFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun openProductList() {
+    fun openProductList() {
         val orderGuid = viewModel.getGuid()
         if (orderGuid.isEmpty()) return
         val action = OrderFragmentDirections.actionOrderFragmentToProductListFragment(
@@ -253,17 +240,38 @@ class OrderFragment: Fragment(), MenuProvider {
 
     private fun editNotes() {
         val alertDialog = AlertDialog.Builder(requireContext())
-        val editText = EditText(requireContext())
+
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        val container = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(padding, padding, padding, 0)
+        }
+
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(
+            requireContext(),
+            null,
+            com.google.android.material.R.attr.textInputOutlinedStyle
+        ).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            hint = getString(R.string.doc_notes)
+        }
+
+        val editText = com.google.android.material.textfield.TextInputEditText(inputLayout.context).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(viewModel.document.value?.notes ?: "")
+        }
+
+        inputLayout.addView(editText)
+        container.addView(inputLayout)
 
         alertDialog.setTitle(R.string.doc_notes)
-        //alertDialog.setMessage("Enter new text for TextView")
-
-        val lp = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.MATCH_PARENT)
-        editText.layoutParams = lp
-        editText.setText(viewModel.document.value?.notes ?: "")
-        alertDialog.setView(editText)
+        alertDialog.setView(container)
 
         alertDialog.setPositiveButton(R.string.save) { dialog, _ ->
             viewModel.onEditNotes(editText.text.toString())
@@ -398,10 +406,6 @@ class OrderFragment: Fragment(), MenuProvider {
 
     private fun saveInProgress(progress: Boolean) {
         binding?.apply {
-            menuSelectClient.isEnabled = !progress
-            menuSelectGoods.isEnabled = !progress
-            menuEditNotes.isEnabled = !progress
-            menuSave.visibility = if (progress) View.GONE else View.VISIBLE
             menuProgress.visibility = if (progress) View.VISIBLE else View.GONE
         }
     }
