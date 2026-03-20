@@ -465,6 +465,7 @@
     <string name="document_state_icon">Document state icon</string>
     <string name="error_no_current_account">Not selected current account</string>
     <string name="product">Product</string>
+    <string name="delimiter_semicolon" translatable="false">;</string>
     <string name="delimiter_quantity" translatable="false">x</string>
     <string name="events_log">Events log</string>
     <string name="sync_settings">Sync settings</string>
