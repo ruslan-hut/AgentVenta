@@ -261,6 +261,8 @@
     <string name="hint_press_back">Press once again to exit</string>
     <string name="pref_desc_rests_only">By default, show goods items having rests only</string>
     <string name="pref_title_rests_only">Goods with rests only</string>
+    <string name="pref_desc_sort_by_name">By default, sort goods items by name</string>
+    <string name="pref_title_sort_by_name">Sort by name</string>
     <string name="rests_only">Rests only</string>
     <string name="whole_list">Whole list</string>
     <string name="price_type">Price type</string>

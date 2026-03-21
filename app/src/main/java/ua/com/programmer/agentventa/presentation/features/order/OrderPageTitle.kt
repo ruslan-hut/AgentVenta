@@ -104,6 +104,7 @@ class OrderPageTitle: Fragment() {
                 docTotalPrice.text = order.price.format(2)
                 docTotalQuantity.text = order.quantity.formatAsInt(3)
                 docNextPayment.text = order.nextPayment.format(2)
+                rowNextPayment.visibility = if (order.nextPayment != 0.0) View.VISIBLE else View.GONE
                 docNotes.setText(order.notes)
 
                 titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE

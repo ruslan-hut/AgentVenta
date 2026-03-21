@@ -10,6 +10,7 @@ import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.data.local.entity.LProduct
@@ -76,6 +77,8 @@ class ProductListViewModel @Inject constructor(
         listParams.value = params
     }
 
+    private var loadDataJob: Job? = null
+
     private fun loadData() {
         val sharedParams = listParams.value ?: return
         _noDataTextVisibility.value = View.GONE
@@ -85,15 +88,13 @@ class ProductListViewModel @Inject constructor(
             groupGuid = currentGroupGuid.value ?: "",
         )
 
-        viewModelScope.launch {
-            launch (Dispatchers.IO) {
-                productRepository.getProducts(params).collect {
-                    withContext(Dispatchers.Main) {
-                        _noDataTextVisibility.value = if (it.isEmpty()) View.VISIBLE else View.GONE
-                        _products.value = it
-                    }
+        loadDataJob?.cancel()
+        loadDataJob = viewModelScope.launch(Dispatchers.IO) {
+            productRepository.getProducts(params).collect {
+                withContext(Dispatchers.Main) {
+                    _noDataTextVisibility.value = if (it.isEmpty()) View.VISIBLE else View.GONE
+                    _products.value = it
                 }
-
             }
         }
     }

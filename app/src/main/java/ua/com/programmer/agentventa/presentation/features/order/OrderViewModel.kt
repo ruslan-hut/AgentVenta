@@ -75,6 +75,10 @@ class OrderViewModel @Inject constructor(
     private val _navigateToPage = MutableStateFlow(-1)
     val navigateToPage: androidx.lifecycle.LiveData<Int> = _navigateToPage.asLiveData()
 
+    fun setNavigatePage(page: Int) {
+        _navigateToPage.value = page
+    }
+
     // Order content as StateFlow
     private val _currentContentFlow: StateFlow<List<LOrderContent>> = _documentGuid
         .flatMapLatest { guid ->

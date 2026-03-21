@@ -147,7 +147,8 @@ interface OrderDao {
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
             "IFNULL(product.description, '<?>') AS description," +
-            "IFNULL(product.code2, '<?>') AS code," +
+            "IFNULL(product.code1, '<?>') AS code," +
+            "IFNULL(product.code2, '<?>') AS code2," +
             "IFNULL(product.groupName, '') AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +
@@ -162,6 +163,7 @@ interface OrderDao {
                 "SELECT " +
                 "products.guid, " +
                 "products.description, " +
+                "products.code1, " +
                 "products.code2, " +
                 "products.group_guid," +
                 "IFNULL(product_groups.description, '') AS groupName " +
@@ -178,7 +180,8 @@ interface OrderDao {
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
             "IFNULL(product.description, '<?>') AS description," +
-            "IFNULL(product.code2, '<?>') AS code," +
+            "IFNULL(product.code1, '<?>') AS code," +
+            "IFNULL(product.code2, '<?>') AS code2," +
             "IFNULL(product.groupName, '') AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +
@@ -193,6 +196,7 @@ interface OrderDao {
             "SELECT " +
             "products.guid, " +
             "products.description, " +
+            "products.code1, " +
             "products.code2, " +
             "products.group_guid," +
             "IFNULL(product_groups.description, '') AS groupName " +
@@ -251,7 +255,7 @@ interface OrderDao {
     @Query("""
         SELECT
             content.product_guid AS productGuid,
-            IFNULL(product.code2, '<?>') AS code,
+            IFNULL(product.code1, '<?>') AS code,
             IFNULL(product.description, '<?>') AS description,
             IFNULL(product.groupName, '') AS groupName,
             content.unit_code AS unit,
@@ -261,7 +265,7 @@ interface OrderDao {
         FROM order_content AS content
         INNER JOIN orders ON content.order_guid = orders.guid
         LEFT OUTER JOIN (
-            SELECT products.guid, products.description, products.code2,
+            SELECT products.guid, products.description, products.code1,
                    IFNULL(product_groups.description, '') AS groupName
             FROM products
             LEFT OUTER JOIN (SELECT description, guid, db_guid FROM products WHERE is_group=1) AS product_groups

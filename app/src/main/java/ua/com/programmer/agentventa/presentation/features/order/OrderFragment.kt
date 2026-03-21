@@ -96,6 +96,9 @@ class OrderFragment: Fragment(), MenuProvider {
             (activity as AppCompatActivity).supportActionBar?.title = title
 
             sharedModel.setDocumentGuid(Constants.DOCUMENT_ORDER, guid, order.companyGuid, order.storeGuid)
+            if (order.priceType.isNotBlank()) {
+                sharedModel.setPriceByCode(order.priceType)
+            }
 
             // FAB visibility is handled by child fragments via ViewModel
             // will run once if document has GUID an client is not already set
@@ -112,7 +115,7 @@ class OrderFragment: Fragment(), MenuProvider {
         }
 
         viewModel.navigateToPage.observe(this.viewLifecycleOwner) {
-            binding?.container?.setCurrentItem(it, false)
+            if (it >= 0) binding?.container?.setCurrentItem(it, false)
         }
         viewModel.saveResult.observe(this.viewLifecycleOwner) {
             it ?: return@observe
@@ -169,6 +172,7 @@ class OrderFragment: Fragment(), MenuProvider {
     fun openProductList() {
         val orderGuid = viewModel.getGuid()
         if (orderGuid.isEmpty()) return
+        viewModel.setNavigatePage(1)
         val action = OrderFragmentDirections.actionOrderFragmentToProductListFragment(
             groupGuid = "",
             modeSelect = true

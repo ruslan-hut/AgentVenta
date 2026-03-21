@@ -39,6 +39,9 @@ class ApplicationSettingsFragment: PreferenceFragmentCompat(), SharedPreferences
             "show_rests_only" -> {
                 sharedModel.setRestsOnly(sharedPreferences?.getBoolean(pref, false) ?: false)
             }
+            "sort_by_name" -> {
+                sharedModel.setSortByName(sharedPreferences?.getBoolean(pref, false) ?: false)
+            }
             "websocket_idle_interval_minutes" -> {
                 val intervalMinutes = sharedPreferences?.getString(pref, "15")?.toIntOrNull() ?: 15
                 connectionManager.setIdleIntervalMinutes(intervalMinutes)

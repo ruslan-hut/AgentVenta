@@ -103,11 +103,9 @@ class ProductListFragment: Fragment(), MenuProvider {
 
             viewModel.setListParams(params)
 
-            if (params.restsOnly || params.sortByName || params.priceType.isNotBlank()) {
+            if (params.priceType.isNotBlank()) {
                 binding.tableTop.visibility = View.VISIBLE
                 binding.priceType.text = sharedModel.getPriceDescription(params.priceType)
-                binding.filterRestsOnly.visibility = if (params.restsOnly) View.VISIBLE else View.GONE
-                binding.sortByName.visibility = if (params.sortByName) View.VISIBLE else View.GONE
             } else {
                 binding.tableTop.visibility = View.GONE
             }

@@ -109,7 +109,9 @@ class SharedViewModel @Inject constructor(
     var selectProductAction: (LProduct?, () -> Unit) -> Unit = { _, _ -> }
 
     fun toggleSortByName() {
-        _sharedParams.value = _sharedParams.value.copy(sortByName = !_sharedParams.value.sortByName)
+        val newValue = !_sharedParams.value.sortByName
+        _sharedParams.value = _sharedParams.value.copy(sortByName = newValue)
+        preference.edit { putBoolean("sort_by_name", newValue) }
     }
 
     fun toggleRestsOnly() {
@@ -122,12 +124,20 @@ class SharedViewModel @Inject constructor(
         _sharedParams.value = _sharedParams.value.copy(restsOnly = value)
     }
 
+    fun setSortByName(value: Boolean) {
+        _sharedParams.value = _sharedParams.value.copy(sortByName = value)
+    }
+
     fun toggleClientProducts() {
         _sharedParams.value = _sharedParams.value.copy(clientProducts = !_sharedParams.value.clientProducts)
     }
 
     fun setPrice(description: String) {
         _sharedParams.value = _sharedParams.value.copy(priceType = getPriceTypeCode(description))
+    }
+
+    fun setPriceByCode(code: String) {
+        _sharedParams.value = _sharedParams.value.copy(priceType = code)
     }
 
     fun setDocumentGuid(type: String = "", guid: String = "", companyGuid: String = "", storeGuid: String = "") {
@@ -209,6 +219,7 @@ class SharedViewModel @Inject constructor(
         // Load preferences
         _sharedParams.value = _sharedParams.value.copy(
             restsOnly = preference.getBoolean("show_rests_only", false),
+            sortByName = preference.getBoolean("sort_by_name", false),
             ignoreBarcodeReads = preference.getBoolean("ignore_sequential_barcodes", false)
         )
     }

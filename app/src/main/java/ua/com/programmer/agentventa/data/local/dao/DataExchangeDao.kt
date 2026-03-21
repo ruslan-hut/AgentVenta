@@ -227,7 +227,8 @@ interface DataExchangeDao {
             "content.order_guid AS orderGuid," +
             "content.product_guid AS productGuid," +
             "IFNULL(product.description, '<?>') AS description," +
-            "IFNULL(product.code2, '<?>') AS code," +
+            "IFNULL(product.code1, '<?>') AS code," +
+            "IFNULL(product.code2, '<?>') AS code2," +
             "'' AS groupName," +
             "content.unit_code AS unit," +
             "content.quantity," +
@@ -242,6 +243,7 @@ interface DataExchangeDao {
             "SELECT " +
             "products.guid, " +
             "products.description, " +
+            "products.code1, " +
             "products.code2 " +
             "FROM products WHERE products.db_guid=:accountGuid) AS product " +
             "ON product.guid=content.product_guid " +

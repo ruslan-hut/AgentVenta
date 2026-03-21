@@ -32,6 +32,7 @@ data class LOrderContent(
     val orderGuid: String = "",
     val productGuid: String = "",
     val code: String = "",
+    val code2: String = "",
     val description: String = "",
     val groupName: String = "",
     val unit: String = "",
@@ -64,8 +65,8 @@ fun LOrderContent.toMap(): Map<String,Any> {
     return mapOf(
         "order_guid" to orderGuid,
         "item_guid" to productGuid,
-        "code1" to code,
-        "code2" to code,
+        "code1" to code2,
+        "code2" to code2,
         "description" to description,
         "unit_code" to unit,
         "quantity" to quantity,

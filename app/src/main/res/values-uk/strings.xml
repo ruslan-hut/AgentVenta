@@ -154,6 +154,8 @@
     <string name="hint_press_back">Нажміть ще раз для виходу</string>
     <string name="pref_desc_rests_only">За умовчанням показувати тільки товари із залишками</string>
     <string name="pref_title_rests_only">Товари із залишками</string>
+    <string name="pref_desc_sort_by_name">За умовчанням сортувати товари за назвою</string>
+    <string name="pref_title_sort_by_name">Сортування за назвою</string>
     <string name="rests_only">Тільки із залишком</string>
     <string name="whole_list">Всі товари</string>
     <string name="price_type">Категорія цін</string>
