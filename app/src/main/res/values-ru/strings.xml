@@ -306,6 +306,31 @@
     <string name="warn_no_location">Нет данных о местоположении клиента</string>
     <string name="pref_warn_read_only">Опции загружаются с сервера и не изменяются на устройстве</string>
     <string name="pref_summary_app_options">Настройки приложения</string>
+
+    <!-- Options screen: category titles -->
+    <string name="option_category_general">Общие</string>
+    <string name="option_category_orders">Заказы</string>
+    <string name="option_category_clients">Клиенты</string>
+    <string name="option_category_companies">Организации и склады</string>
+    <string name="option_category_location">Геолокация</string>
+    <string name="option_category_fiscal">Фискализация</string>
+
+    <!-- Options screen: option titles -->
+    <string name="option_title_printing">Печать документов</string>
+    <string name="option_title_currency">Валюта</string>
+    <string name="option_title_differential_updates">Дифференциальное обновление</string>
+    <string name="option_title_allow_return">Разрешить возвраты</string>
+    <string name="option_title_use_demands">Использовать требования</string>
+    <string name="option_title_edit_locations">Редактировать координаты клиентов</string>
+    <string name="option_title_clients_directions">Маршруты клиентов</string>
+    <string name="option_title_default_client">Клиент по умолчанию</string>
+    <string name="option_title_use_companies">Использовать организации</string>
+    <string name="option_title_use_stores">Использовать склады</string>
+    <string name="option_title_fiscal_provider">Поставщик фискализации</string>
+    <string name="option_title_fiscal_number">Фискальный номер</string>
+    <string name="option_title_fiscal_cashier">Кассир</string>
+    <string name="option_title_fiscal_device_id">ID фискального устройства</string>
+    <string name="option_value_not_set">Не указано</string>
     <string name="task">Задача</string>
     <string name="open_account_settings">Открыть настройки</string>
     <string name="current_account_for_sync">Текущие настройки подключения</string>

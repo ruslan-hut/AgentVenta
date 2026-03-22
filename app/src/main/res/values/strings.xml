@@ -396,6 +396,31 @@
     <string name="warn_no_location">No data about client location</string>
     <string name="pref_warn_read_only">Options are loaded from server and are not editable</string>
     <string name="pref_summary_app_options">General application settings</string>
+
+    <!-- Options screen: category titles -->
+    <string name="option_category_general">General</string>
+    <string name="option_category_orders">Orders</string>
+    <string name="option_category_clients">Clients</string>
+    <string name="option_category_companies">Companies and stores</string>
+    <string name="option_category_location">Location</string>
+    <string name="option_category_fiscal">Fiscal</string>
+
+    <!-- Options screen: option titles -->
+    <string name="option_title_printing">Printing enabled</string>
+    <string name="option_title_currency">Currency</string>
+    <string name="option_title_differential_updates">Differential updates</string>
+    <string name="option_title_allow_return">Allow returns</string>
+    <string name="option_title_use_demands">Use demands</string>
+    <string name="option_title_edit_locations">Edit clients locations</string>
+    <string name="option_title_clients_directions">Clients directions</string>
+    <string name="option_title_default_client">Default client</string>
+    <string name="option_title_use_companies">Use companies</string>
+    <string name="option_title_use_stores">Use stores</string>
+    <string name="option_title_fiscal_provider">Fiscal provider</string>
+    <string name="option_title_fiscal_number">Fiscal number</string>
+    <string name="option_title_fiscal_cashier">Fiscal cashier</string>
+    <string name="option_title_fiscal_device_id">Fiscal device ID</string>
+    <string name="option_value_not_set">Not set</string>
     <string name="task">Task</string>
     <string name="open_account_settings">Open account settings</string>
     <string name="current_account_for_sync">Current sync settings</string>

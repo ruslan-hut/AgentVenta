@@ -306,6 +306,31 @@
     <string name="warn_no_location">Немає даних про розташування клієнта</string>
     <string name="pref_warn_read_only">Опції завантажуються з сервера і не змінюються на пристрої</string>
     <string name="pref_summary_app_options">Налаштування додатка</string>
+
+    <!-- Options screen: category titles -->
+    <string name="option_category_general">Загальне</string>
+    <string name="option_category_orders">Замовлення</string>
+    <string name="option_category_clients">Клієнти</string>
+    <string name="option_category_companies">Організації та склади</string>
+    <string name="option_category_location">Геолокація</string>
+    <string name="option_category_fiscal">Фіскалізація</string>
+
+    <!-- Options screen: option titles -->
+    <string name="option_title_printing">Друк документів</string>
+    <string name="option_title_currency">Валюта</string>
+    <string name="option_title_differential_updates">Диференціальне оновлення</string>
+    <string name="option_title_allow_return">Дозволити повернення</string>
+    <string name="option_title_use_demands">Використовувати вимоги</string>
+    <string name="option_title_edit_locations">Редагувати координати клієнтів</string>
+    <string name="option_title_clients_directions">Маршрути клієнтів</string>
+    <string name="option_title_default_client">Клієнт за умовчанням</string>
+    <string name="option_title_use_companies">Використовувати організації</string>
+    <string name="option_title_use_stores">Використовувати склади</string>
+    <string name="option_title_fiscal_provider">Постачальник фіскалізації</string>
+    <string name="option_title_fiscal_number">Фіскальний номер</string>
+    <string name="option_title_fiscal_cashier">Касир</string>
+    <string name="option_title_fiscal_device_id">ID фіскального пристрою</string>
+    <string name="option_value_not_set">Не вказано</string>
     <string name="task">Завдання</string>
     <string name="open_account_settings">Відкрити налаштування</string>
     <string name="current_account_for_sync">Поточні налаштування підключення</string>
