@@ -1,7 +1,6 @@
 package ua.com.programmer.agentventa.data.repository
 
 import android.util.Base64
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +150,6 @@ class NetworkRepositoryImpl @Inject constructor(
         webSocketRepository.batchComplete.onEach { serverTimestamp ->
             val accountGuid = currentSystemAccount?.guid ?: return@onEach
             try {
-                Log.d("XBUG", "batchComplete: cleaning up data older than $serverTimestamp for $accountGuid")
                 logger.d(logTag, "Batch complete received — cleaning up stale data (timestamp=$serverTimestamp)")
                 dataRepository.cleanUp(accountGuid, serverTimestamp)
             } catch (e: Exception) {
@@ -195,9 +193,7 @@ class NetworkRepositoryImpl @Inject constructor(
     }
 
     private val prepare: Flow<Result> = flow {
-        Log.d("XBUG", "prepare: start, account=${account?.getGuid()}, useWebSocket=${account?.useWebSocket}")
         if (isNotValidAccount(currentSystemAccount)) {
-            Log.w("XBUG", "prepare: invalid account settings")
             emit(Result.Error("Wrong connection settings"))
             return@flow
         }
@@ -206,15 +202,12 @@ class NetworkRepositoryImpl @Inject constructor(
         if (account?.isDemo() == true) {
             logger.d(logTag, "Demo account - skipping device approval check")
         } else {
-            Log.d("XBUG", "prepare: checking device approval, wsState=${webSocketRepository.connectionState.value}")
             val (isApproved, approvalError) = checkDeviceApproval()
             if (!isApproved) {
-                Log.w("XBUG", "prepare: device NOT approved: $approvalError")
                 logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
                 emit(Result.Error(approvalError))
                 return@flow
             }
-            Log.d("XBUG", "prepare: device approved")
         }
 
         _timestamp = System.currentTimeMillis()
@@ -223,7 +216,6 @@ class NetworkRepositoryImpl @Inject constructor(
         tokenManager.resetCounter()
 
         if (accountGuid.isBlank()) {
-            Log.w("XBUG", "prepare: accountGuid is blank")
             emit(Result.Error("No settings for connection"))
             return@flow
         }
@@ -240,7 +232,6 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         if (needsRefresh) {
-            Log.d("XBUG", "prepare: refreshing token/options via HTTP check (httpMode=${account?.shouldUseWebSocket() != true})")
             when (val result = tokenManager.refreshToken("prepare")) {
                 is TokenManager.TokenResult.Success -> {
                     token = result.token
@@ -249,7 +240,6 @@ class NetworkRepositoryImpl @Inject constructor(
                         account = freshAccount
                     }
                     _options = UserOptionsBuilder.build(account)
-                    Log.d("XBUG", "prepare: token refreshed OK, canRead=${result.canRead}, options.isEmpty=${_options.isEmpty}")
                     if (!result.canRead) {
                         logger.w(logTag, "User has no read access")
                         emit(Result.Error("User has no read access"))
@@ -257,7 +247,6 @@ class NetworkRepositoryImpl @Inject constructor(
                     }
                 }
                 is TokenManager.TokenResult.Error -> {
-                    Log.e("XBUG", "prepare: token refresh FAILED: ${result.message}")
                     logger.e(logTag, "Token refresh failed: ${result.message}")
                     emit(Result.Error(result.message))
                     return@flow
@@ -266,27 +255,23 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         if (token.isBlank()) {
-            Log.w("XBUG", "prepare: token still blank after refresh")
             emit(Result.Error("Forbidden"))
             return@flow
         }
 
         val hasOptions = !(account?.options?.isEmpty() ?: true)
         val server = account?.dbServer ?: ""
-        Log.d("XBUG", "prepare: READY, token=${token.take(8)}..., hasOptions=$hasOptions, server=$server")
         logger.d(logTag, "api call for: ${account?.getGuid()} opt=$hasOptions svr=$server")
         emit(Result.Progress("start: ${account?.description}"))
     }
 
     override suspend fun updateAll(): Flow<Result> = flow {
         val currentAccount = account
-        Log.d("XBUG", "updateAll: START (full sync), useWebSocket=${currentAccount?.useWebSocket}")
 
         // WebSocket sync path: only upload documents.
         // Catalog data is pushed by the server asynchronously;
         // batch_complete signal triggers cleanup via batchComplete observer.
         if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
-            Log.d("XBUG", "updateAll: using WebSocket path")
             logger.d(logTag, "Using WebSocket sync — uploading documents")
             _timestamp = System.currentTimeMillis()
             val accountGuid = currentAccount.guid
@@ -297,14 +282,12 @@ class NetworkRepositoryImpl @Inject constructor(
                     emit(it)
                 }
             } catch (e: Exception) {
-                Log.e("XBUG", "updateAll: WebSocket error: ${e.message}")
                 logger.e(logTag, "WebSocket sync error: $e")
                 emit(Result.Error(e.message ?: "WebSocket sync failed"))
                 return@flow
             }
 
             val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-            Log.d("XBUG", "updateAll: WebSocket DONE in $timeSpent")
             logger.d(logTag, "WebSocket sync finish: $timeSpent")
             emit(Result.Progress("finish: $timeSpent"))
             emit(Result.Success(""))
@@ -312,7 +295,6 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         // HTTP full sync path
-        Log.d("XBUG", "updateAll: using HTTP path")
 
         runCatching {
             prepare.collect {
@@ -320,7 +302,6 @@ class NetworkRepositoryImpl @Inject constructor(
                 if (it is Result.Error) throw Exception(it.message)
             }
         }.onFailure {
-            Log.w("XBUG", "updateAll: prepare FAILED: $it")
             logger.w(logTag, "prepare: $it")
             return@flow
         }
@@ -340,25 +321,20 @@ class NetworkRepositoryImpl @Inject constructor(
         if (_options.clientsProducts) queue.add("clients_goods")
         if (_options.loadImages) queue.add("images")
 
-        Log.d("XBUG", "updateAll: queue=${queue.joinToString()}")
 
         for (item in queue) {
             try {
-                Log.d("XBUG", "updateAll: HTTP GET <- $item")
                 makeDataRequest(accountGuid, _timestamp, item, "")
                 for (c in counters) {
-                    Log.d("XBUG", "updateAll: received ${c.key}: ${c.value} items")
                     emit(Result.Progress("${c.key}: ${c.value}"))
                 }
                 counters.clear()
             } catch (e: HttpException) {
-                Log.e("XBUG", "updateAll: HTTP error on $item: ${e.code()} ${e.message()}")
                 logger.e(logTag, "Http error: $item: $e")
                 onConnectionError()
                 emit(Result.Error("${e.message()} (${e.code()})"))
                 return@flow
             } catch (e: Exception) {
-                Log.e("XBUG", "updateAll: exception on $item: ${e.message}")
                 logger.e(logTag, "Exception: $item: $e")
                 emit(Result.Error(e.message ?: "unknown error"))
                 return@flow
@@ -371,7 +347,6 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-        Log.d("XBUG", "updateAll: DONE in $timeSpent")
         logger.d(logTag, "finish update: $timeSpent")
         emit(Result.Progress("finish: $timeSpent"))
         emit(Result.Success(""))
@@ -379,11 +354,9 @@ class NetworkRepositoryImpl @Inject constructor(
 
     override suspend fun updateDifferential(): Flow<Result> = flow {
         val currentAccount = account
-        Log.d("XBUG", "updateDiff: START, useWebSocket=${currentAccount?.useWebSocket}")
 
         // For WebSocket accounts, skip HTTP preparation and use WebSocket sync directly
         if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
-            Log.d("XBUG", "updateDiff: using WebSocket path")
             logger.d(logTag, "Using WebSocket differential sync")
             _timestamp = System.currentTimeMillis()
             webSocketRepository.setCurrentAccountGuid(currentAccount.guid)
@@ -393,14 +366,12 @@ class NetworkRepositoryImpl @Inject constructor(
                     emit(it)
                 }
             } catch (e: Exception) {
-                Log.e("XBUG", "updateDiff: WebSocket sync error: ${e.message}")
                 logger.e(logTag, "WebSocket sync error: $e")
                 emit(Result.Error(e.message ?: "WebSocket sync failed"))
                 return@flow
             }
 
             val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-            Log.d("XBUG", "updateDiff: WebSocket DONE in $timeSpent")
             logger.d(logTag, "WebSocket sync finish: $timeSpent")
             emit(Result.Progress("finish: $timeSpent"))
             emit(Result.Success(""))
@@ -408,14 +379,12 @@ class NetworkRepositoryImpl @Inject constructor(
         }
 
         // HTTP sync path
-        Log.d("XBUG", "updateDiff: using HTTP path")
         runCatching {
             prepare.collect {
                 emit(it)
                 if (it is Result.Error) throw Exception(it.message)
             }
         }.onFailure {
-            Log.w("XBUG", "updateDiff: prepare FAILED: $it")
             logger.w(logTag, "prepare: $it")
             return@flow
         }
@@ -424,30 +393,24 @@ class NetworkRepositoryImpl @Inject constructor(
 
         if(_options.write) {
             try {
-                Log.d("XBUG", "updateDiff: HTTP POST -> sending documents")
                 sendDocuments(accountGuid).collect {
                     emit(it)
                 }
-                Log.d("XBUG", "updateDiff: documents sent OK")
             } catch (e: HttpException) {
-                Log.e("XBUG", "updateDiff: HTTP error sending: ${e.code()} ${e.message()}")
                 logger.e(logTag, "Http error: send: $e")
                 onConnectionError()
                 emit(Result.Error("${e.message()} (${e.code()})"))
                 return@flow
             } catch (e: Exception) {
-                Log.e("XBUG", "updateDiff: exception sending: ${e.message}")
                 logger.e(logTag, "Exception: send: $e")
                 emit(Result.Error(e.message ?: "unknown error"))
                 return@flow
             }
         } else {
-            Log.w("XBUG", "updateDiff: no write access")
             emit(Result.Error("No write access"))
         }
 
         val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-        Log.d("XBUG", "updateDiff: HTTP DONE in $timeSpent")
         logger.d(logTag, "finish: $timeSpent")
         emit(Result.Progress("finish: $timeSpent"))
         emit(Result.Success(""))
@@ -510,22 +473,18 @@ class NetworkRepositoryImpl @Inject constructor(
             ""
         }
 
-        Log.d("XBUG", "HTTP GET <- type=$type${if (more.isNotEmpty()) " more=$more" else ""}")
         val response = apiService?.get(type, token, more)
 
         if (response != null) {
             if (response.containsKey("data")){
                 val data = response["data"] as List<*>
-                Log.d("XBUG", "HTTP GET <- $type: received ${data.size} items")
                 saveData(account, time, data)
             }
             if (response.containsKey("more")){
                 val nextElement = getMoreNumber("${response["more"]}")
-                Log.d("XBUG", "HTTP GET <- $type: has more=$nextElement")
                 makeDataRequest(account, time, type, nextElement)
             }
         } else {
-            Log.w("XBUG", "HTTP GET <- $type: null response")
         }
     }
 
@@ -533,7 +492,6 @@ class NetworkRepositoryImpl @Inject constructor(
 
         if (token.isBlank()) throw Exception("post: token is empty")
 
-        Log.d("XBUG", "HTTP POST -> type=$type, guid=${guid.take(8)}")
         val response = apiService?.post(token, data)
 
         response?.let {
@@ -542,7 +500,6 @@ class NetworkRepositoryImpl @Inject constructor(
             val status = result.getString("status")
             when (val resultCode = result.getString("result")) {
                 "ok" -> {
-                    Log.d("XBUG", "HTTP POST -> $type OK, status=$status${if (error.isNotEmpty() && error != "null") ", warn=$error" else ""}")
                     val sendResult = SendResult(
                         account = account,
                         guid = guid,
@@ -556,15 +513,13 @@ class NetworkRepositoryImpl @Inject constructor(
                     }
                 }
                 "error" -> {
-                    Log.e("XBUG", "HTTP POST -> $type ERROR: $error")
                     logger.w(logTag, "send: $error")
                 }
                 else -> {
-                    Log.w("XBUG", "HTTP POST -> $type unexpected result: $resultCode")
                     logger.w(logTag, "send: unexpected result: $resultCode")
                 }
             }
-        } ?: Log.w("XBUG", "HTTP POST -> $type: null response")
+        }
 
     }
 

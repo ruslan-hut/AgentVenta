@@ -252,6 +252,9 @@
         <action
             android:id="@+id/action_settingsFragment_to_applicationSettingsFragment"
             app:destination="@id/applicationSettingsFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_scannerSettingsFragment"
+            app:destination="@id/scannerSettingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/optionsFragment"
@@ -336,4 +339,16 @@
         android:id="@+id/webSocketTestFragment"
         android:name="ua.com.programmer.agentventa.presentation.features.websocket.WebSocketTestFragment"
         android:label="WebSocket Test" />
+    <fragment
+        android:id="@+id/scannerSettingsFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.ScannerSettingsFragment"
+        android:label="@string/scanner_settings_title" >
+        <action
+            android:id="@+id/action_scannerSettingsFragment_to_scannerTestFragment"
+            app:destination="@id/scannerTestFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/scannerTestFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.settings.ScannerTestFragment"
+        android:label="@string/scanner_test_title" />
 </navigation>

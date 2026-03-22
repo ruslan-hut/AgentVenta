@@ -22,12 +22,15 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.ModelActivityOrderBinding
 import ua.com.programmer.agentventa.extensions.fileExtension
@@ -143,12 +146,14 @@ class OrderFragment: Fragment(), MenuProvider {
             showPrinterState(it)
         }
 
-        sharedModel.barcode.observe(this.viewLifecycleOwner) {
-            if (it.isEmpty()) return@observe
-            viewModel.onBarcodeRead(it) {
-                Toast.makeText(requireContext(), getString(R.string.error_product_not_found), Toast.LENGTH_SHORT).show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedModel.barcodeFlow.collect { code ->
+                    viewModel.onBarcodeRead(code) {
+                        Toast.makeText(requireContext(), getString(R.string.error_product_not_found), Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
-            sharedModel.clearBarcode()
         }
         sharedModel.sharedParams.observe(this.viewLifecycleOwner) {
             viewModel.setSharedParameters(it.ignoreBarcodeReads)

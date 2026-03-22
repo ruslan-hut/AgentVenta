@@ -79,73 +79,7 @@
     <string name="data_xml_error">Data parsing error</string>
 
     <!-- Strings related to Settings -->
-
-    <!-- Example General settings -->
     <string name="pref_header_general">General</string>
-
-    <string name="pref_title_social_recommendations">Enable social recommendations</string>
-    <string name="pref_description_social_recommendations">Recommendations for people to contact
-        based on your message history
-    </string>
-
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
-
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
-
-    <!-- Example settings for Data & Sync -->
-    <string name="pref_header_data_sync">Data and sync</string>
-
-    <string name="pref_title_sync_frequency">Sync frequency</string>
-    <string-array name="pref_sync_frequency_titles">
-        <item>15 minutes</item>
-        <item>30 minutes</item>
-        <item>1 hour</item>
-        <item>3 hours</item>
-        <item>6 hours</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_sync_frequency_values">
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
-        <item>180</item>
-        <item>360</item>
-        <item>-1</item>
-    </string-array>
-
-    <string-array name="list_preference_entries">
-        <item>Entry 1</item>
-        <item>Entry 2</item>
-        <item>Entry 3</item>
-    </string-array>
-
-    <string-array name="list_preference_entry_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
-
-    <string-array name="pref_sync_format_entries">
-        <item>HTTP service</item>
-        <item>FTP server</item>
-    </string-array>
-    <string-array name="pref_sync_format_values">
-        <item>HTTP_service</item>
-        <item>FTP_server</item>
-    </string-array>
-
-    <string-array name="multi_select_list_preference_default_value" />
 
     <!-- WebSocket sync interval options -->
     <string-array name="pref_websocket_interval_entries">
@@ -165,25 +99,10 @@
         <item>60</item>
     </string-array>
 
-    <string name="pref_title_sync_format">Connection type</string>
-    <string name="pref_title_system_sync_settings">System sync settings</string>
-    <string name="pref_title_network_usage">Network usage</string>
     <string name="pref_title_websocket_interval">Sync interval</string>
     <string name="pref_summary_websocket_interval">How often to check for new data</string>
     <string name="pref_title_sync_settings">Sync settings</string>
 
-    <string name="pref_title_server_address">Server address</string>
-
-    <!-- Example settings for Notifications -->
-    <string name="pref_header_notifications">Notifications</string>
-
-    <string name="pref_title_new_message_notifications">New message notifications</string>
-
-    <string name="pref_title_ringtone">Ringtone</string>
-    <string name="pref_ringtone_silent">Silent</string>
-
-    <string name="pref_title_vibrate">Vibrate</string>
-    <string name="title_activity_orders_list">Orders List</string>
     <string name="order">Order</string>
     <string name="new_element">new</string>
     <string name="doc_number">Number</string>
@@ -223,7 +142,8 @@
     <string name="close">Close</string>
     <string name="error_no_client">No client is chosen</string>
     <string name="error">Error occurred</string>
-    <string name="pref_default_server_address">Demo mode</string>
+    <string name="pref_title_server_address">Server address</string>
+    <string name="pref_title_server_port">Server port</string>
     <string name="pref_title_base_name">Database name</string>
     <string name="pref_title_username">User name</string>
     <string name="pref_title_password">Password</string>
@@ -309,7 +229,6 @@
     <string name="pref_title_highlight_goods">Highlight goods</string>
     <string name="attr_price_min">Minimal price</string>
     <string name="loading">Loading…</string>
-    <string name="pref_title_server_port">Server port</string>
     <string name="header_cash_list">Cash</string>
     <string name="holder_text">[…]</string>
     <string name="no_data_list">No data</string>
@@ -613,6 +532,41 @@
     <string name="cd_toggle_packed">Toggle packed</string>
     <string name="cd_edit_item">Edit item</string>
     <string name="cd_client_photo">Client photo</string>
+
+    <!-- Scanner Settings -->
+    <string name="scanner_settings_title">Scanner settings</string>
+    <string name="pref_summary_scanner_settings">Configure hardware barcode scanner detection</string>
+    <string name="scanner_timeout_hint">Keystroke timeout (ms)</string>
+    <string name="scanner_timeout_description">Max gap between keystrokes to treat them as one scan. Increase for Bluetooth scanners (50–500 ms, default 200)</string>
+    <string name="scanner_min_length_hint">Minimum barcode length</string>
+    <string name="scanner_min_length_description">Minimum characters before Enter/Tab triggers a scan. Reduce for short barcodes like EAN-8 (1–20, default 4)</string>
+    <string name="scanner_terminator_hint">Terminator key</string>
+    <string name="scanner_terminator_both">Both</string>
+    <string name="scanner_prefix_hint">Prefix to strip</string>
+    <string name="scanner_suffix_hint">Suffix to strip</string>
+    <string name="scanner_prefix_suffix_description">Some scanners add prefix/suffix characters to the barcode. These will be removed before processing</string>
+    <string name="scanner_test_title">Test scanner</string>
+    <string name="scanner_test_result">Detected barcode</string>
+    <string name="scanner_test_waiting">Scan a barcode to test…</string>
+    <string name="scanner_test_buffer">Current buffer</string>
+    <string name="scanner_test_buffer_info">%1$d chars (min: %2$d)</string>
+    <string name="scanner_test_log">Key event log</string>
+    <string name="scanner_test_settings_summary">Timeout: %1$d ms | Min length: %2$d | Terminator: %3$s | Prefix: %4$s | Suffix: %5$s</string>
+    <string name="scanner_test_scan_number">Scan #%1$d</string>
+    <string name="scanner_test_length">Length: %1$d</string>
+    <string name="scanner_test_raw">Raw: %1$s</string>
+    <string name="clear">Clear</string>
+
+    <!-- Scanner Diagnostics -->
+    <string name="diag_section_title">Diagnostics</string>
+    <string name="diag_description">Record detailed key events and barcode detection data for troubleshooting. Enable, use the scanner normally, then export the data.</string>
+    <string name="diag_toggle">Record diagnostics</string>
+    <string name="diag_status_idle">Not recording</string>
+    <string name="diag_status_recording">Recording… %1$d events</string>
+    <string name="diag_status_stopped">Stopped. %1$d events recorded</string>
+    <string name="diag_copy_clipboard">Copy to clipboard</string>
+    <string name="diag_no_data">No diagnostic data recorded</string>
+    <string name="toast_saved">Data saved</string>
 
     <!-- FAB Labels -->
     <string name="fab_new">New</string>

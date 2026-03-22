@@ -15,9 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.infrastructure.location.GeocodeHelperImpl
 import ua.com.programmer.agentventa.data.local.database.AppDatabase
 import ua.com.programmer.agentventa.infrastructure.location.GeocodeHelper
-import ua.com.programmer.agentventa.infrastructure.license.LicenseManager
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
-import ua.com.programmer.agentventa.presentation.common.viewmodel.BarcodeHandler
 import ua.com.programmer.agentventa.presentation.common.viewmodel.GlideImageLoadingManager
 import ua.com.programmer.agentventa.presentation.common.viewmodel.ImageLoadingManager
 import ua.com.programmer.agentventa.utility.ResourceProvider
@@ -48,11 +46,6 @@ class GlobalModule {
         return Utils()
     }
 
-    @Provides
-    @Singleton
-    fun provideLicenseManager(): LicenseManager {
-        return LicenseManager()
-    }
 
     @Provides
     @Singleton
@@ -64,12 +57,6 @@ class GlobalModule {
     @Singleton
     fun provideGeocoder(@ApplicationContext context: Context): GeocodeHelper {
         return GeocodeHelperImpl(context)
-    }
-
-    @Provides
-    @Singleton
-    fun provideBarcodeHandler(): BarcodeHandler {
-        return BarcodeHandler()
     }
 
     @Provides

@@ -47,7 +47,9 @@
       "Bash(while read:*)",
       "Bash(do sed:*)",
       "Bash(done)",
-      "Bash(go build:*)"
+      "Bash(go build:*)",
+      "Bash(sort find:*)",
+      "Bash(xargs perl:*)"
     ]
   }
 }

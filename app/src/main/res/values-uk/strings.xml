@@ -5,67 +5,8 @@
     <string name="action_sync">Оновити дані</string>
     <string name="header_goods_list">Список товарів</string>
     <string name="header_orders_list">Замовлення</string>
-    <string name="pref_default_display_name">Степан Гармаш</string>
-    <string name="pref_header_data_sync">Зв\'язок</string>
     <string name="pref_header_general">Загальні</string>
-    <string name="pref_header_notifications">Сповіщення</string>
-    <string name="pref_ringtone_silent">Тихо</string>
-    <string name="pref_title_display_name">Ім\'я</string>
-    <string name="pref_title_network_usage">Використання мережі</string>
-    <string name="pref_title_ringtone">Сигнал</string>
-    <string name="pref_title_server_address">Адреса сервера</string>
-    <string name="pref_title_sync_frequency">Інтервал оновлень</string>
     <string name="title_activity_settings">Налаштування</string>
-    <string name="pref_description_social_recommendations">Рекомендації</string>
-    <string name="pref_title_add_friends_to_messages">Додавати друзів</string>
-    <string-array name="pref_example_list_titles">
-        <item>Завжди</item>
-        <item>Якщо можливо</item>
-        <item>Ніколи</item>
-    </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
-    <string name="pref_title_new_message_notifications">Сповіщення про нові листи</string>
-    <string name="pref_title_social_recommendations">Соціальні сервіси</string>
-    <string name="pref_title_system_sync_settings">Системні налаштування</string>
-    <string name="pref_title_vibrate">Вібрувати</string>
-    <string-array name="pref_sync_frequency_titles">
-        <item>15 хвилин</item>
-        <item>30 хвилин</item>
-        <item>1 година</item>
-        <item>3 години</item>
-        <item>6 годин</item>
-        <item>Ніколи</item>
-    </string-array>
-    <string-array name="pref_sync_frequency_values">
-        <item>15</item>
-        <item>30</item>
-        <item>60</item>
-        <item>180</item>
-        <item>360</item>
-        <item>-1</item>
-    </string-array>
-    <string-array name="list_preference_entries">
-        <item>Варіант 1</item>
-        <item>Варіант 2</item>
-        <item>Варіант 3</item>
-    </string-array>
-    <string-array name="list_preference_entry_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-    </string-array>
-    <string-array name="pref_sync_format_entries">
-        <item>HTTP сервіс</item>
-        <item>FTP сервер</item>
-    </string-array>
-    <string-array name="pref_sync_format_values">
-        <item>HTTP_service</item>
-        <item>FTP_server</item>
-    </string-array>
     <string name="data_inserted">Нових</string>
     <string name="data_total_rows_count">Всього записів</string>
     <string name="data_updated">Дані оновлено</string>
@@ -75,7 +16,6 @@
     <string name="attr_description">Найменування</string>
     <string name="attr_price">Ціна</string>
     <string name="attr_quantity">Кількість</string>
-    <string name="title_activity_orders_list">Список замовлень</string>
     <string name="order">Замовлення</string>
     <string name="new_element">нове</string>
     <string name="doc_client">Клієнт</string>
@@ -115,10 +55,11 @@
     <string name="close">Закрити</string>
     <string name="error_no_client">Не обраний клієнт</string>
     <string name="error">Помилка</string>
-    <string name="pref_default_server_address">Демонстраційний режим</string>
+    <string name="pref_title_server_address">Адреса сервера</string>
+    <string name="pref_title_server_port">Номер порту</string>
     <string name="pref_title_base_name">Ім\'я бази даних</string>
-    <string name="pref_title_password">Пароль</string>
     <string name="pref_title_username">Ім\'я користувача</string>
+    <string name="pref_title_password">Пароль</string>
     <string name="item_not_selected">Спочатку оберіть товар</string>
     <string name="save">Зберегти</string>
     <string name="cancel">Скасувати</string>
@@ -132,7 +73,6 @@
     <string name="no_data">Немає данних для відправлення</string>
     <string name="access_denied_on_server">Сервер відмовив в доступі</string>
     <string name="read_only">Дозволено тільки читання даних</string>
-    <string name="pref_title_sync_format">Тип підключення</string>
     <string name="error_sync_format_not_set">Не встановлений тип підключення</string>
     <string name="error_no_server_address">Не вказана адреса сервера або ім\'я бази</string>
     <string name="search_hint">Пошук…</string>
@@ -201,7 +141,6 @@
     <string name="perf_desc_highlight_goods">Виділяти кольором товари які вже введені в замовлення</string>
     <string name="attr_price_min">Найменьша ціна</string>
     <string name="loading">Завантаження…</string>
-    <string name="pref_title_server_port">Номер порту</string>
     <string name="header_cash_list">Каса</string>
     <string name="holder_text">[…]</string>
     <string name="no_data_list">Список порожній</string>
@@ -574,5 +513,40 @@
     <string name="nav_clients">Клієнти</string>
     <string name="nav_products">Товари</string>
     <string name="nav_sync">Обмін</string>
+
+    <!-- Scanner Settings -->
+    <string name="scanner_settings_title">Налаштування сканера</string>
+    <string name="pref_summary_scanner_settings">Налаштування розпізнавання апаратного сканера штрихкодів</string>
+    <string name="scanner_timeout_hint">Тайм-аут між натисканнями (мс)</string>
+    <string name="scanner_timeout_description">Максимальний інтервал між натисканнями клавіш для групування в один скан. Збільшіть для Bluetooth-сканерів (50–500 мс, за замовчуванням 200)</string>
+    <string name="scanner_min_length_hint">Мінімальна довжина штрихкоду</string>
+    <string name="scanner_min_length_description">Мінімальна кількість символів для розпізнавання сканування. Зменшіть для коротких штрихкодів EAN-8 (1–20, за замовчуванням 4)</string>
+    <string name="scanner_terminator_hint">Клавіша завершення</string>
+    <string name="scanner_terminator_both">Обидві</string>
+    <string name="scanner_prefix_hint">Префікс для видалення</string>
+    <string name="scanner_suffix_hint">Суфікс для видалення</string>
+    <string name="scanner_prefix_suffix_description">Деякі сканери додають префікс/суфікс до штрихкоду. Ці символи будуть видалені перед обробкою</string>
+    <string name="scanner_test_title">Тест сканера</string>
+    <string name="scanner_test_result">Розпізнаний штрихкод</string>
+    <string name="scanner_test_waiting">Скануйте штрихкод для перевірки…</string>
+    <string name="scanner_test_buffer">Поточний буфер</string>
+    <string name="scanner_test_buffer_info">%1$d симв. (мін: %2$d)</string>
+    <string name="scanner_test_log">Журнал подій клавіш</string>
+    <string name="scanner_test_settings_summary">Тайм-аут: %1$d мс | Мін. довжина: %2$d | Завершення: %3$s | Префікс: %4$s | Суфікс: %5$s</string>
+    <string name="scanner_test_scan_number">Скан #%1$d</string>
+    <string name="scanner_test_length">Довжина: %1$d</string>
+    <string name="scanner_test_raw">Вихідний: %1$s</string>
+    <string name="clear">Очистити</string>
+
+    <!-- Scanner Diagnostics -->
+    <string name="diag_section_title">Діагностика</string>
+    <string name="diag_description">Записуйте детальні події клавіш та дані розпізнавання штрихкодів для пошуку несправностей. Увімкніть, скористайтеся сканером, потім експортуйте дані.</string>
+    <string name="diag_toggle">Записувати діагностику</string>
+    <string name="diag_status_idle">Запис не ведеться</string>
+    <string name="diag_status_recording">Запис… %1$d подій</string>
+    <string name="diag_status_stopped">Зупинено. %1$d подій записано</string>
+    <string name="diag_copy_clipboard">Копіювати в буфер обміну</string>
+    <string name="diag_no_data">Немає записаних діагностичних даних</string>
+    <string name="toast_saved">Дані збережено</string>
 
 </resources>

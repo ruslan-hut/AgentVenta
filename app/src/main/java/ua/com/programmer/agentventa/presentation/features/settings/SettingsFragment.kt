@@ -30,5 +30,12 @@ class SettingsFragment: PreferenceFragmentCompat() {
             view?.findNavController()?.navigate(action)
             true
         }
+
+        val scannerPref = findPreference<Preference>("scanner")
+        scannerPref?.setOnPreferenceClickListener {
+            val action = SettingsFragmentDirections.actionSettingsFragmentToScannerSettingsFragment()
+            view?.findNavController()?.navigate(action)
+            true
+        }
     }
 }

@@ -17,5 +17,10 @@
         app:icon="@drawable/baseline_print_24"
         app:title="@string/title_printer_settings"
         app:summary="@string/pref_summary_printer_settings"/>
+    <Preference
+        android:key="scanner"
+        app:icon="@drawable/baseline_settings_24"
+        app:title="@string/scanner_settings_title"
+        app:summary="@string/pref_summary_scanner_settings"/>
 
 </PreferenceScreen>

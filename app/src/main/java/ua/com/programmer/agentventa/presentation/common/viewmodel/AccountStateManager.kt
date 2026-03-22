@@ -8,14 +8,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ua.com.programmer.agentventa.data.remote.dto.UserAccountDto
 import ua.com.programmer.agentventa.data.local.entity.Company
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
 import ua.com.programmer.agentventa.data.local.entity.PriceType
 import ua.com.programmer.agentventa.data.local.entity.Store
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.isDemo
-import ua.com.programmer.agentventa.infrastructure.license.LicenseManager
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
@@ -38,7 +36,6 @@ import javax.inject.Singleton
 class AccountStateManager @Inject constructor(
     private val userAccountRepository: UserAccountRepository,
     private val orderRepository: OrderRepository,
-    private val licenseManager: LicenseManager,
     private val logger: Logger
 ) {
     private val logTag = "AccountStateManager"
@@ -103,7 +100,6 @@ class AccountStateManager @Inject constructor(
 
                     if (!userAccount.isDemo()) {
                         FirebaseCrashlytics.getInstance().setUserId(userAccount.guid)
-                        sendUserInfo(userAccount)
                     }
                 }
 
@@ -137,14 +133,6 @@ class AccountStateManager @Inject constructor(
         val demo = UserAccount.buildDemo()
         userAccountRepository.saveAccount(demo)
         userAccountRepository.setIsCurrent(demo.guid)
-    }
-
-    private fun sendUserInfo(account: UserAccount) {
-        val cloudAccount = UserAccountDto.build(account)
-        if (cloudAccount.guid.isBlank()) return
-        scope.launch {
-            licenseManager.getLicense(cloudAccount)
-        }
     }
 
     // Lookup helpers

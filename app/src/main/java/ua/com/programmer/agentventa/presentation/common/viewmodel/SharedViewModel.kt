@@ -8,12 +8,15 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -64,10 +67,9 @@ class SharedViewModel @Inject constructor(
     val priceTypes: List<PriceType> get() = accountStateManager.priceTypes.value
     val paymentTypes: List<PaymentType> get() = accountStateManager.paymentTypes.value
 
-    // Barcode state
-    private val _barcode = MutableStateFlow("")
-    val barcodeFlow: StateFlow<String> = _barcode.asStateFlow()
-    val barcode: androidx.lifecycle.LiveData<String> = _barcode.asLiveData()
+    // Barcode state — Channel delivers each value exactly once
+    private val _barcode = Channel<String>(Channel.BUFFERED)
+    val barcodeFlow: Flow<String> = _barcode.receiveAsFlow()
 
     // Shared parameters state
     private val _sharedParams = MutableStateFlow(SharedParameters())
@@ -275,12 +277,8 @@ class SharedViewModel @Inject constructor(
     }
 
     fun onBarcodeRead(value: String) {
-        if (value.isBlank() || value.length < 10) return
-        _barcode.value = value
-    }
-
-    fun clearBarcode() {
-        _barcode.value = ""
+        if (value.isBlank()) return
+        _barcode.trySend(value)
     }
 
     private fun deleteOldData() {

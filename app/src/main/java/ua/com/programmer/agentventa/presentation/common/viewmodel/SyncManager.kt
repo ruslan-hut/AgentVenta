@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.util.Log
 import ua.com.programmer.agentventa.data.remote.Result
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
@@ -153,13 +152,11 @@ class SyncManager @Inject constructor(
 
     fun callDiffSync(scope: CoroutineScope, afterSync: () -> Unit) {
         if (_isRefreshing.value) return
-        Log.d("XBUG", "SyncManager: callDiffSync START, wsState=${webSocketState.value}")
         _isRefreshing.value = true
         _progressMessage.value = ""
         scope.launch {
             withContext(Dispatchers.IO) {
                 networkRepository.updateDifferential().collect { result ->
-                    Log.d("XBUG", "SyncManager: diffSync result: $result")
                     withContext(Dispatchers.Main) {
                         _updateState.value = result
                         handleSyncResult(result)
@@ -172,13 +169,11 @@ class SyncManager @Inject constructor(
 
     fun callFullSync(scope: CoroutineScope, afterSync: () -> Unit) {
         if (_isRefreshing.value) return
-        Log.d("XBUG", "SyncManager: callFullSync START, wsState=${webSocketState.value}")
         _isRefreshing.value = true
         _progressMessage.value = ""
         scope.launch {
             withContext(Dispatchers.IO) {
                 networkRepository.updateAll().collect { result ->
-                    Log.d("XBUG", "SyncManager: fullSync result: $result")
                     withContext(Dispatchers.Main) {
                         _updateState.value = result
                         handleSyncResult(result)
