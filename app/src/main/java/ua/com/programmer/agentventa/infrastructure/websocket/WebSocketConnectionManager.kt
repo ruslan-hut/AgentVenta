@@ -75,8 +75,10 @@ class WebSocketConnectionManager @Inject constructor(
     private val _pendingDataSummary = MutableStateFlow(PendingDataSummary.EMPTY)
     val pendingDataSummary: StateFlow<PendingDataSummary> = _pendingDataSummary.asStateFlow()
 
-    // Last sync timestamp
-    private val _lastSyncTime = MutableStateFlow(0L)
+    // Last sync timestamp (persisted across app restarts)
+    private val _lastSyncTime = MutableStateFlow(
+        sharedPreferences.getLong(PREF_LAST_SYNC_TIME, 0L)
+    )
     val lastSyncTime: StateFlow<Long> = _lastSyncTime.asStateFlow()
 
     private var isAppInForeground = false
@@ -129,14 +131,14 @@ class WebSocketConnectionManager @Inject constructor(
         // Update last sync time when catalog data is received from server
         scope.launch {
             webSocketRepository.incomingMessages.collect {
-                _lastSyncTime.value = System.currentTimeMillis()
+                updateLastSyncTime()
             }
         }
 
         // Update last sync time on batch_complete (full catalog sync finished)
         scope.launch {
             webSocketRepository.batchComplete.collect {
-                _lastSyncTime.value = System.currentTimeMillis()
+                updateLastSyncTime()
             }
         }
 
@@ -154,7 +156,7 @@ class WebSocketConnectionManager @Inject constructor(
 
         val pending = _pendingDataSummary.value
         if (pending.hasPendingData) {
-            _lastSyncTime.value = System.currentTimeMillis()
+            updateLastSyncTime()
             triggerDataSync()
         }
     }
@@ -361,7 +363,14 @@ class WebSocketConnectionManager @Inject constructor(
         startPeriodicCheck()
     }
 
+    private fun updateLastSyncTime() {
+        val now = System.currentTimeMillis()
+        _lastSyncTime.value = now
+        sharedPreferences.edit { putLong(PREF_LAST_SYNC_TIME, now) }
+    }
+
     companion object {
         const val PREF_WEBSOCKET_IDLE_INTERVAL = "websocket_idle_interval"
+        const val PREF_LAST_SYNC_TIME = "websocket_last_sync_time"
     }
 }
