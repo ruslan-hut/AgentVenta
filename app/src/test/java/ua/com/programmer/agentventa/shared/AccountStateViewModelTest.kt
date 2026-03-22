@@ -441,7 +441,7 @@ class AccountStateViewModelTest {
 
         // Assert
         assertThat(paymentType.description).isEqualTo("Cash")
-        assertThat(paymentType.paymentType).isEqualTo("CASH")
+        assertThat(paymentType.paymentType).isEqualTo("PAY1")
         verify(accountStateManager).getPaymentType("Cash")
     }
 

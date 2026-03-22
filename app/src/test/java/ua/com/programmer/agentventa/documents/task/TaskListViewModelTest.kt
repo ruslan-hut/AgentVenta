@@ -49,6 +49,8 @@ class TaskListViewModelTest {
             taskRepository = taskRepository,
             userAccountRepository = userAccountRepository
         )
+        // Clear default date filter (defaults to today, which won't match fixture dates)
+        viewModel.setDate(null)
     }
 
     // ========================================
@@ -317,10 +319,12 @@ class TaskListViewModelTest {
 
         val oldTask = TestFixtures.createTask1().copy(
             guid = "old-task",
+            date = "2025-01-10",
             time = calendar.apply { set(2025, Calendar.JANUARY, 10) }.timeInMillis
         )
         val newTask = TestFixtures.createTask1().copy(
             guid = "new-task",
+            date = "2025-01-20",
             time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
         )
 
@@ -350,10 +354,12 @@ class TaskListViewModelTest {
 
         val task1 = TestFixtures.createTask1().copy(
             guid = "task-1",
+            date = "2025-01-10",
             time = calendar.apply { set(2025, Calendar.JANUARY, 10) }.timeInMillis
         )
         val task2 = TestFixtures.createTask1().copy(
             guid = "task-2",
+            date = "2025-01-20",
             time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
         )
 
@@ -480,10 +486,12 @@ class TaskListViewModelTest {
 
         val task1 = TestFixtures.createTask1().copy(
             guid = "task-old",
+            date = "2025-01-10",
             time = calendar.apply { set(2025, Calendar.JANUARY, 10) }.timeInMillis
         )
         val task2 = TestFixtures.createTask1().copy(
             guid = "task-new",
+            date = "2025-01-20",
             time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
         )
 
@@ -535,16 +543,19 @@ class TaskListViewModelTest {
         val task1 = TestFixtures.createTask1().copy(
             guid = "abc-old",
             description = "ABC Task",
+            date = "2025-01-10",
             time = calendar.apply { set(2025, Calendar.JANUARY, 10) }.timeInMillis
         )
         val task2 = TestFixtures.createTask1().copy(
             guid = "abc-new",
             description = "ABC Meeting",
+            date = "2025-01-20",
             time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
         )
         val task3 = TestFixtures.createTask1().copy(
             guid = "xyz-new",
             description = "XYZ Task",
+            date = "2025-01-20",
             time = calendar.apply { set(2025, Calendar.JANUARY, 20) }.timeInMillis
         )
 

@@ -49,7 +49,23 @@
       "Bash(done)",
       "Bash(go build:*)",
       "Bash(sort find:*)",
-      "Bash(xargs perl:*)"
+      "Bash(xargs perl:*)",
+      "Bash(./gradlew testStandartDebugUnitTest)",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.documents.common.DocumentListViewModelTest.initial UI state is correct\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.shared.*\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest.callPrintDocument delegates to SyncManager\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.documents.common.DocumentListViewModelTest\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest.initial UI state is correct\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest.initial UI state is correct\" --info)",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.features.task.TaskListViewModelTest.tasks list loads from repository\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.features.order.OrderViewModelTest\")",
+      "Bash(./gradlew compileStandartDebugUnitTestKotlin)",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest.updateDocumentWithResult saves and sets save result to true\" --info)",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest\")",
+      "Bash(python3 -c \"import sys,html; sys.stdout.write\\(html.unescape\\(sys.stdin.read\\(\\)\\)\\)\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateViewModelTest\")"
     ]
   }
 }

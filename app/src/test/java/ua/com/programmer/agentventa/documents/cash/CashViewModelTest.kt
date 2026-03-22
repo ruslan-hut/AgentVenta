@@ -55,7 +55,7 @@ class CashViewModelTest {
 
     @Before
     fun setup() {
-        cashRepository = FakeCashRepository(TestFixtures.TEST_DB_GUID)
+        cashRepository = FakeCashRepository(TestFixtures.TEST_ACCOUNT_GUID)
         logger = mock()
 
         // Real use cases

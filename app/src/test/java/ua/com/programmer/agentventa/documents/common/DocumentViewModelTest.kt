@@ -43,9 +43,9 @@ class DocumentViewModelTest {
 
     @Before
     fun setup() {
-        repository = FakeOrderRepository(TestFixtures.TEST_DB_GUID)
+        repository = FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID)
         logger = mock()
-        viewModel = TestDocumentViewModel(repository, logger)
+        viewModel = TestDocumentViewModel(repository, logger, kotlinx.coroutines.Dispatchers.Unconfined)
     }
 
     @After
@@ -209,7 +209,7 @@ class DocumentViewModelTest {
     @Test
     fun `initNewDocument with repository failure emits error event`() = runTest {
         // Arrange - create repository that returns null for newDocument
-        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_DB_GUID) {
+        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun newDocument(): Order? = null
         }
         val failingViewModel = TestDocumentViewModel(failingRepository, logger)
@@ -231,7 +231,7 @@ class DocumentViewModelTest {
     @Test
     fun `initNewDocument with failure logs error`() = runTest {
         // Arrange
-        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_DB_GUID) {
+        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun newDocument(): Order? = null
         }
         val failingViewModel = TestDocumentViewModel(failingRepository, logger)
@@ -314,7 +314,7 @@ class DocumentViewModelTest {
     @Test
     fun `updateDocumentWithResult with repository failure emits SaveError event`() = runTest {
         // Arrange - create repository that fails to save
-        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_DB_GUID) {
+        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun updateDocument(document: Order): Boolean = false
         }
         val failingViewModel = TestDocumentViewModel(failingRepository, logger)
@@ -337,7 +337,7 @@ class DocumentViewModelTest {
     @Test
     fun `updateDocumentWithResult with failure sets save result to false`() = runTest {
         // Arrange
-        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_DB_GUID) {
+        val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun updateDocument(document: Order): Boolean = false
         }
         val failingViewModel = TestDocumentViewModel(failingRepository, logger)
@@ -599,12 +599,14 @@ class DocumentViewModelTest {
 @OptIn(ExperimentalCoroutinesApi::class)
 class TestDocumentViewModel(
     repository: FakeOrderRepository,
-    logger: Logger
+    logger: Logger,
+    ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO
 ) : DocumentViewModel<Order>(
     repository = repository,
     logger = logger,
     logTag = "TestDocumentVM",
-    emptyDocument = { Order(guid = "", databaseId = TestFixtures.TEST_DB_GUID) }
+    emptyDocument = { Order(guid = "", databaseId = TestFixtures.TEST_ACCOUNT_GUID) },
+    ioDispatcher = ioDispatcher
 ) {
 
     var isEditEnabled = false

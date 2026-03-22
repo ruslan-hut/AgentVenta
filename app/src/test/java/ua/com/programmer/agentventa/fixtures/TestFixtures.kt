@@ -84,7 +84,7 @@ object TestFixtures {
     // ========== Companies ==========
 
     fun createCompany1() = Company(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = COMPANY_1_GUID,
         description = "Main Company LLC",
         isDefault = 1,
@@ -92,7 +92,7 @@ object TestFixtures {
     )
 
     fun createCompany2() = Company(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = COMPANY_2_GUID,
         description = "Branch Company Ltd",
         isDefault = 0,
@@ -102,7 +102,7 @@ object TestFixtures {
     // ========== Stores ==========
 
     fun createStore1() = Store(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = STORE_1_GUID,
         description = "Warehouse #1",
         isDefault = 1,
@@ -110,7 +110,7 @@ object TestFixtures {
     )
 
     fun createStore2() = Store(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = STORE_2_GUID,
         description = "Warehouse #2",
         isDefault = 0,
@@ -120,14 +120,14 @@ object TestFixtures {
     // ========== Price Types ==========
 
     fun createPriceTypeRetail() = PriceType(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         priceType = PRICE_TYPE_RETAIL,
         description = "Retail Price",
         timestamp = System.currentTimeMillis()
     )
 
     fun createPriceTypeWholesale() = PriceType(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         priceType = PRICE_TYPE_WHOLESALE,
         description = "Wholesale Price",
         timestamp = System.currentTimeMillis()
@@ -141,7 +141,7 @@ object TestFixtures {
     // ========== Payment Types ==========
 
     fun createPaymentTypeCash() = PaymentType(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         paymentType = PAYMENT_TYPE_CASH,
         isFiscal = 1,
         isDefault = 1,
@@ -150,7 +150,7 @@ object TestFixtures {
     )
 
     fun createPaymentTypeCard() = PaymentType(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         paymentType = PAYMENT_TYPE_CARD,
         isFiscal = 1,
         isDefault = 0,
@@ -166,7 +166,7 @@ object TestFixtures {
     // ========== Clients ==========
 
     fun createClient1() = Client(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = CLIENT_1_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "C001",
@@ -186,7 +186,7 @@ object TestFixtures {
     )
 
     fun createClient2() = Client(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = CLIENT_2_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "C002",
@@ -206,7 +206,7 @@ object TestFixtures {
     )
 
     fun createClient3Banned() = Client(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = CLIENT_3_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "C003",
@@ -272,7 +272,7 @@ object TestFixtures {
     // ========== Debts ==========
 
     fun createDebt1ForClient1() = Debt(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         companyGuid = COMPANY_1_GUID,
         clientGuid = CLIENT_1_GUID,
         docGuid = ORDER_1_GUID,
@@ -289,7 +289,7 @@ object TestFixtures {
     )
 
     fun createDebt2ForClient2() = Debt(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         companyGuid = COMPANY_1_GUID,
         clientGuid = CLIENT_2_GUID,
         docGuid = ORDER_2_GUID,
@@ -308,7 +308,7 @@ object TestFixtures {
     // ========== Products ==========
 
     fun createProduct1() = Product(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = PRODUCT_1_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "P001",
@@ -329,7 +329,7 @@ object TestFixtures {
     )
 
     fun createProduct2() = Product(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = PRODUCT_2_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "P002",
@@ -350,7 +350,7 @@ object TestFixtures {
     )
 
     fun createProduct3OutOfStock() = Product(
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         guid = PRODUCT_3_GUID,
         timestamp = System.currentTimeMillis(),
         code1 = "P003",
@@ -447,7 +447,7 @@ object TestFixtures {
 
     fun createOrder1() = Order(
         guid = ORDER_1_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         date = "2025-01-15",
         time = System.currentTimeMillis(),
         number = 1,
@@ -474,7 +474,7 @@ object TestFixtures {
 
     fun createOrder2Return() = Order(
         guid = ORDER_2_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         date = "2025-01-16",
         time = System.currentTimeMillis(),
         number = 2,
@@ -498,7 +498,7 @@ object TestFixtures {
 
     fun createOrder3Sent() = Order(
         guid = ORDER_3_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         date = "2025-01-14",
         time = System.currentTimeMillis() - 86400000, // 1 day ago
         number = 3,
@@ -585,7 +585,7 @@ object TestFixtures {
 
     fun createCash1() = Cash(
         guid = CASH_1_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         date = "2025-01-15",
         time = System.currentTimeMillis(),
         number = 1,
@@ -604,7 +604,7 @@ object TestFixtures {
 
     fun createCash2() = Cash(
         guid = CASH_2_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         date = "2025-01-16",
         time = System.currentTimeMillis(),
         number = 2,
@@ -626,7 +626,7 @@ object TestFixtures {
 
     fun createTask1() = Task(
         guid = TASK_1_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         time = System.currentTimeMillis(),
         date = "2025-01-15",
         isDone = 0,
@@ -638,7 +638,7 @@ object TestFixtures {
 
     fun createTask2Completed() = Task(
         guid = TASK_2_GUID,
-        databaseId = TEST_DB_GUID,
+        databaseId = TEST_ACCOUNT_GUID,
         time = System.currentTimeMillis() - 86400000, // 1 day ago
         date = "2025-01-14",
         isDone = 1,

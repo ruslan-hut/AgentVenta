@@ -3,6 +3,7 @@ package ua.com.programmer.agentventa.presentation.common.document
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,8 @@ abstract class DocumentViewModel<T>(
     protected val repository: DocumentRepository<T>,
     protected val logger: Logger,
     protected val logTag: String,
-    private val emptyDocument: () -> T
+    private val emptyDocument: () -> T,
+    protected val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
     // Document GUID state
@@ -95,7 +97,7 @@ abstract class DocumentViewModel<T>(
     protected open fun initNewDocument() {
         viewModelScope.launch {
             _isLoading.value = true
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val newDoc = repository.newDocument()
                 if (newDoc != null) {
                     val guid = getDocumentGuid(newDoc)
@@ -114,7 +116,7 @@ abstract class DocumentViewModel<T>(
      */
     protected fun updateDocument(updated: T) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 repository.updateDocument(updated)
             }
         }
@@ -126,7 +128,7 @@ abstract class DocumentViewModel<T>(
     protected fun updateDocumentWithResult(updated: T) {
         viewModelScope.launch {
             _isLoading.value = true
-            val saved = withContext(Dispatchers.IO) { repository.updateDocument(updated) }
+            val saved = withContext(ioDispatcher) { repository.updateDocument(updated) }
             _saveResult.value = saved
             if (saved) {
                 _events.send(DocumentEvent.SaveSuccess(getDocumentGuid(updated)))
@@ -142,7 +144,7 @@ abstract class DocumentViewModel<T>(
      */
     open fun deleteDocument() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 repository.deleteDocument(currentDocument)
                 _events.send(DocumentEvent.DeleteSuccess)
             }

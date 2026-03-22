@@ -436,7 +436,7 @@ class ProductListViewModelTest {
         assertThat(currentGroup).isNotNull()
         assertThat(currentGroup?.guid).isEqualTo(group.guid)
         assertThat(currentGroup?.description).isEqualTo("Electronics")
-        assertThat(currentGroup?.isGroup).isEqualTo(1)
+        assertThat(currentGroup?.isGroup).isTrue()
     }
 
     // ========================================

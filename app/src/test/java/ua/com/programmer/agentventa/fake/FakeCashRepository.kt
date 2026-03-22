@@ -23,12 +23,12 @@ class FakeCashRepository(
     private val companies = MutableStateFlow<List<Company>>(emptyList())
 
     override fun getDocument(guid: String): Flow<Cash> = cashDocuments.map { list ->
-        list.first { it.guid == guid }
+        list.firstOrNull { it.guid == guid } ?: Cash(guid = guid, databaseId = currentAccountGuid)
     }
 
     override suspend fun newDocument(): Cash? {
         val now = Date()
-        return Cash(
+        val cash = Cash(
             guid = UUID.randomUUID().toString(),
             databaseId = currentAccountGuid,
             date = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
@@ -37,10 +37,14 @@ class FakeCashRepository(
             isProcessed = 0,
             sum = 0.0
         )
+        cashDocuments.value = cashDocuments.value + cash
+        return cash
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Cash>> = cashDocuments.map { list ->
         list.filter { cash ->
+            val matchesAccount = cash.databaseId == currentAccountGuid
+
             val matchesFilter = filter.isEmpty() || cash.client.contains(filter, ignoreCase = true) || cash.number.toString().contains(filter, ignoreCase = true)
 
             val matchesDate = listDate == null || try {
@@ -50,7 +54,7 @@ class FakeCashRepository(
                 false
             }
 
-            matchesFilter && matchesDate
+            matchesAccount && matchesFilter && matchesDate
         }
     }
 

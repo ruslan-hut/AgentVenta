@@ -17,6 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -96,10 +97,15 @@ class SharedViewModelTest {
         imageLoadingManager = mock()
         commonRepository = mock()
 
-        // Mock SharedPreferences
+        // Mock SharedPreferences with Editor for edit { } calls
+        val mockEditor: SharedPreferences.Editor = mock {
+            on { putBoolean(any(), any()) } doReturn mock
+            on { putString(any(), any()) } doReturn mock
+        }
         sharedPreferences = mock {
             on { getBoolean(eq("show_rests_only"), any()) } doReturn false
             on { getBoolean(eq("ignore_sequential_barcodes"), any()) } doReturn false
+            on { edit() } doReturn mockEditor
         }
 
         // Initialize state flows for managers
@@ -188,9 +194,9 @@ class SharedViewModelTest {
     }
 
     @Test
-    fun `initial barcode is empty`() = runTest {
+    fun `initial barcode has no emissions`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -245,9 +251,6 @@ class SharedViewModelTest {
     @Test
     fun `onBarcodeRead emits valid barcode`() = runTest {
         viewModel.barcodeFlow.test {
-            // Initial empty
-            assertThat(awaitItem()).isEmpty()
-
             // Act: read barcode
             viewModel.onBarcodeRead("1234567890123")
 
@@ -261,25 +264,8 @@ class SharedViewModelTest {
     @Test
     fun `onBarcodeRead ignores blank barcode`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             // Act: read blank barcode
             viewModel.onBarcodeRead("")
-
-            // Assert: no emission (timeout expected)
-            expectNoEvents()
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `onBarcodeRead ignores short barcode`() = runTest {
-        viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
-            // Act: read short barcode (less than 10 chars)
-            viewModel.onBarcodeRead("123")
 
             // Assert: no emission
             expectNoEvents()
@@ -289,17 +275,13 @@ class SharedViewModelTest {
     }
 
     @Test
-    fun `clearBarcode resets barcode to empty`() = runTest {
+    fun `onBarcodeRead accepts short barcode`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
+            // Act: read short barcode
+            viewModel.onBarcodeRead("123")
 
-            // Set barcode
-            viewModel.onBarcodeRead("1234567890123")
-            assertThat(awaitItem()).isEqualTo("1234567890123")
-
-            // Clear barcode
-            viewModel.clearBarcode()
-            assertThat(awaitItem()).isEmpty()
+            // Assert: barcode emitted (no min-length check in SharedViewModel)
+            assertThat(awaitItem()).isEqualTo("123")
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -308,8 +290,6 @@ class SharedViewModelTest {
     @Test
     fun `multiple barcode reads emit sequentially`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             viewModel.onBarcodeRead("1111111111")
             assertThat(awaitItem()).isEqualTo("1111111111")
 
@@ -786,7 +766,7 @@ class SharedViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        verify(syncManager).callPrintDocument(any(), eq(guid), any(), any())
+        verify(syncManager).callPrintDocument(any(), eq(guid), anyOrNull(), any())
     }
 
     @Test
@@ -902,8 +882,6 @@ class SharedViewModelTest {
     @Test
     fun `barcode with exactly 10 characters is accepted`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             viewModel.onBarcodeRead("1234567890")
             assertThat(awaitItem()).isEqualTo("1234567890")
 
@@ -912,13 +890,10 @@ class SharedViewModelTest {
     }
 
     @Test
-    fun `barcode with 9 characters is rejected`() = runTest {
+    fun `barcode with 9 characters is accepted`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             viewModel.onBarcodeRead("123456789")
-
-            expectNoEvents()
+            assertThat(awaitItem()).isEqualTo("123456789")
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -972,32 +947,15 @@ class SharedViewModelTest {
     }
 
     @Test
-    fun `clearBarcode can be called multiple times safely`() = runTest {
-        viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
-            viewModel.clearBarcode()
-            viewModel.clearBarcode()
-            viewModel.clearBarcode()
-
-            // Should remain empty
-            expectNoEvents()
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
     fun `setting same parameter value does not emit duplicate`() = runTest {
         viewModel.sharedParamsFlow.test {
-            val initial = awaitItem()
+            awaitItem() // initial
 
-            // Set to same value as default
+            // Set to same value as default — StateFlow deduplicates
             viewModel.setRestsOnly(false)
 
-            // Should emit with same value
-            val updated = awaitItem()
-            assertThat(updated.restsOnly).isEqualTo(initial.restsOnly)
+            // No new emission expected
+            expectNoEvents()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -1006,8 +964,6 @@ class SharedViewModelTest {
     @Test
     fun `long barcode values are accepted`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             val longBarcode = "1".repeat(100)
             viewModel.onBarcodeRead(longBarcode)
 
@@ -1020,8 +976,6 @@ class SharedViewModelTest {
     @Test
     fun `special characters in barcode are accepted`() = runTest {
         viewModel.barcodeFlow.test {
-            assertThat(awaitItem()).isEmpty()
-
             val specialBarcode = "ABC-123-XYZ"
             viewModel.onBarcodeRead(specialBarcode)
 

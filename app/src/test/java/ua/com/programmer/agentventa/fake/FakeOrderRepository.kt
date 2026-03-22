@@ -26,12 +26,12 @@ open class FakeOrderRepository(
     private val paymentTypes = MutableStateFlow<List<PaymentType>>(emptyList())
 
     override fun getDocument(guid: String): Flow<Order> = orders.map { list ->
-        list.first { it.guid == guid }
+        list.firstOrNull { it.guid == guid } ?: Order(guid = guid, databaseId = currentAccountGuid)
     }
 
     override open suspend fun newDocument(): Order? {
         val now = Date()
-        return Order(
+        val order = Order(
             guid = UUID.randomUUID().toString(),
             databaseId = currentAccountGuid,
             date = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
@@ -39,10 +39,14 @@ open class FakeOrderRepository(
             isSent = 0,
             isProcessed = 0
         )
+        orders.value = orders.value + order
+        return order
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Order>> = orders.map { list ->
         list.filter { order ->
+            val matchesAccount = order.databaseId == currentAccountGuid
+
             val matchesFilter = filter.isEmpty() ||
                     order.clientDescription?.contains(filter, ignoreCase = true) == true || order.number.toString().contains(filter, ignoreCase = true)
 
@@ -53,7 +57,7 @@ open class FakeOrderRepository(
                 false
             }
 
-            matchesFilter && matchesDate
+            matchesAccount && matchesFilter && matchesDate
         }
     }
 

@@ -24,17 +24,21 @@ class FakeTaskRepository(
 
     override suspend fun newDocument(): Task? {
         val now = Date()
-        return Task(
+        val task = Task(
             guid = UUID.randomUUID().toString(),
             databaseId = currentAccountGuid,
             date = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now),
             time = now.time,
             isDone = 0
         )
+        tasks.value = tasks.value + task
+        return task
     }
 
     override fun getDocuments(filter: String, listDate: Date?): Flow<List<Task>> = tasks.map { list ->
         list.filter { task ->
+            val matchesAccount = task.databaseId == currentAccountGuid
+
             val matchesFilter = filter.isEmpty() || task.notes.contains(filter, ignoreCase = true) || task.description.contains(filter, ignoreCase = true)
 
             val matchesDate = listDate == null || try {
@@ -44,7 +48,7 @@ class FakeTaskRepository(
                 false
             }
 
-            matchesFilter && matchesDate
+            matchesAccount && matchesFilter && matchesDate
         }
     }
 

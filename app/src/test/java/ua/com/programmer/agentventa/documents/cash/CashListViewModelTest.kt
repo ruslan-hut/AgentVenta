@@ -48,6 +48,7 @@ class CashListViewModelTest {
             cashRepository = cashRepository,
             userAccountRepository = userAccountRepository
         )
+        viewModel.setDate(null)
     }
 
     // ========================================

@@ -64,6 +64,7 @@ class OrderListViewModelTest {
             userAccountRepository = userAccountRepository,
             copyOrderUseCase = copyOrderUseCase
         )
+        viewModel.setDate(null)
     }
 
     // ========================================

@@ -66,8 +66,8 @@ class OrderViewModelTest {
 
     @Before
     fun setup() {
-        orderRepository = FakeOrderRepository(TestFixtures.TEST_DB_GUID)
-        productRepository = FakeProductRepository(TestFixtures.TEST_DB_GUID)
+        orderRepository = FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID)
+        productRepository = FakeProductRepository(TestFixtures.TEST_ACCOUNT_GUID)
         logger = mock()
         generateOrderPrintUseCase = mock()
         webhookPrintService = mock()
