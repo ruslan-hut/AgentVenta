@@ -159,12 +159,10 @@ class OrderViewModel @Inject constructor(
         if (clientGuid.isNullOrEmpty() || order.guid.isEmpty()) return
         if ((order.clientGuid ?: "").isNotEmpty()) return
         viewModelScope.launch {
-            orderRepository.getClient(clientGuid)?.let { client ->
-                orderRepository.getOrder(order.guid)?.let { currentOrder ->
-                    currentOrder.setClient(client.toUi())
-                    orderRepository.updateDocument(currentOrder)
-                }
-            }
+            val client = orderRepository.getClient(clientGuid) ?: return@launch
+            val currentOrder = orderRepository.getOrder(order.guid) ?: return@launch
+            currentOrder.setClient(client.toUi())
+            orderRepository.updateDocument(currentOrder)
         }
     }
 

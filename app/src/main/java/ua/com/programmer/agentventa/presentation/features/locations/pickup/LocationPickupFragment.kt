@@ -221,26 +221,24 @@ class LocationPickupFragment: Fragment(), MenuProvider, OnMapReadyCallback {
             alert.show()
             return
         }
-        map?.let { m ->
-            clientLocation?.let { c ->
-                val marker = markerCollection?.markers?.find {
-                    it.tag == c.clientGuid
-                } ?: markerCollection?.addMarker(clientLocationOptions(c))
-                marker?.apply {
-                    tag = c.clientGuid
-                    title = c.description
-                    snippet = c.address
-                }
-                val location = LatLng(c.latitude, c.longitude)
-                binding.coordinates.text = locationText(location)
-                m.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(
-                        location, 17f
-                    ))
-                markerCollection?.markers?.find {
-                    it.tag == markerTagCurrentLocation
-                }?.remove()
-            }
+        val m = map ?: return
+        val c = clientLocation ?: return
+        val marker = markerCollection?.markers?.find {
+            it.tag == c.clientGuid
+        } ?: markerCollection?.addMarker(clientLocationOptions(c))
+        marker?.apply {
+            tag = c.clientGuid
+            title = c.description
+            snippet = c.address
         }
+        val location = LatLng(c.latitude, c.longitude)
+        binding.coordinates.text = locationText(location)
+        m.moveCamera(com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(
+                location, 17f
+            ))
+        markerCollection?.markers?.find {
+            it.tag == markerTagCurrentLocation
+        }?.remove()
     }
 
     private fun deleteClientMarker() {

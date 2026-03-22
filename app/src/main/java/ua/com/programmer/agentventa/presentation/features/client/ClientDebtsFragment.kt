@@ -36,13 +36,12 @@ class ClientDebtsFragment: Fragment() {
         val adapter = ClientDebtsAdapter(
             onItemClicked = { debt ->
                 if (debt.hasContent == 1) {
-                    val action = viewModel.client.value?.let { client ->
-                        ClientFragmentDirections.actionClientMenuFragmentToDebtFragment(
-                            clientGuid = client.guid,
-                            docId = debt.docId
-                        )
-                    }
-                    action?.let { it1 -> view.findNavController().navigate(it1) }
+                    val client = viewModel.client.value ?: return@ClientDebtsAdapter
+                    val action = ClientFragmentDirections.actionClientMenuFragmentToDebtFragment(
+                        clientGuid = client.guid,
+                        docId = debt.docId
+                    )
+                    view.findNavController().navigate(action)
                 }
             },
             onItemLongClicked = {},
