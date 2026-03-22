@@ -127,6 +127,20 @@ class WebSocketConnectionManager @Inject constructor(
             }
         }
 
+        // Update last sync time when catalog data is received from server
+        scope.launch {
+            webSocketRepository.incomingMessages.collect {
+                _lastSyncTime.value = System.currentTimeMillis()
+            }
+        }
+
+        // Update last sync time on batch_complete (full catalog sync finished)
+        scope.launch {
+            webSocketRepository.batchComplete.collect {
+                _lastSyncTime.value = System.currentTimeMillis()
+            }
+        }
+
         // Start periodic check scheduler
         startPeriodicCheck()
     }
