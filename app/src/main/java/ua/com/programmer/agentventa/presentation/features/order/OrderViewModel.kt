@@ -91,19 +91,11 @@ class OrderViewModel @Inject constructor(
             initialValue = emptyList()
         )
     val currentContentFlow: StateFlow<List<LOrderContent>> get() = _currentContentFlow
-    val currentContent: androidx.lifecycle.MutableLiveData<List<LOrderContent>> = androidx.lifecycle.MutableLiveData(emptyList())
+    val currentContent = _currentContentFlow.asLiveData()
 
     // Previous order content
     private val _previousContent = MutableStateFlow<List<PreviousOrderContent>>(emptyList())
     val previousContent: StateFlow<List<PreviousOrderContent>> = _previousContent.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _currentContentFlow.collect { content ->
-                currentContent.postValue(content)
-            }
-        }
-    }
 
     fun loadPreviousContent() {
         val clientGuid = order.clientGuid ?: return

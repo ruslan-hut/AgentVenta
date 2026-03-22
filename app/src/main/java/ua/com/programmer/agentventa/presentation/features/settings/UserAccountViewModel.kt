@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.presentation.features.settings
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -8,13 +7,9 @@ import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
-import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
@@ -37,15 +32,6 @@ class UserAccountViewModel @Inject constructor(
     val formatSpinner = MutableLiveData<List<String>>()
     val selectedFormat = MutableLiveData<String>()
 
-    private val _connectionState = MutableLiveData(resourceProvider.getString(R.string.account_ws_disconnected))
-    val connectionState: LiveData<String> = _connectionState
-
-    private val _isConnected = MutableLiveData<Boolean>(false)
-    val isConnected: LiveData<Boolean> = _isConnected
-
-    private val _isConnecting = MutableLiveData<Boolean>(false)
-    val isConnecting: LiveData<Boolean> = _isConnecting
-
     val account get() = _guid.switchMap {
         userAccountRepository.getByGuid(it).asLiveData()
     }
@@ -57,29 +43,6 @@ class UserAccountViewModel @Inject constructor(
             Constants.SYNC_FORMAT_WEBSOCKET
         )
         selectedFormat.value = Constants.SYNC_FORMAT_WEBSOCKET // Default to relay/WebSocket
-
-        // Observe WebSocket connection state
-        webSocketRepository.connectionState
-            .onEach { state ->
-                // Update status text
-                val statusText = when (state) {
-                    is WebSocketState.Connected -> resourceProvider.getString(R.string.account_ws_connected, state.deviceUuid.take(8))
-                    is WebSocketState.Connecting -> resourceProvider.getString(R.string.account_ws_connecting, state.attempt)
-                    is WebSocketState.Disconnected -> resourceProvider.getString(R.string.account_ws_disconnected)
-                    is WebSocketState.Pending -> resourceProvider.getString(R.string.account_ws_pending, state.deviceUuid.take(8))
-                    is WebSocketState.LicenseError -> resourceProvider.getString(R.string.account_ws_license_error, state.reason)
-                    is WebSocketState.Error -> resourceProvider.getString(R.string.account_ws_error, state.error)
-                    is WebSocketState.Reconnecting -> resourceProvider.getString(R.string.account_ws_reconnecting, state.delayMs, state.attempt)
-                }
-                _connectionState.postValue(statusText)
-
-                // Update boolean states for UI logic
-                _isConnected.postValue(state is WebSocketState.Connected)
-                _isConnecting.postValue(
-                    state is WebSocketState.Connecting || state is WebSocketState.Reconnecting
-                )
-            }
-            .launchIn(viewModelScope)
     }
 
     fun setCurrentAccount(guid: String?) {
@@ -118,7 +81,6 @@ class UserAccountViewModel @Inject constructor(
                 webSocketRepository.connect(currentAccount)
             } else {
                 logger.w(TAG, "Cannot connect: No account loaded")
-                _connectionState.value = resourceProvider.getString(R.string.account_ws_no_account)
             }
         }
     }
