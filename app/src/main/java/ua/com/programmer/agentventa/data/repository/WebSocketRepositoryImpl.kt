@@ -719,7 +719,6 @@ class WebSocketRepositoryImpl @Inject constructor(
         try {
             val ackMessage = WebSocketMessageFactory.createAckMessage(messageId)
             webSocket?.send(ackMessage)
-            logger.d(TAG, "Sent ACK for catalog $catalogType ($itemCount items)")
         } catch (e: Exception) {
             logger.e(TAG, "Error sending catalog ACK: ${e.message}")
         }
@@ -859,7 +858,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 // Emit batch_complete event after all data is saved and ACKed
                 if (batchCompleteTimestamp != null) {
                     _batchComplete.emit(batchCompleteTimestamp)
-                    logger.d(TAG, "Batch complete emitted with timestamp: $batchCompleteTimestamp")
                 }
 
             } catch (e: Exception) {
@@ -973,7 +971,6 @@ class WebSocketRepositoryImpl @Inject constructor(
         try {
             val ackMessage = WebSocketMessageFactory.createAckMessage(messageId)
             webSocket?.send(ackMessage)
-            logger.d(TAG, "Sent ACK for $dataType ($itemCount items)")
         } catch (e: Exception) {
             logger.e(TAG, "Error sending ACK: ${e.message}")
         }

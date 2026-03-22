@@ -150,7 +150,6 @@ class NetworkRepositoryImpl @Inject constructor(
         webSocketRepository.batchComplete.onEach { serverTimestamp ->
             val accountGuid = currentSystemAccount?.guid ?: return@onEach
             try {
-                logger.d(logTag, "Batch complete received — cleaning up stale data (timestamp=$serverTimestamp)")
                 dataRepository.cleanUp(accountGuid, serverTimestamp)
             } catch (e: Exception) {
                 logger.e(logTag, "Error during batch_complete cleanup: ${e.message}")
