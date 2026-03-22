@@ -130,7 +130,7 @@ class OrderViewModel @Inject constructor(
                     discountValue = totals.discount
                 ))
             }
-            withContext(Dispatchers.Main) { onComplete(true) }
+            onComplete(true)
         }
     }
 
@@ -174,9 +174,7 @@ class OrderViewModel @Inject constructor(
                 description = client.description,
             )
             orderRepository.setClient(orderGuid, clientData)
-            withContext(Dispatchers.Main) {
-                popUp()
-            }
+            popUp()
         }
     }
 
@@ -216,9 +214,7 @@ class OrderViewModel @Inject constructor(
                     discountValue = totals.discount.round(2),
                 ))
 
-                withContext(Dispatchers.Main) {
-                    popUp()
-                }
+                popUp()
             }
         }
     }
@@ -260,9 +256,7 @@ class OrderViewModel @Inject constructor(
                 discountValue = totals.discount.round(2),
             ))
             if (isFiscal()) {
-                withContext(Dispatchers.Main) {
-                    continueFiscal(orderGuid)
-                }
+                continueFiscal(orderGuid)
             } else {
                 saveDocument()
             }
@@ -307,12 +301,8 @@ class OrderViewModel @Inject constructor(
 
     fun updateLocation(onComplete: () -> Unit) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                orderRepository.updateLocation(order)
-                withContext(Dispatchers.Main) {
-                    onComplete()
-                }
-            }
+            withContext(Dispatchers.IO) { orderRepository.updateLocation(order) }
+            onComplete()
         }
     }
 
@@ -320,9 +310,9 @@ class OrderViewModel @Inject constructor(
         val clientGuid = order.clientGuid ?: ""
         if (clientGuid.isEmpty()) return onComplete(false)
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val result = orderRepository.copyPreviousContent(order.guid, clientGuid)
-                if (result) {
+            val result = withContext(Dispatchers.IO) {
+                val copied = orderRepository.copyPreviousContent(order.guid, clientGuid)
+                if (copied) {
                     val totals = orderRepository.getDocumentTotals(order.guid)
                     updateDocument(order.copy(
                         price = totals.sum,
@@ -331,10 +321,9 @@ class OrderViewModel @Inject constructor(
                         discountValue = totals.discount,
                     ))
                 }
-                withContext(Dispatchers.Main) {
-                    onComplete(result)
-                }
+                copied
             }
+            onComplete(result)
         }
     }
 
@@ -354,9 +343,7 @@ class OrderViewModel @Inject constructor(
                 }
             } else {
                 logger.w(logTag, "product not found; barcode=$barcode")
-                withContext(Dispatchers.Main) {
-                    onFail()
-                }
+                onFail()
             }
             // Set navigation page
             _navigateToPage.value = 1
@@ -393,16 +380,10 @@ class OrderViewModel @Inject constructor(
             )
 
             when (val result = generateOrderPrintUseCase(params)) {
-                is Result.Success -> {
-                    withContext(Dispatchers.Main) {
-                        onResult(result.data.name)
-                    }
-                }
+                is Result.Success -> onResult(result.data.name)
                 is Result.Error -> {
                     logger.e(logTag, "Print generation failed: ${result.exception.message}")
-                    withContext(Dispatchers.Main) {
-                        onResult(null)
-                    }
+                    onResult(null)
                 }
             }
         }
@@ -420,17 +401,15 @@ class OrderViewModel @Inject constructor(
 
             val result = webhookPrintService.sendPrintData(printData)
 
-            withContext(Dispatchers.Main) {
-                result.fold(
-                    onSuccess = { message ->
-                        onResult(true, message)
-                    },
-                    onFailure = { error ->
-                        logger.e(logTag, "Webhook print failed: ${error.message}")
-                        onResult(false, error.message ?: "Unknown error")
-                    }
-                )
-            }
+            result.fold(
+                onSuccess = { message ->
+                    onResult(true, message)
+                },
+                onFailure = { error ->
+                    logger.e(logTag, "Webhook print failed: ${error.message}")
+                    onResult(false, error.message ?: "Unknown error")
+                }
+            )
         }
     }
 }

@@ -126,16 +126,12 @@ abstract class DocumentViewModel<T>(
     protected fun updateDocumentWithResult(updated: T) {
         viewModelScope.launch {
             _isLoading.value = true
-            withContext(Dispatchers.IO) {
-                val saved = repository.updateDocument(updated)
-                withContext(Dispatchers.Main) {
-                    _saveResult.value = saved
-                }
-                if (saved) {
-                    _events.send(DocumentEvent.SaveSuccess(getDocumentGuid(updated)))
-                } else {
-                    _events.send(DocumentEvent.SaveError("Failed to save document"))
-                }
+            val saved = withContext(Dispatchers.IO) { repository.updateDocument(updated) }
+            _saveResult.value = saved
+            if (saved) {
+                _events.send(DocumentEvent.SaveSuccess(getDocumentGuid(updated)))
+            } else {
+                _events.send(DocumentEvent.SaveError("Failed to save document"))
             }
             _isLoading.value = false
         }

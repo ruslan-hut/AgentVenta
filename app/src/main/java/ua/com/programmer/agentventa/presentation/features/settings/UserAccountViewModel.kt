@@ -53,22 +53,17 @@ class UserAccountViewModel @Inject constructor(
         }
     }
 
-    fun saveAccount(updated: UserAccount, afterSave: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userAccountRepository.saveAccount(updated)
-            withContext(Dispatchers.Main) {
-                afterSave()
-            }
+    fun saveAccount(updated: UserAccount, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { userAccountRepository.saveAccount(updated) }
+            onComplete()
         }
     }
 
-    fun deleteAccount(guid: String, afterDelete: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (userAccountRepository.deleteByGuid(guid) > 0) {
-                withContext(Dispatchers.Main) {
-                    afterDelete()
-                }
-            }
+    fun deleteAccount(guid: String, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            val deleted = withContext(Dispatchers.IO) { userAccountRepository.deleteByGuid(guid) }
+            if (deleted > 0) onComplete()
         }
     }
 

@@ -91,9 +91,7 @@ class CashViewModel @Inject constructor(
                 description = client.description,
             )
             cashRepository.setClient(docGuid, clientData)
-            withContext(Dispatchers.Main) {
-                popUp()
-            }
+            popUp()
         }
     }
 }

@@ -28,43 +28,23 @@ class TaskListViewModel @Inject constructor(
      */
     fun deleteTask(task: Task, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                taskRepository.deleteDocument(task)
-            }
-            withContext(Dispatchers.Main) {
-                onComplete()
-            }
+            withContext(Dispatchers.IO) { taskRepository.deleteDocument(task) }
+            onComplete()
         }
     }
 
-    /**
-     * Restore a deleted task (for undo functionality).
-     * Uses insertOrUpdateDocument to re-insert the task into the database.
-     * @param task The task to restore
-     */
     fun restoreTask(task: Task) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                taskRepository.insertOrUpdateDocument(task)
-            }
+            withContext(Dispatchers.IO) { taskRepository.insertOrUpdateDocument(task) }
         }
     }
 
-    /**
-     * Mark a task as done or undone.
-     * @param task The task to update
-     * @param isDone True to mark as done, false to mark as not done
-     * @param onComplete Callback invoked after update completes
-     */
     fun markTaskAsDone(task: Task, isDone: Boolean, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val updatedTask = task.copy(isDone = if (isDone) 1 else 0)
-                taskRepository.updateDocument(updatedTask)
+                taskRepository.updateDocument(task.copy(isDone = if (isDone) 1 else 0))
             }
-            withContext(Dispatchers.Main) {
-                onComplete()
-            }
+            onComplete()
         }
     }
 
