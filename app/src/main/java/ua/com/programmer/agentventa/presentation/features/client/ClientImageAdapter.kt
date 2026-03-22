@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import ua.com.programmer.agentventa.databinding.ClientImageItemBinding
+import ua.com.programmer.agentventa.extensions.visibleIf
 
 
 class ClientImageAdapter(
@@ -27,16 +28,8 @@ class ClientImageAdapter(
             binding.apply {
                 imageLoader(item, imageView)
                 description.text = item.description
-                isDefault.visibility = if (item.isDefault == 1) {
-                    android.view.View.VISIBLE
-                } else {
-                    android.view.View.GONE
-                }
-                isSent.visibility = if (item.isSent == 0 && item.isLocal == 1) {
-                    android.view.View.VISIBLE
-                } else {
-                    android.view.View.GONE
-                }
+                isDefault.visibleIf(item.isDefault == 1)
+                isSent.visibleIf(item.isSent == 0 && item.isLocal == 1)
             }
         }
     }

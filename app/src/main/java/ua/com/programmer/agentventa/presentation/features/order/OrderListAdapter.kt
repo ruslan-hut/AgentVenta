@@ -11,6 +11,8 @@ import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
+import ua.com.programmer.agentventa.extensions.visibleIf
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 import java.util.Locale
 
 class OrderListAdapter(
@@ -29,31 +31,11 @@ class OrderListAdapter(
                 listItemDate.text = document.date
                 listItemCompany.text = document.company
                 listItemStore.text = document.store
-                listItemCompany.visibility = if (document.company.isNotEmpty()) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
-                }
-                listItemStore.visibility = if (document.store.isNotEmpty()) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
-                }
-                iconFiscal.visibility = if (document.isFiscal == 1) {
-                    View.VISIBLE
-                } else {
-                    View.INVISIBLE
-                }
-                iconReturn.visibility = if (document.isReturn == 1) {
-                    View.VISIBLE
-                } else {
-                    View.INVISIBLE
-                }
-                iconCash.visibility = if (document.paymentType == "CASH") {
-                    View.VISIBLE
-                } else {
-                    View.INVISIBLE
-                }
+                listItemCompany.visibleIf(document.company.isNotEmpty())
+                listItemStore.visibleIf(document.store.isNotEmpty())
+                iconFiscal.visibleOrInvisibleIf(document.isFiscal == 1)
+                iconReturn.visibleOrInvisibleIf(document.isReturn == 1)
+                iconCash.visibleOrInvisibleIf(document.paymentType == "CASH")
                 iconUpload.setImageResource(if (document.isSent == 1) {
                     R.drawable.baseline_cloud_done_24
                 } else if (document.isProcessed == 1) {

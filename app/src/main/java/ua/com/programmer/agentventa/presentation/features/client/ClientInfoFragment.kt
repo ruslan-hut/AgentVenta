@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.data.local.entity.hasLocation
 import ua.com.programmer.agentventa.databinding.ClientFragmentBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 
 @AndroidEntryPoint
@@ -79,7 +80,7 @@ class ClientInfoFragment: Fragment(){
             itemPhone.text = client.phone
             itemAddress.text = client.address
             itemInfo.text = client.notes //maybe something else
-            itemAddressIcon.visibility = if (client.hasLocation()) View.VISIBLE else View.INVISIBLE
+            itemAddressIcon.visibleOrInvisibleIf(client.hasLocation())
 
             addOrder.setOnClickListener {
                 val action = ClientFragmentDirections.actionClientMenuFragmentToOrderFragment(

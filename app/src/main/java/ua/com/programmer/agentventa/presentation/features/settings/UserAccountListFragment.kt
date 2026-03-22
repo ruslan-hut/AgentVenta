@@ -26,6 +26,7 @@ import ua.com.programmer.agentventa.data.local.entity.equalTo
 import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.databinding.ActivityConnectionsListBinding
 import ua.com.programmer.agentventa.databinding.ConnectionsListItemBinding
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 
 @AndroidEntryPoint
 class UserAccountListFragment: Fragment(), MenuProvider {
@@ -117,7 +118,7 @@ class UserAccountListFragment: Fragment(), MenuProvider {
                     } else {
                         licenseKey.setText(R.string.license_not_installed)
                     }
-                    activeIcon.visibility = if (item.isCurrent == 1) View.VISIBLE else View.INVISIBLE
+                    activeIcon.visibleOrInvisibleIf(item.isCurrent == 1)
                 }
             }
         }

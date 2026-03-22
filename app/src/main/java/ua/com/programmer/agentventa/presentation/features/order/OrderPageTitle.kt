@@ -17,6 +17,7 @@ import ua.com.programmer.agentventa.data.local.entity.hasLocation
 import ua.com.programmer.agentventa.databinding.ModelContentOrderBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
+import ua.com.programmer.agentventa.extensions.visibleIf
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 import ua.com.programmer.agentventa.utility.Constants
 import java.util.Date
@@ -104,13 +105,13 @@ class OrderPageTitle: Fragment() {
                 docTotalPrice.text = order.price.format(2)
                 docTotalQuantity.text = order.quantity.formatAsInt(3)
                 docNextPayment.text = order.nextPayment.format(2)
-                rowNextPayment.visibility = if (order.nextPayment != 0.0) View.VISIBLE else View.GONE
+                rowNextPayment.visibleIf(order.nextPayment != 0.0)
                 docNotes.setText(order.notes)
 
-                titleCompany.visibility = if (options.useCompanies) View.VISIBLE else View.GONE
-                titleStore.visibility = if (options.useStores) View.VISIBLE else View.GONE
-                docIsFiscal.visibility = if (order.isFiscal == 1) View.VISIBLE else View.GONE
-                elementReturns.visibility = if (options.allowReturn) View.VISIBLE else View.GONE
+                titleCompany.visibleIf(options.useCompanies)
+                titleStore.visibleIf(options.useStores)
+                docIsFiscal.visibleIf(order.isFiscal == 1)
+                elementReturns.visibleIf(options.allowReturn)
 
                 if (order.isProcessed > 0) {
                     docClient.isEnabled = false

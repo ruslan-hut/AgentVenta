@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.databinding.DebtListItemBinding
 import ua.com.programmer.agentventa.extensions.format
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 
 class ClientDebtsAdapter(
     private val onItemClicked: (Debt) -> Unit,
@@ -42,7 +43,7 @@ class ClientDebtsAdapter(
                         iconOutcome.visibility = ViewGroup.VISIBLE
                     }
 
-                    icon.visibility = if (item.hasContent == 1) ViewGroup.VISIBLE else ViewGroup.INVISIBLE
+                    icon.visibleOrInvisibleIf(item.hasContent == 1)
                 }
             }
         }

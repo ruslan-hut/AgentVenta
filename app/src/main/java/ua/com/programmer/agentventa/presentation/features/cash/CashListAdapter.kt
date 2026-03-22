@@ -10,6 +10,8 @@ import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.Cash
 import ua.com.programmer.agentventa.databinding.ModelDocumentsListItemBinding
 import ua.com.programmer.agentventa.extensions.format
+import ua.com.programmer.agentventa.extensions.visibleIf
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 import java.util.Locale
 
 class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
@@ -27,17 +29,9 @@ class CashListAdapter(private val onDocumentClicked: (Cash) -> Unit)
                 listItemStatus.text = document.status
                 listItemDate.text = document.date
                 listItemCompany.text = document.company
-                listItemCompany.visibility = if (document.company.isNotEmpty()) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
-                }
+                listItemCompany.visibleIf(document.company.isNotEmpty())
                 listItemStore.visibility = View.GONE
-                iconFiscal.visibility = if (document.isFiscal == 1) {
-                    View.VISIBLE
-                } else {
-                    View.INVISIBLE
-                }
+                iconFiscal.visibleOrInvisibleIf(document.isFiscal == 1)
                 iconReturn.visibility = View.INVISIBLE
                 iconCash.visibility = View.INVISIBLE
                 iconUpload.setImageResource(if (document.isSent == 1) {

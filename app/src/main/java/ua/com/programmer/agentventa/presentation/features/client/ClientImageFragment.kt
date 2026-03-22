@@ -22,6 +22,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.fileName
 import ua.com.programmer.agentventa.databinding.ClientImageFragmentBinding
+import ua.com.programmer.agentventa.extensions.visibleIf
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 
 @AndroidEntryPoint
@@ -59,16 +60,8 @@ class ClientImageFragment: Fragment(), MenuProvider{
         viewModel.image.observe(viewLifecycleOwner) {
             binding.apply {
                 image = it
-                isDefault.visibility = if (it.isDefault == 1) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
-                }
-                isSent.visibility = if (it.isSent == 0 && it.isLocal == 1) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
-                }
+                isDefault.visibleIf(it.isDefault == 1)
+                isSent.visibleIf(it.isSent == 0 && it.isLocal == 1)
                 rotation = itemImage.rotation.toInt()
             }
             sharedModel.loadClientImage(it, binding.itemImage)

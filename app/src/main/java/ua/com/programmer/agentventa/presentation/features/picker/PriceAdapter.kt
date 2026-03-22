@@ -9,6 +9,7 @@ import ua.com.programmer.agentventa.data.local.entity.LPrice
 import ua.com.programmer.agentventa.data.local.entity.markup
 import ua.com.programmer.agentventa.databinding.PriceListItemBinding
 import ua.com.programmer.agentventa.extensions.format
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 
 class PriceAdapter (
     private val onItemClicked: (LPrice) -> Unit,
@@ -27,11 +28,7 @@ class PriceAdapter (
                     description.text = item.description
                     value.text = item.price.format(2, "--")
                     percent.text = item.markup().format(1, "-", "%")
-                    isCurrent.visibility = if (item.isCurrent) {
-                        android.view.View.VISIBLE
-                    } else {
-                        android.view.View.INVISIBLE
-                    }
+                    isCurrent.visibleOrInvisibleIf(item.isCurrent)
                 }
             }
         }

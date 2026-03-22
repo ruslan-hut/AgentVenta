@@ -10,6 +10,7 @@ import ua.com.programmer.agentventa.data.local.entity.getPriceFormatted
 import ua.com.programmer.agentventa.data.local.entity.getQuantityFormatted
 import ua.com.programmer.agentventa.data.local.entity.getSumFormatted
 import ua.com.programmer.agentventa.databinding.OrderContentLineBinding
+import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 
 class OrderContentAdapter(
     private val onItemClicked: (LOrderContent) -> Unit,
@@ -31,16 +32,8 @@ class OrderContentAdapter(
                 itemPrice.text = item.getPriceFormatted()
                 itemQuantity.text = item.getQuantityFormatted()
                 itemSum.text = item.getSumFormatted()
-                itemIsPacked.visibility = if (item.isPacked) {
-                    ViewGroup.VISIBLE
-                } else {
-                    ViewGroup.INVISIBLE
-                }
-                itemIsDemand.visibility = if (item.isDemand) {
-                    ViewGroup.VISIBLE
-                } else {
-                    ViewGroup.INVISIBLE
-                }
+                itemIsPacked.visibleOrInvisibleIf(item.isPacked)
+                itemIsDemand.visibleOrInvisibleIf(item.isDemand)
             }
         }
     }
