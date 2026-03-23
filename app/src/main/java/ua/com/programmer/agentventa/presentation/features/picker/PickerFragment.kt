@@ -92,6 +92,7 @@ class PickerFragment: Fragment(), MenuProvider {
                 if (it.price > 0) {
                     binding?.editPrice?.setText(it.price.format(2))
                 }
+                updatePriceHint(it.description)
             },
             onItemLongClicked = {},
         )
@@ -102,6 +103,10 @@ class PickerFragment: Fragment(), MenuProvider {
             adapter.submitList(list)
             val hidePrices = list.isEmpty() || !sharedModel.options.allowPriceTypeChoose
             binding?.blockPriceList?.visibility = if (hidePrices) View.GONE else View.VISIBLE
+            val currentPrice = list.firstOrNull { it.isCurrent }
+            if (currentPrice != null) {
+                updatePriceHint(currentPrice.description)
+            }
         }
 
         viewModel.product.observe(viewLifecycleOwner) {
@@ -183,6 +188,15 @@ class PickerFragment: Fragment(), MenuProvider {
                 basePriceView.visibility = View.GONE
             }
             (priceRecycler.adapter as PriceAdapter).setClickable(options.allowPriceTypeChoose)
+        }
+    }
+
+    private fun updatePriceHint(priceTypeName: String) {
+        val baseLabel = getString(R.string.attr_price)
+        binding?.itemPrice?.hint = if (priceTypeName.isNotBlank()) {
+            "$baseLabel: $priceTypeName"
+        } else {
+            baseLabel
         }
     }
 
