@@ -160,8 +160,12 @@ class OrderViewModel @Inject constructor(
         viewModelScope.launch {
             val client = orderRepository.getClient(clientGuid) ?: return@launch
             val currentOrder = orderRepository.getOrder(order.guid) ?: return@launch
+            val oldPriceType = currentOrder.priceType
             currentOrder.setClient(client.toUi(), setClientPrice)
             orderRepository.updateDocument(currentOrder)
+            if (currentOrder.priceType != oldPriceType) {
+                recalculateContent(currentOrder)
+            }
         }
     }
 
@@ -169,10 +173,25 @@ class OrderViewModel @Inject constructor(
         val orderGuid = order.guid
         viewModelScope.launch {
             val currentOrder = orderRepository.getOrder(orderGuid) ?: return@launch
+            val oldPriceType = currentOrder.priceType
             currentOrder.setClient(client, setClientPrice)
             orderRepository.updateDocument(currentOrder)
+            if (currentOrder.priceType != oldPriceType) {
+                recalculateContent(currentOrder)
+            }
             popUp()
         }
+    }
+
+    private suspend fun recalculateContent(currentOrder: Order) {
+        orderRepository.recalculateContentPrices(currentOrder.guid, currentOrder.priceType)
+        val totals = orderRepository.getDocumentTotals(currentOrder.guid)
+        updateDocument(currentOrder.copy(
+            price = totals.sum.round(2),
+            quantity = totals.quantity.round(3),
+            weight = totals.weight.round(3),
+            discountValue = totals.discount.round(2),
+        ))
     }
 
     fun onProductClick(product: LProduct?, popUp: () -> Unit) {

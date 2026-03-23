@@ -233,6 +233,10 @@ open class FakeOrderRepository(
         ))
     }
 
+    override suspend fun recalculateContentPrices(orderGuid: String, priceType: String) {
+        // No-op in fake
+    }
+
     // Test helper methods
 
     fun addOrder(order: Order) {

@@ -38,4 +38,5 @@ interface OrderRepository: DocumentRepository<Order> {
     suspend fun setStore(guid: String, store: Store)
     suspend fun setClient(guid: String, client: Client)
     suspend fun getPreviousOrderContent(clientGuid: String): List<PreviousOrderContent>
+    suspend fun recalculateContentPrices(orderGuid: String, priceType: String)
 }

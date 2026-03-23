@@ -133,6 +133,12 @@ interface OrderDao {
     @Query("SELECT * FROM order_content WHERE order_guid=:orderGuid AND product_guid=:productGuid")
     suspend fun getContentLine(orderGuid: String, productGuid: String): OrderContent?
 
+    @Query("SELECT * FROM order_content WHERE order_guid=:orderGuid")
+    suspend fun getContentLines(orderGuid: String): List<OrderContent>
+
+    @Query("SELECT IFNULL(price, 0.0) FROM product_prices WHERE product_guid = :productGuid AND price_type = :priceType AND db_guid = :dbGuid LIMIT 1")
+    suspend fun getProductPrice(dbGuid: String, productGuid: String, priceType: String): Double?
+
     @Query("DELETE FROM order_content WHERE order_guid=:orderGuid AND product_guid=:productGuid")
     suspend fun deleteContentLine(orderGuid: String, productGuid: String): Int
 
