@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.data.repository
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -32,6 +33,7 @@ import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OrderRepositoryImpl @Inject constructor(
     private val orderDao: OrderDao,
     private val userAccountDao: UserAccountDao,
@@ -41,7 +43,7 @@ class OrderRepositoryImpl @Inject constructor(
 ): OrderRepository {
 
     private var userAccount = UserAccount.buildEmpty()
-    private lateinit var options: UserOptions
+    private var options: UserOptions = UserOptionsBuilder.build(userAccount)
     private var companies = emptyList<Company>()
     private var stores = emptyList<Store>()
     private var priceTypes = emptyList<PriceType>()
