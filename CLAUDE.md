@@ -106,7 +106,7 @@ Located in `/domain/result/Result.kt`:
 - `domain.result.Result<T>` — domain layer result for use cases
 
 #### Current Use Cases
-**Order:** GetOrdersUseCase, GetOrderUseCase, GetOrderWithContentUseCase, CreateOrderUseCase, SaveOrderUseCase, ValidateOrderUseCase, DeleteOrderUseCase, EnableOrderEditUseCase, CopyOrderUseCase, GenerateOrderPrintUseCase
+**Order:** GetOrdersUseCase, GetOrderUseCase, GetOrderWithContentUseCase, CreateOrderUseCase, SaveOrderUseCase, ValidateOrderUseCase, DeleteOrderUseCase, EnableOrderEditUseCase, CopyOrderUseCase, GenerateOrderPrintUseCase, GetProductDiscountUseCase
 **Cash:** CreateCashUseCase, SaveCashUseCase, ValidateCashUseCase, DeleteCashUseCase, EnableCashEditUseCase
 **Task:** CreateTaskUseCase, SaveTaskUseCase, ValidateTaskUseCase, DeleteTaskUseCase, MarkTaskDoneUseCase
 
@@ -153,7 +153,7 @@ Located in `/domain/result/Result.kt`:
 **UseCaseModule** (`ViewModelComponent`, `@ViewModelScoped`):
 - All order, cash, task use cases
 
-**BluetoothModule** (`SingletonComponent`):
+**PrintModule** (`SingletonComponent`):
 - BluetoothAdapter (nullable, from BluetoothManager)
 
 **Qualifiers** (`/di/Qualifiers.kt`):
@@ -166,18 +166,18 @@ Located in `/domain/result/Result.kt`:
 
 ### Database (Room)
 
-**Database:** AppDatabase (version 25)
+**Database:** AppDatabase (version 26)
 
 **Key Entity Categories:**
 - **Documents**: Order, Cash, Task (with isSent, isProcessed flags)
 - **Catalogs**: Product, Client, Company, Store, PaymentType, PriceType
 - **Content**: OrderContent (order lines)
-- **Financial**: Debt, Rest (stock levels), ProductPrice
+- **Financial**: Debt, Rest (stock levels), ProductPrice, Discount
 - **Location**: LocationHistory, ClientLocation
 - **Media**: ProductImage, ClientImage (with isLocal flag for sync)
 - **System**: UserAccount, LogEvent
 
-**DAOs:** OrderDao, ProductDao, ClientDao, LocationDao, UserAccountDao, LogDao, DataExchangeDao, TaskDao, CashDao, CommonDao, CompanyDao, StoreDao, RestDao
+**DAOs:** OrderDao, ProductDao, ClientDao, LocationDao, UserAccountDao, LogDao, DataExchangeDao, DiscountDao, TaskDao, CashDao, CommonDao, CompanyDao, StoreDao, RestDao
 
 **UserAccount Fields (current):**
 guid, is_current, extended_id, description, license, data_format, db_server, db_name, db_user, db_password, token, options, relay_server, use_websocket
@@ -186,12 +186,12 @@ guid, is_current, extended_id, description, license, data_format, db_server, db_
 Most entities use `db_guid` in composite primary keys. Each UserAccount represents a connection to a different 1C database. Current account marked with `is_current=1`. DAOs automatically filter by current account.
 
 **Primary Key Patterns (important nuance):**
-- **Composite `db_guid` PKs**: Product, Client, Task, Company, Store, PriceType, PaymentType, ProductPrice, ProductImage, ClientImage, ClientLocation, Rest, Debt
+- **Composite `db_guid` PKs**: Product, Client, Task, Company, Store, PriceType, PaymentType, ProductPrice, ProductImage, ClientImage, ClientLocation, Rest, Debt, Discount
 - **Autoincrement `_id` PKs**: Order, Cash, OrderContent, LocationHistory, LogEvent — these have `db_guid` as a regular indexed field, NOT part of the primary key
 - **Single PK**: UserAccount (guid only — its guid IS the `db_guid` for other tables)
 
 **Migration Strategy:**
-Manual migrations defined: MIGRATION_13_14 through MIGRATION_24_25. Schema location: `app/schemas/`
+Manual migrations defined: MIGRATION_13_14 through MIGRATION_25_26. Schema location: `app/schemas/`
 
 Key migrations since v20:
 - **20→21**: Added performance indexes on orders, clients, products, order_content tables
@@ -199,6 +199,7 @@ Key migrations since v20:
 - **22→23**: Added `sync_email` field to UserAccount
 - **23→24**: Added `use_websocket` flag to UserAccount (default: 1)
 - **24→25**: Removed `sync_email` column (table recreation)
+- **25→26**: Added `discounts` table for complex discount system (PK: db_guid, client_guid, product_guid)
 
 ### Repository Pattern
 
@@ -254,7 +255,7 @@ Company/Store: ListViewModel (shared name, separate packages)
 
 **Endpoints:**
 - `GET check/{id}` - Token validation/refresh
-- `GET get/{type}/{token}{more}` - Data download with pagination
+- `GET get/{type}/{token}{more}` - Data download with pagination. Types: `clients`, `goods`, `debts`, `payment_types`, `companies`, `stores`, `rests`, `images`, `clients_locations`, `clients_directions`, `clients_goods`, `discounts`
 - `POST post/{token}` - Document upload
 - `GET document/{type}/{guid}/{token}` - Document content fetch
 - `GET print/{guid}` - PDF receipt generation
@@ -279,14 +280,14 @@ Company/Store: ListViewModel (shared name, separate packages)
 - ApiKeyProvider (`/infrastructure/config/`) manages WebSocket API key from BuildConfig
 
 **Sync Strategy (HTTP mode):**
-1. **Full Sync**: Download all catalogs (clients, goods, debts, payment_types, companies, stores, rests, images) based on UserOptions. Cleans old data via timestamp comparison.
+1. **Full Sync**: Download all catalogs (clients, goods, debts, payment_types, companies, stores, rests, images, discounts) based on UserOptions. Optional catalogs added to sync queue conditionally (e.g., `discounts` only when `complexDiscounts=true`, `companies` only when `useCompanies=true`). Cleans old data via timestamp comparison.
 2. **Differential Sync**: Upload unsent documents (orders, cash, images, locations), receive sync results.
 
 **Sync Strategy (WebSocket mode):**
 1. **Document Upload**: App uploads unsent documents (orders, cash, images, locations) via WebSocket relay.
-2. **Catalog Receipt**: Fully passive — 1C pushes catalog data through the relay server at its own initiative. Each data element contains a UTC millisecond `timestamp` field set by 1C.
+2. **Catalog Receipt**: Fully passive — 1C pushes catalog data (including discounts) through the relay server at its own initiative. Each data element contains a `value_id` field identifying the data type (e.g., `"discount"`, `"item"`, `"client"`) and a UTC millisecond `timestamp` field set by 1C. The app routes data to the correct loader via `DataExchangeRepositoryImpl.saveFilteredData()` based on `value_id`.
 3. **Batch Complete**: When 1C finishes pushing all data, it sends `POST /api/v1/push/complete` with the same timestamp. The relay delivers a `batch_complete` sentinel to the app.
-4. **Cleanup**: On receiving `batch_complete`, the app deletes all local catalog data where `timestamp < T` (the 1C timestamp), removing items not refreshed in the current batch.
+4. **Cleanup**: On receiving `batch_complete`, the app deletes all local catalog data where `timestamp < T` (the 1C timestamp), removing items not refreshed in the current batch. This includes discounts table cleanup.
 
 **Progress Tracking:** Flow<Result> with Progress/Success/Error states (legacy `data.remote.Result`).
 
@@ -354,6 +355,52 @@ All data stored locally in Room. Documents created offline marked with `isSent=0
 #### Document-Content Pattern
 Orders use header-lines structure: Order (header) + OrderContent (lines). Cascade delete operations. Totals calculated via DAO aggregations with real-time Flow<DocumentTotals>.
 
+#### Discount System
+
+Two discount modes controlled by `UserOptions.complexDiscounts` (default: `false`):
+
+**Simple Mode (complexDiscounts = false):**
+- `Client.discount` value is copied to `Order.discount` when client is selected via `Order.setClient()`
+- `OrderContent.discount` stays 0 — line sums are `price × quantity`
+- Discount is stored at order header level only
+
+**Complex Mode (complexDiscounts = true):**
+- Uses `discounts` table synced from 1C with priority-based per-product per-client discount lookup
+- Discount is a **percentage** (can be negative = surcharge/price increase)
+- Applied automatically when adding products to orders (`OrderViewModel.onProductClick()`)
+- Also recalculated when price type changes (`OrderRepositoryImpl.recalculateContentPrices()`)
+- NOT applied when copying from previous orders (those are historical snapshots)
+
+**Discount Table Structure:**
+```
+Table: discounts
+PK: (db_guid, client_guid, product_guid)
+Fields: discount (REAL, percentage), timestamp (INTEGER)
+Convention: empty string "" = wildcard (any client / any product)
+```
+
+**Lookup Priority** (resolved in single SQL query via ORDER BY + LIMIT 1):
+
+| Priority | client_guid | product_guid | Meaning |
+|----------|------------|-------------|---------|
+| 1 (highest) | exact client | exact product | Product-specific for this client |
+| 2 | exact client | product's group guid | Group-level for this client |
+| 3 | exact client | "" (empty) | Client-wide discount |
+| 4 | "" (empty) | exact product | Product-wide for all clients |
+| 5 | "" (empty) | product's group guid | Group-wide for all clients |
+| 6 | — | — | No discount (0.0) |
+
+**Key Implementation Details:**
+- `DiscountDao.getDiscount()` — single SQL query resolves all 5 priority levels
+- `GetProductDiscountUseCase` — wraps DAO call, auto-resolves `groupGuid` via `product.group_guid` when not provided
+- `OrderContent.discount` stores the **monetary amount** (not percentage): `lineSum × discountPercent / 100`
+- `OrderContent.sum` = `calculateLineSum(price, quantity) - discount`
+- `DocumentTotals.discount` = SUM of all `OrderContent.discount` values
+- `Order.discountValue` stores the total discount amount across all lines
+- Product groups identified by `Product.isGroup = 1`, linked via `Product.groupGuid` (single-level hierarchy only)
+
+**Sync:** Discount data synced as `DATA_DISCOUNT = "discount"` constant. HTTP mode: added to sync queue when `complexDiscounts` enabled. WebSocket mode: handled automatically via `DataExchangeRepository` routing. Cleanup follows standard timestamp-based pattern.
+
 #### Location Tracking
 Foreground service (LocationUpdatesService) continuously tracks GPS at 10-second intervals. Filtering by accuracy threshold and minimum distance. History stored in LocationHistory table. Addresses resolved via GeocodeHelper interface (GeocodeHelperImpl using Geocoding API).
 
@@ -367,7 +414,7 @@ Checkbox PRRO system integration for Ukrainian fiscal compliance. Order marked w
 **Fiscal Options:** Provider ID, Device ID, Cashier PIN stored in UserAccount.options.
 
 #### User Options System
-Server-controlled feature flags in UserAccount.options JSON. Parsed to UserOptions data class. Controls UI visibility and features: locations tracking, image loading, company/store selection, fiscal provider, etc.
+Server-controlled feature flags in UserAccount.options JSON. Parsed to UserOptions data class. Controls UI visibility and features: locations tracking, image loading, company/store selection, fiscal provider, complex discounts, etc.
 
 #### SharedViewModel Pattern
 Cross-fragment state sharing for document GUID selections, barcode scans, progress messages. Provides image loading via ImageLoadingManager, file operations via FilesRepository, and action callbacks for client/product selection.
@@ -443,16 +490,16 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │   │                                    #   CommonRepository)
 │   ├── /usecase/                        # Use case base classes + implementations
 │   │   ├── UseCase.kt                  # Base interfaces and abstract classes
-│   │   ├── /order/                      # Order use cases (9 use cases)
+│   │   ├── /order/                      # Order use cases (10 use cases)
 │   │   ├── /cash/                       # Cash use cases (5 use cases)
 │   │   └── /task/                       # Task use cases (5 use cases)
 │   └── /result/                         # Result<T> sealed class, DomainException hierarchy
 │
 ├── /data/                               # Data Layer
 │   ├── /local/
-│   │   ├── /database/                   # AppDatabase (v25)
-│   │   ├── /dao/                        # Room DAOs (13 DAOs)
-│   │   └── /entity/                     # Room entities with db_guid (19 entities)
+│   │   ├── /database/                   # AppDatabase (v26)
+│   │   ├── /dao/                        # Room DAOs (14 DAOs)
+│   │   └── /entity/                     # Room entities with db_guid (20 entities)
 │   ├── /remote/
 │   │   ├── /api/                        # HttpClientApi (Retrofit service)
 │   │   ├── /dto/                        # Network DTOs (UserAccountDto, etc.)
@@ -562,7 +609,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 11. Create ViewModel (extend DocumentViewModel<T>) and Fragment in `/presentation/features/{type}/`
 
 ### When Modifying Database Schema
-1. Increment AppDatabase version (currently 25)
+1. Increment AppDatabase version (currently 26)
 2. Create MIGRATION_X_Y in AppDatabase
 3. Test migration on existing data
 4. Update schema export in `app/schemas/`
@@ -630,6 +677,8 @@ Demo mode available for evaluation:
 
 **WebSocket Message Types:** `data`, `ack`, `ping`, `pong`, `error`, `upload_order`, `upload_cash`, `upload_image`, `upload_location`, `download_catalogs`
 
+**Sync Data Types:** `DATA_DISCOUNT="discount"`, `DATA_GOODS_ITEM="item"`, `DATA_PRICE="price"`, `DATA_CLIENT="client"`, `DATA_COMPANY="company"`, `DATA_STORE="store"`, `DATA_REST="rest"`, `DATA_PAYMENT_TYPE="payment_type"`, `DATA_IMAGE="image"`, `DATA_DEBT="debt"`
+
 **Device Status Values:** `pending`, `approved`, `denied`
 
 **License Error Codes:** `license_expired`, `license_not_active`, `device_limit_reached`
@@ -646,5 +695,8 @@ Demo mode available for evaluation:
 - **Use case base classes**: `/domain/usecase/UseCase.kt`
 - **Domain Result types**: `/domain/result/Result.kt`
 - **DI modules**: `/di/` package (7 files)
+- **Discount entity**: `/data/local/entity/Discount.kt`
+- **Discount DAO**: `/data/local/dao/DiscountDao.kt` (priority-based lookup query)
+- **Discount use case**: `/domain/usecase/order/GetProductDiscountUseCase.kt`
 - **Test utilities**: `app/src/test/.../util/` (MainDispatcherRule, extensions)
 - **Test fakes**: `app/src/test/.../fake/` (7 fake repositories)

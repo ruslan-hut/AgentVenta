@@ -113,6 +113,7 @@ The critical requirement is **completeness** — every item that should remain o
 | Client directions | `client_direction` | Conditional | When `clientsDirections: true` in options |
 | Client products | `client_goods_item` | Conditional | When `clientsProducts: true` in options |
 | Product images | `image` | Conditional | When `loadImages: true` in options |
+| Discounts | `discount` | Conditional | When `complexDiscounts: true` in options |
 
 **Key parameters in options object:**
 
@@ -126,6 +127,7 @@ The critical requirement is **completeness** — every item that should remain o
 | `clientsDirections` | boolean | Send client address lists |
 | `clientsProducts` | boolean | Send per-client product lists |
 | `loadImages` | boolean | Send product images |
+| `complexDiscounts` | boolean | Send per-client per-product discount rules (when false, only `Client.discount` is used) |
 
 **Example: full sync push sequence**
 
@@ -134,7 +136,8 @@ The critical requirement is **completeness** — every item that should remain o
 1. POST /push → options + clients (each item has "timestamp": T)
 2. POST /push → products + prices (each item has "timestamp": T)
 3. POST /push → debts + payment_types + companies + stores + rests (each item has "timestamp": T)
-4. POST /push/complete → { "device_uuid": "...", "timestamp": T }
+4. POST /push → discounts (each item has "timestamp": T) — only if complexDiscounts: true
+5. POST /push/complete → { "device_uuid": "...", "timestamp": T }
 ```
 
 Splitting into multiple push calls is fine — 1C embeds the same timestamp in every data element, so they are consistent regardless of how many push calls are used. The relay server queues each push and delivers them in order. The final `push/complete` call sends a `batch_complete` sentinel to the device so it knows the batch is finished.
@@ -204,7 +207,8 @@ Data is sent as a **flat array of objects** in the `data` field of the push requ
     { "value_id": "item", "guid": "prod-002", "description": "Хліб білий", "price": 22.00 },
     { "value_id": "client", "guid": "client-001", "description": "ТОВ Продукти", "phone": "+380501234567" },
     { "value_id": "price", "item_guid": "prod-001", "price_type": "1", "price_name": "Роздріб", "price": 45.50 },
-    { "value_id": "debt", "client_guid": "client-001", "doc_id": "ЗАМ-001", "sum": 1250.75 }
+    { "value_id": "debt", "client_guid": "client-001", "doc_id": "ЗАМ-001", "sum": 1250.75 },
+    { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": 5.0 }
   ]
 }
 ```
@@ -243,6 +247,7 @@ Push user settings to device.
 | usePackageMark | boolean | Use "Package" flag in requests |
 | useCompanies | boolean | Multi-company operation |
 | useStores | boolean | Multi-warehouse operation |
+| complexDiscounts | boolean | Enable per-client per-product discount system |
 
 ---
 
@@ -419,6 +424,52 @@ Push user settings to device.
 
 ---
 
+#### Discount (`value_id: "discount"`)
+
+Per-client per-product discount rules. Only sent when `complexDiscounts: true` in options. Replaces the simple `Client.discount` field with a priority-based lookup system.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| value_id | string | Value: `"discount"` |
+| client_guid | string | Client identifier (empty string `""` = applies to all clients) |
+| item_guid | string | Product or product group identifier (empty string `""` = applies to all products) |
+| discount | number | Discount percentage. Positive = discount, negative = surcharge (price increase) |
+
+**Wildcard convention:** Empty string `""` in `client_guid` or `item_guid` means "any". This allows defining discounts at different specificity levels.
+
+**Priority resolution on device** (highest to lowest):
+
+| Priority | client_guid | item_guid | Meaning |
+|----------|------------|-----------|---------|
+| 1 | exact client | exact product | Product-specific discount for this client |
+| 2 | exact client | product group GUID | Group-level discount for this client |
+| 3 | exact client | `""` | Client-wide discount (all products) |
+| 4 | `""` | exact product | Product-wide discount (all clients) |
+| 5 | `""` | product group GUID | Group-wide discount (all clients) |
+
+The device selects the **first matching** rule by priority. If no rule matches, no discount is applied (0%).
+
+**Examples:**
+
+```json
+[
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": 10.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "group-dairy", "discount": 5.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "", "discount": 3.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "", "item_guid": "prod-expensive", "discount": -2.0, "timestamp": 1710583200000 }
+]
+```
+
+In this example:
+- Client "client-001" gets 10% off product "prod-001" (priority 1)
+- Client "client-001" gets 5% off all dairy products in group "group-dairy" (priority 2)
+- Client "client-001" gets 3% off everything else (priority 3)
+- All other clients pay 2% **more** for product "prod-expensive" (negative discount = surcharge, priority 4)
+
+**Note:** `item_guid` can reference either a product GUID or a product group GUID (products with `is_group: 1`). The device uses the product's `group_guid` field to match group-level rules.
+
+---
+
 ### Incoming Data Types (Device → 1C)
 
 Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document type.
@@ -570,6 +621,7 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.2 | 2026-03-24 | Added Discount data type (`value_id: "discount"`) with priority-based lookup, `complexDiscounts` option. |
 | 3.1 | 2026-03-16 | Added Sync Modes section: full sync flow, required data types, key options parameters. |
 | 3.0 | 2026-03-16 | Fixed data format: flat array with value_id, removed nested catalog_type+items wrappers. Added payment_type. |
 | 2.1 | 2025-01-15 | Converted to table format with exact field specifications |

@@ -39,6 +39,8 @@ import ua.com.programmer.agentventa.extensions.round
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import ua.com.programmer.agentventa.domain.repository.ProductRepository
+import ua.com.programmer.agentventa.domain.usecase.order.GetProductDiscountUseCase
+import ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateManager
 import java.util.Date
 import javax.inject.Inject
 
@@ -51,6 +53,8 @@ class OrderViewModel @Inject constructor(
     private val saveOrderUseCase: SaveOrderUseCase,
     private val enableOrderEditUseCase: EnableOrderEditUseCase,
     private val generateOrderPrintUseCase: GenerateOrderPrintUseCase,
+    private val getProductDiscountUseCase: GetProductDiscountUseCase,
+    private val accountStateManager: AccountStateManager,
     private val webhookPrintService: WebhookPrintService,
     logger: Logger,
     @IoDispatcher ioDispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -194,6 +198,24 @@ class OrderViewModel @Inject constructor(
         ))
     }
 
+    private suspend fun calculateLineDiscount(
+        price: Double,
+        quantity: Double,
+        productGuid: String,
+        groupGuid: String,
+    ): Double {
+        val options = accountStateManager.options.value
+        if (!options.complexDiscounts) return 0.0
+        val clientGuid = order.clientGuid ?: return 0.0
+        if (clientGuid.isEmpty()) return 0.0
+        val dbGuid = order.databaseId
+        val params = GetProductDiscountUseCase.Params(dbGuid, clientGuid, productGuid, groupGuid)
+        val result = getProductDiscountUseCase(params)
+        val discountPercent = (result as? Result.Success)?.data ?: return 0.0
+        if (discountPercent == 0.0) return 0.0
+        return calculateLineSum(price, quantity) * discountPercent / 100.0
+    }
+
     fun onProductClick(product: LProduct?, popUp: () -> Unit) {
         if (order.isProcessed == 1) return popUp()
         if (product == null) return
@@ -202,12 +224,17 @@ class OrderViewModel @Inject constructor(
 
         viewModelScope.launch {
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
+            val lineSum = calculateLineSum(product.price, product.quantity)
+            val discount = calculateLineDiscount(
+                product.price, product.quantity, product.guid, product.groupGuid
+            )
 
             val updated = contentLine.copy(
                 unitCode = product.unit,
                 price = product.price,
                 quantity = product.quantity,
-                sum = calculateLineSum(product.price, product.quantity),
+                sum = lineSum - discount,
+                discount = discount,
                 weight = product.weight * product.quantity,
                 isPacked = if (product.isPacked) 1 else 0,
                 isDemand = if (product.isDemand) 1 else 0,

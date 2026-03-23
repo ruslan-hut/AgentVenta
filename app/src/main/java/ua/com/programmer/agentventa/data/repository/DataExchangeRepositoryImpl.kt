@@ -7,6 +7,7 @@ import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.ClientLocation
 import ua.com.programmer.agentventa.data.local.entity.Company
 import ua.com.programmer.agentventa.data.local.entity.Debt
+import ua.com.programmer.agentventa.data.local.entity.Discount
 import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.PaymentType
@@ -58,6 +59,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
             Constants.DATA_STORE -> loadStores(data)
             Constants.DATA_REST -> loadRests(data)
             Constants.DATA_PAYMENT_TYPE -> loadPaymentTypes(data)
+            Constants.DATA_DISCOUNT -> loadDiscounts(data)
             else -> logger.e(logTag, "missed loader for ${data.first().getValueId()}")
         }
     }
@@ -175,6 +177,16 @@ class DataExchangeRepositoryImpl @Inject constructor(
         dataExchangeDao.upsertPaymentTypes(valid)
     }
 
+    private suspend fun loadDiscounts(data: List<XMap>) {
+        val prepared = data.map { Discount.build(it) }
+        val valid = prepared.filter { it.isValid() }
+        if (valid.size < data.size) {
+            val invalid = prepared.filter { !it.isValid() }
+            for (item in invalid) logger.w(logTag, "invalid discount: client=${item.clientGuid} product=${item.productGuid}")
+        }
+        dataExchangeDao.upsertDiscountList(valid)
+    }
+
     override suspend fun cleanUp(accountGuid: String, timestamp: Long) {
         try {
             var del = dataExchangeDao.deletePriceTypes(accountGuid, timestamp)
@@ -184,6 +196,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
             del += dataExchangeDao.deleteProducts(accountGuid, timestamp)
             del += dataExchangeDao.deleteClients(accountGuid, timestamp)
             del += dataExchangeDao.deleteDebts(accountGuid, timestamp)
+            del += dataExchangeDao.deleteDiscounts(accountGuid, timestamp)
             if (del > 0) logger.d(logTag, "cleanUp: $del")
         } catch (e: Exception) {
             logger.e(logTag, "cleanUp: ${e.message}")

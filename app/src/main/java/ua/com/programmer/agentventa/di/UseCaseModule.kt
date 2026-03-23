@@ -16,6 +16,7 @@ import ua.com.programmer.agentventa.domain.usecase.order.DeleteOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.GetOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.GetOrderWithContentUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.GetProductDiscountUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.GetOrdersUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
@@ -24,6 +25,8 @@ import ua.com.programmer.agentventa.domain.usecase.task.DeleteTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
+import kotlinx.coroutines.CoroutineDispatcher
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.domain.repository.CashRepository
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import ua.com.programmer.agentventa.domain.repository.TaskRepository
@@ -88,6 +91,13 @@ object UseCaseModule {
     fun provideCopyOrderUseCase(
         orderRepository: OrderRepository
     ): CopyOrderUseCase = CopyOrderUseCase(orderRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideGetProductDiscountUseCase(
+        discountDao: DiscountDao,
+        @CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher
+    ): GetProductDiscountUseCase = GetProductDiscountUseCase(discountDao, dispatcher)
 
     // Cash use cases
 

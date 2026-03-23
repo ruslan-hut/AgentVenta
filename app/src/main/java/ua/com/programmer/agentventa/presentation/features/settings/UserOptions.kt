@@ -38,6 +38,7 @@ data class UserOptions(
     val fiscalProvider: String = "",
     val allowPaymentType: Boolean = true,
     val defaultPaymentType: String = "",
+    val complexDiscounts: Boolean = false,
 )
 
 fun UserOptions.toJson(): String {
@@ -76,5 +77,6 @@ fun UserOptions.toJson(): String {
     json.put("fiscalProvider", fiscalProvider)
     json.put("allowPaymentType", allowPaymentType)
     json.put("defaultPaymentType", defaultPaymentType)
+    json.put("complexDiscounts", complexDiscounts)
     return json.toString()
 }

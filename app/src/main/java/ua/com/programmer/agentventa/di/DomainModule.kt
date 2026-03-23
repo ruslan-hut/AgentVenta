@@ -13,6 +13,7 @@ import ua.com.programmer.agentventa.data.local.dao.ClientDao
 import ua.com.programmer.agentventa.data.local.dao.CommonDao
 import ua.com.programmer.agentventa.data.local.dao.CompanyDao
 import ua.com.programmer.agentventa.data.local.dao.DataExchangeDao
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
 import ua.com.programmer.agentventa.data.local.dao.LogDao
 import ua.com.programmer.agentventa.data.local.dao.OrderDao
@@ -100,6 +101,10 @@ class DomainModule {
     @Provides
     fun provideRestDao(database: AppDatabase): RestDao {
         return database.restDao()
+    }
+    @Provides
+    fun provideDiscountDao(database: AppDatabase): DiscountDao {
+        return database.discountDao()
     }
 }
 

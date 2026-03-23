@@ -104,6 +104,7 @@ data class LProduct(
     val modeSelect: Boolean = false,
     val imageUrl: String? = "",
     val imageGuid: String? = "",
+    val groupGuid: String = "",
 )
 
 fun Product.isValid(): Boolean {

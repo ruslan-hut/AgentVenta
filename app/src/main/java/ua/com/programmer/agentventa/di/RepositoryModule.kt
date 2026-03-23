@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import ua.com.programmer.agentventa.data.local.dao.CashDao
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.OrderDao
 import ua.com.programmer.agentventa.data.local.dao.TaskDao
 import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
@@ -28,9 +29,10 @@ object RepositoryModule {
         accountDao: UserAccountDao,
         userAccountRepository: UserAccountRepository,
         locationDao: LocationDao,
+        discountDao: DiscountDao,
         utils: UtilsInterface
     ): DocumentRepository<Order> {
-        return OrderRepositoryImpl(dao, accountDao, userAccountRepository, locationDao, utils)
+        return OrderRepositoryImpl(dao, accountDao, userAccountRepository, locationDao, discountDao, utils)
     }
     @Provides
     fun provideCashRepository(

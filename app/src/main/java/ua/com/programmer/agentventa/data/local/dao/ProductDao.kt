@@ -47,7 +47,8 @@ interface ProductDao {
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
             IFNULL(images.url, '') AS imageUrl,
-            IFNULL(images.guid, '') AS imageGuid
+            IFNULL(images.guid, '') AS imageGuid,
+            product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
             SELECT product_guid, quantity, price, sum, is_packed, is_demand
@@ -129,7 +130,8 @@ interface ProductDao {
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
             IFNULL(images.url, '') AS imageUrl,
-            IFNULL(images.guid, '') AS imageGuid
+            IFNULL(images.guid, '') AS imageGuid,
+            product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
             SELECT product_guid, quantity, price, sum, is_packed, is_demand
@@ -219,7 +221,8 @@ interface ProductDao {
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
             IFNULL(images.url, '') AS imageUrl,
-            IFNULL(images.guid, '') AS imageGuid
+            IFNULL(images.guid, '') AS imageGuid,
+            product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
             SELECT product_guid, quantity, price, sum, is_packed, is_demand
@@ -299,7 +302,8 @@ interface ProductDao {
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
             IFNULL(images.url, '') AS imageUrl,
-            IFNULL(images.guid, '') AS imageGuid
+            IFNULL(images.guid, '') AS imageGuid,
+            product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
             SELECT product_guid, quantity, price, sum, is_packed, is_demand

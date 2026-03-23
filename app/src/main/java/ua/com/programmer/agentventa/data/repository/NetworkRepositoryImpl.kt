@@ -319,6 +319,7 @@ class NetworkRepositoryImpl @Inject constructor(
         if (_options.clientsDirections) queue.add("clients_directions")
         if (_options.clientsProducts) queue.add("clients_goods")
         if (_options.loadImages) queue.add("images")
+        if (_options.complexDiscounts) queue.add("discounts")
 
 
         for (item in queue) {

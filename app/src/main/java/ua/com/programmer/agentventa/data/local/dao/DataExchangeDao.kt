@@ -20,6 +20,7 @@ import ua.com.programmer.agentventa.data.local.entity.PriceType
 import ua.com.programmer.agentventa.data.local.entity.Product
 import ua.com.programmer.agentventa.data.local.entity.ProductImage
 import ua.com.programmer.agentventa.data.local.entity.ProductPrice
+import ua.com.programmer.agentventa.data.local.entity.Discount
 import ua.com.programmer.agentventa.data.local.entity.Rest
 import ua.com.programmer.agentventa.data.local.entity.Store
 
@@ -206,6 +207,25 @@ interface DataExchangeDao {
 
     @Delete
     suspend fun deleteClientLocation(location: ClientLocation): Int
+
+    //----------------------------------------------------- DISCOUNTS
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertDiscountList(items: List<Discount>): List<Long>
+
+    @Update(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun updateDiscountList(items: List<Discount>): Int
+
+    @Transaction
+    suspend fun upsertDiscountList(items: List<Discount>) {
+        val updateCount = updateDiscountList(items)
+        if (updateCount != items.size) {
+            insertDiscountList(items)
+        }
+    }
+
+    @Query("DELETE FROM discounts WHERE db_guid=:id AND timestamp<:time")
+    suspend fun deleteDiscounts(id: String, time: Long): Int
 
     @Query("DELETE FROM clients WHERE db_guid=:id AND timestamp<:time")
     suspend fun deleteClients(id: String, time: Long): Int

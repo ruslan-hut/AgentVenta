@@ -46,6 +46,7 @@ class UserOptionsBuilder {
             fiscalProvider = optionsMap.getString("fiscalProvider"),
             allowPaymentType = if (optionsMap.getString("allowPaymentType").isEmpty()) true else optionsMap.getBoolean("allowPaymentType"),
             defaultPaymentType = optionsMap.getString("defaultPaymentType"),
+            complexDiscounts = optionsMap.getBoolean("complexDiscounts"),
         )
     }
 

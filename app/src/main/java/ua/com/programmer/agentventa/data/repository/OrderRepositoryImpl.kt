@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.OrderDao
 import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
 import ua.com.programmer.agentventa.data.local.entity.Client
@@ -40,6 +41,7 @@ class OrderRepositoryImpl @Inject constructor(
     private val userAccountDao: UserAccountDao,
     private val userAccountRepository: UserAccountRepository,
     private val locationDao: LocationDao,
+    private val discountDao: DiscountDao,
     private val utils: UtilsInterface
 ): OrderRepository {
 
@@ -285,12 +287,22 @@ class OrderRepositoryImpl @Inject constructor(
 
     override suspend fun recalculateContentPrices(orderGuid: String, priceType: String) {
         val dbGuid = getCurrentDbGuid()
+        val order = orderDao.getOrder(orderGuid) ?: return
+        val clientGuid = order.clientGuid ?: ""
+        val options = UserOptionsBuilder.build(userAccountDao.getCurrent())
         val lines = orderDao.getContentLines(orderGuid)
         for (line in lines) {
             val newPrice = orderDao.getProductPrice(dbGuid, line.productGuid, priceType) ?: continue
+            val lineSum = calculateLineSum(newPrice, line.quantity)
+            val discount = if (options.complexDiscounts && clientGuid.isNotEmpty()) {
+                val groupGuid = discountDao.getProductGroupGuid(dbGuid, line.productGuid) ?: ""
+                val discountPercent = discountDao.getDiscount(dbGuid, clientGuid, line.productGuid, groupGuid) ?: 0.0
+                if (discountPercent != 0.0) lineSum * discountPercent / 100.0 else 0.0
+            } else 0.0
             orderDao.insertContentLine(line.copy(
                 price = newPrice,
-                sum = calculateLineSum(newPrice, line.quantity)
+                sum = lineSum - discount,
+                discount = discount,
             ))
         }
     }

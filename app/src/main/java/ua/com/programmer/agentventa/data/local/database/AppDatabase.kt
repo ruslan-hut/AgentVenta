@@ -12,6 +12,7 @@ import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.ClientLocation
 import ua.com.programmer.agentventa.data.local.entity.Company
 import ua.com.programmer.agentventa.data.local.entity.Debt
+import ua.com.programmer.agentventa.data.local.entity.Discount
 import ua.com.programmer.agentventa.data.local.entity.LocationHistory
 import ua.com.programmer.agentventa.data.local.entity.LogEvent
 import ua.com.programmer.agentventa.data.local.entity.Order
@@ -30,6 +31,7 @@ import ua.com.programmer.agentventa.data.local.dao.ClientDao
 import ua.com.programmer.agentventa.data.local.dao.CommonDao
 import ua.com.programmer.agentventa.data.local.dao.CompanyDao
 import ua.com.programmer.agentventa.data.local.dao.DataExchangeDao
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
 import ua.com.programmer.agentventa.data.local.dao.LogDao
 import ua.com.programmer.agentventa.data.local.dao.OrderDao
@@ -59,7 +61,8 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Rest::class,
     Company::class,
     Store::class,
-                     ], version = 25, exportSchema = true)
+    Discount::class,
+                     ], version = 26, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -75,6 +78,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun companyDao(): CompanyDao
     abstract fun storeDao(): StoreDao
     abstract fun restDao(): RestDao
+    abstract fun discountDao(): DiscountDao
 
     companion object {
 
@@ -262,6 +266,18 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        private val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE discounts (" +
+                        "db_guid TEXT NOT NULL DEFAULT '', " +
+                        "client_guid TEXT NOT NULL DEFAULT '', " +
+                        "product_guid TEXT NOT NULL DEFAULT '', " +
+                        "discount REAL NOT NULL DEFAULT 0.0, " +
+                        "timestamp INTEGER NOT NULL DEFAULT 0, " +
+                        "PRIMARY KEY(db_guid, client_guid, product_guid))")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -281,6 +297,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_22_23,
                         MIGRATION_23_24,
                         MIGRATION_24_25,
+                        MIGRATION_25_26,
                     )
                     .build()
                 INSTANCE = instance
