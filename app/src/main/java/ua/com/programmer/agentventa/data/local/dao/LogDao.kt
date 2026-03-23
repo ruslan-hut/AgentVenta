@@ -11,7 +11,7 @@ interface LogDao {
     @Insert
     suspend fun insertLogEvent(logEvent: LogEvent): Long
 
-    @Query("SELECT * FROM log_events ORDER BY id DESC")
+    @Query("SELECT * FROM log_events ORDER BY id DESC LIMIT 500")
     fun fetchLogs(): Flow<List<LogEvent>>
 
     @Query("SELECT * FROM log_events ORDER BY id DESC LIMIT 50")

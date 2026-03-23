@@ -86,6 +86,7 @@ interface ProductDao {
         ORDER BY product.is_group DESC,
             CASE WHEN :sortByName = 1 THEN product.description_lc END ASC,
             CASE WHEN :sortByName = 0 THEN product.sorting END ASC
+        LIMIT 1000
     """)
     fun getProducts(
         dbGuid: String,
@@ -173,6 +174,7 @@ interface ProductDao {
         ORDER BY product.is_group DESC,
             CASE WHEN :sortByName = 1 THEN product.description_lc END ASC,
             CASE WHEN :sortByName = 0 THEN product.sorting END ASC
+        LIMIT 1000
     """)
     fun getProductsWithRests(
         dbGuid: String,
