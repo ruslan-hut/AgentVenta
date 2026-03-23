@@ -56,17 +56,19 @@ class TaskViewModelTest {
         taskRepository.clearAll() // Ensure clean state for each test
         logger = mock()
 
-        // Use real use cases for accurate domain logic testing
-        validateTaskUseCase = ValidateTaskUseCase()
-        saveTaskUseCase = SaveTaskUseCase(taskRepository, validateTaskUseCase)
-        markTaskDoneUseCase = MarkTaskDoneUseCase(taskRepository)
+        // Use real use cases with Unconfined dispatcher for testing
+        val testDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        validateTaskUseCase = ValidateTaskUseCase(testDispatcher)
+        saveTaskUseCase = SaveTaskUseCase(taskRepository, validateTaskUseCase, testDispatcher)
+        markTaskDoneUseCase = MarkTaskDoneUseCase(taskRepository, testDispatcher)
 
         viewModel = TaskViewModel(
             taskRepository = taskRepository,
             validateTaskUseCase = validateTaskUseCase,
             saveTaskUseCase = saveTaskUseCase,
             markTaskDoneUseCase = markTaskDoneUseCase,
-            logger = logger
+            logger = logger,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
         )
     }
 

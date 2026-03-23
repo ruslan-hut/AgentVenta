@@ -67,10 +67,11 @@ class OrderViewModelTest {
         generateOrderPrintUseCase = mock()
         webhookPrintService = mock()
 
-        // Real use cases (they're simple enough)
-        validateOrderUseCase = ValidateOrderUseCase()
-        saveOrderUseCase = SaveOrderUseCase(orderRepository, validateOrderUseCase)
-        enableOrderEditUseCase = EnableOrderEditUseCase(orderRepository)
+        // Real use cases with Unconfined dispatcher for testing
+        val testDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        validateOrderUseCase = ValidateOrderUseCase(testDispatcher)
+        saveOrderUseCase = SaveOrderUseCase(orderRepository, validateOrderUseCase, testDispatcher)
+        enableOrderEditUseCase = EnableOrderEditUseCase(orderRepository, testDispatcher)
 
         viewModel = OrderViewModel(
             orderRepository = orderRepository,
@@ -80,7 +81,8 @@ class OrderViewModelTest {
             enableOrderEditUseCase = enableOrderEditUseCase,
             generateOrderPrintUseCase = generateOrderPrintUseCase,
             webhookPrintService = webhookPrintService,
-            logger = logger
+            logger = logger,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
         )
     }
 
@@ -314,8 +316,8 @@ class OrderViewModelTest {
 
     @Test
     fun `payment type selection updates order and fiscal flag`() = runTest {
-        // Arrange
-        val order = TestFixtures.createOrder1()
+        // Arrange - start with empty payment type so the update actually triggers
+        val order = TestFixtures.createOrder1().copy(paymentType = "")
         val paymentType = TestFixtures.createPaymentTypeCash()
 
         orderRepository.addOrder(order)

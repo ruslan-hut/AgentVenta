@@ -83,7 +83,8 @@
       "Bash(__NEW_LINE_8093c8248d0d32da__ for:*)",
       "Bash(do)",
       "Bash(echo \"=== infrastructure/$subdir ===\")",
-      "Read(//Users/ruslanhut/projects/AgentVenta/app/src/main/java/ua/com/programmer/agentventa/infrastructure/**)"
+      "Read(//Users/ruslanhut/projects/AgentVenta/app/src/main/java/ua/com/programmer/agentventa/infrastructure/**)",
+      "Bash(./gradlew :app:compileStandartDebugKotlin)"
     ]
   }
 }

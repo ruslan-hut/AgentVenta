@@ -21,6 +21,7 @@ import ua.com.programmer.agentventa.data.local.entity.Store
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.interval
 import ua.com.programmer.agentventa.data.local.entity.updateDistance
+import ua.com.programmer.agentventa.extensions.calculateLineSum
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
@@ -287,13 +288,10 @@ class OrderRepositoryImpl @Inject constructor(
         val lines = orderDao.getContentLines(orderGuid)
         for (line in lines) {
             val newPrice = orderDao.getProductPrice(dbGuid, line.productGuid, priceType) ?: continue
-            val quantity = (line.quantity * 1000).toLong()
-            val price = (newPrice * 100).toLong()
-            val sum = java.math.BigDecimal(price * quantity)
-                .divide(java.math.BigDecimal(100000))
-                .setScale(2, java.math.RoundingMode.HALF_UP)
-                .toDouble()
-            orderDao.insertContentLine(line.copy(price = newPrice, sum = sum))
+            orderDao.insertContentLine(line.copy(
+                price = newPrice,
+                sum = calculateLineSum(newPrice, line.quantity)
+            ))
         }
     }
 }

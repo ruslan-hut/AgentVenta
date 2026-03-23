@@ -1,5 +1,7 @@
 package ua.com.programmer.agentventa.domain.usecase.order
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
@@ -17,8 +19,9 @@ import javax.inject.Inject
  */
 class SaveOrderUseCase @Inject constructor(
     private val orderRepository: OrderRepository,
-    private val validateOrderUseCase: ValidateOrderUseCase
-) : SuspendUseCase<SaveOrderUseCase.Params, Order>() {
+    private val validateOrderUseCase: ValidateOrderUseCase,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<SaveOrderUseCase.Params, Order>(dispatcher) {
 
     data class Params(
         val order: Order,
@@ -85,7 +88,9 @@ class DeleteOrderUseCase @Inject constructor(
 /**
  * Use case for validating an order before save.
  */
-class ValidateOrderUseCase @Inject constructor() : SuspendUseCase<Order, Order>() {
+class ValidateOrderUseCase @Inject constructor(
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Order, Order>(dispatcher) {
 
     override suspend fun execute(params: Order): Result<Order> {
         // Client is required
@@ -122,8 +127,9 @@ class ValidateOrderUseCase @Inject constructor() : SuspendUseCase<Order, Order>(
  * Use case for enabling edit mode on a processed order.
  */
 class EnableOrderEditUseCase @Inject constructor(
-    private val orderRepository: OrderRepository
-) : SuspendUseCase<Order, Order>() {
+    private val orderRepository: OrderRepository,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Order, Order>(dispatcher) {
 
     override suspend fun execute(params: Order): Result<Order> {
         val editableOrder = params.copy(isProcessed = 0, isSent = 0)

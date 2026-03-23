@@ -77,7 +77,10 @@ class ClientListViewModelTest {
             on { getClient(any(), any()) } doReturn mockCurrentGroupFlow
         }
 
-        viewModel = ClientListViewModel(repository = clientRepository)
+        viewModel = ClientListViewModel(
+            repository = clientRepository,
+            ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+        )
     }
 
     // ========================================
@@ -146,6 +149,10 @@ class ClientListViewModelTest {
 
     @Test
     fun `initial clients list is empty`() = runTest {
+        // Trigger data loading by setting list parameters
+        viewModel.setListParameters(SharedParameters(companyGuid = "company-1"))
+        advanceUntilIdle()
+
         // Assert
         val clients = viewModel.clients.getOrAwaitValue()
         assertThat(clients).isEmpty()
@@ -167,6 +174,10 @@ class ClientListViewModelTest {
 
     @Test
     fun `initial no data text visibility is VISIBLE when list is empty`() = runTest {
+        // Trigger data loading
+        viewModel.setListParameters(SharedParameters(companyGuid = "company-1"))
+        advanceUntilIdle()
+
         // Assert
         val visibility = viewModel.noDataTextVisibility.getOrAwaitValue()
         assertThat(visibility).isEqualTo(View.VISIBLE)

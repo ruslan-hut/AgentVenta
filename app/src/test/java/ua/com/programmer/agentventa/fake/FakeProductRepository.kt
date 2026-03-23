@@ -20,11 +20,11 @@ class FakeProductRepository(
     private val prices = MutableStateFlow<Map<String, List<LPrice>>>(emptyMap())
 
     override fun getProduct(guid: String): Flow<LProduct> = products.map { list ->
-        list.first { it.guid == guid }
+        list.firstOrNull { it.guid == guid } ?: LProduct(guid = guid)
     }
 
     override fun getProduct(guid: String, orderGuid: String, priceType: String): Flow<LProduct> = products.map { list ->
-        list.first { it.guid == guid }.let { product ->
+        (list.firstOrNull { it.guid == guid } ?: LProduct(guid = guid)).let { product ->
             // Apply price type to the product
             val price = prices.value[guid]?.firstOrNull { it.priceType == priceType }
             product.copy(

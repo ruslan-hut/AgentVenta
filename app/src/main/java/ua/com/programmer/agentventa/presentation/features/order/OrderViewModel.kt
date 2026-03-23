@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineDispatcher
 import ua.com.programmer.agentventa.data.local.entity.LClient
 import ua.com.programmer.agentventa.data.local.entity.LProduct
 import ua.com.programmer.agentventa.data.local.entity.Order
@@ -22,6 +23,7 @@ import ua.com.programmer.agentventa.data.local.entity.PaymentType
 import ua.com.programmer.agentventa.data.local.entity.PreviousOrderContent
 import ua.com.programmer.agentventa.data.local.entity.setClient
 import ua.com.programmer.agentventa.data.local.entity.toUi
+import ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher
 import ua.com.programmer.agentventa.presentation.common.document.DocumentViewModel
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
@@ -32,13 +34,11 @@ import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.toPrintData
 import ua.com.programmer.agentventa.infrastructure.printer.WebhookPrintService
 import ua.com.programmer.agentventa.extensions.localFormatted
+import ua.com.programmer.agentventa.extensions.calculateLineSum
 import ua.com.programmer.agentventa.extensions.round
-import ua.com.programmer.agentventa.extensions.roundToInt
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import ua.com.programmer.agentventa.domain.repository.ProductRepository
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.util.Date
 import javax.inject.Inject
 
@@ -52,12 +52,14 @@ class OrderViewModel @Inject constructor(
     private val enableOrderEditUseCase: EnableOrderEditUseCase,
     private val generateOrderPrintUseCase: GenerateOrderPrintUseCase,
     private val webhookPrintService: WebhookPrintService,
-    logger: Logger
+    logger: Logger,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : DocumentViewModel<Order>(
     repository = orderRepository,
     logger = logger,
     logTag = "OrderVM",
-    emptyDocument = { Order(guid = "") }
+    emptyDocument = { Order(guid = "") },
+    ioDispatcher = ioDispatcher
 ) {
 
     private val order get() = currentDocument
@@ -100,7 +102,7 @@ class OrderViewModel @Inject constructor(
         val clientGuid = order.clientGuid ?: return
         if (clientGuid.isEmpty()) return
         viewModelScope.launch {
-            val content = withContext(Dispatchers.IO) {
+            val content = withContext(ioDispatcher) {
                 orderRepository.getPreviousOrderContent(clientGuid)
             }
             _previousContent.value = content
@@ -110,24 +112,18 @@ class OrderViewModel @Inject constructor(
     fun copySelectedProducts(items: List<PreviousOrderContent>, onComplete: (Boolean) -> Unit) {
         if (items.isEmpty()) return onComplete(false)
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 items.forEach { item ->
                     val contentLine = orderRepository.getContentLine(order.guid, item.productGuid)
                     val updated = contentLine.copy(
                         unitCode = item.unit,
                         price = item.price,
                         quantity = item.quantity,
-                        sum = item.price * item.quantity
+                        sum = calculateLineSum(item.price, item.quantity)
                     )
                     orderRepository.updateContentLine(updated)
                 }
-                val totals = orderRepository.getDocumentTotals(order.guid)
-                updateDocument(order.copy(
-                    price = totals.sum,
-                    quantity = totals.quantity,
-                    weight = totals.weight,
-                    discountValue = totals.discount
-                ))
+                refreshOrderTotals()
             }
             onComplete(true)
         }
@@ -185,8 +181,12 @@ class OrderViewModel @Inject constructor(
 
     private suspend fun recalculateContent(currentOrder: Order) {
         orderRepository.recalculateContentPrices(currentOrder.guid, currentOrder.priceType)
-        val totals = orderRepository.getDocumentTotals(currentOrder.guid)
-        updateDocument(currentOrder.copy(
+        refreshOrderTotals()
+    }
+
+    private suspend fun refreshOrderTotals() {
+        val totals = orderRepository.getDocumentTotals(order.guid)
+        updateDocument(order.copy(
             price = totals.sum.round(2),
             quantity = totals.quantity.round(3),
             weight = totals.weight.round(3),
@@ -203,33 +203,18 @@ class OrderViewModel @Inject constructor(
         viewModelScope.launch {
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
 
-            val quantity = product.quantity.roundToInt(1000)
-            val price = product.price.roundToInt(100)
-            val sumTotal = price * quantity
-            val sum = BigDecimal(sumTotal)
-                .divide(BigDecimal(100000))
-                .setScale(2, RoundingMode.HALF_UP)
-                .toDouble()
-
             val updated = contentLine.copy(
                 unitCode = product.unit,
                 price = product.price,
                 quantity = product.quantity,
-                sum = sum,
+                sum = calculateLineSum(product.price, product.quantity),
                 weight = product.weight * product.quantity,
                 isPacked = if (product.isPacked) 1 else 0,
                 isDemand = if (product.isDemand) 1 else 0,
             )
 
             if (orderRepository.updateContentLine(updated)) {
-                val totals = orderRepository.getDocumentTotals(orderGuid)
-                updateDocument(order.copy(
-                    price = totals.sum.round(2),
-                    quantity = totals.quantity.round(3),
-                    weight = totals.weight.round(3),
-                    discountValue = totals.discount.round(2),
-                ))
-
+                refreshOrderTotals()
                 popUp()
             }
         }
@@ -317,7 +302,7 @@ class OrderViewModel @Inject constructor(
 
     fun updateLocation(onComplete: () -> Unit) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { orderRepository.updateLocation(order) }
+            withContext(ioDispatcher) { orderRepository.updateLocation(order) }
             onComplete()
         }
     }
@@ -326,16 +311,10 @@ class OrderViewModel @Inject constructor(
         val clientGuid = order.clientGuid ?: ""
         if (clientGuid.isEmpty()) return onComplete(false)
         viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
+            val result = withContext(ioDispatcher) {
                 val copied = orderRepository.copyPreviousContent(order.guid, clientGuid)
                 if (copied) {
-                    val totals = orderRepository.getDocumentTotals(order.guid)
-                    updateDocument(order.copy(
-                        price = totals.sum,
-                        quantity = totals.quantity,
-                        weight = totals.weight,
-                        discountValue = totals.discount,
-                    ))
+                    refreshOrderTotals()
                 }
                 copied
             }

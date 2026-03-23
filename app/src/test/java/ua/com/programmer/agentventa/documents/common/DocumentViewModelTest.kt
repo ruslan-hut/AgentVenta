@@ -73,7 +73,7 @@ class DocumentViewModelTest {
 
     @Test
     fun `initial state has null save result`() {
-        assertThat(viewModel.saveResult.value).isNull()
+        assertThat(viewModel.saveResultFlow.value).isNull()
     }
 
     @Test
@@ -142,14 +142,14 @@ class DocumentViewModelTest {
         // Arrange - simulate previous save
         viewModel.testUpdateDocumentWithResult(TestFixtures.createOrder1())
         advanceUntilIdle()
-        assertThat(viewModel.saveResult.value).isTrue()
+        assertThat(viewModel.saveResultFlow.value).isTrue()
 
         // Act
         viewModel.setCurrentDocument(TestFixtures.ORDER_2_GUID)
         advanceUntilIdle()
 
         // Assert
-        assertThat(viewModel.saveResult.value).isNull()
+        assertThat(viewModel.saveResultFlow.value).isNull()
     }
 
     @Test
@@ -212,7 +212,7 @@ class DocumentViewModelTest {
         val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun newDocument(): Order? = null
         }
-        val failingViewModel = TestDocumentViewModel(failingRepository, logger)
+        val failingViewModel = TestDocumentViewModel(failingRepository, logger, kotlinx.coroutines.Dispatchers.Unconfined)
 
         // Act
         failingViewModel.events.test {
@@ -234,7 +234,7 @@ class DocumentViewModelTest {
         val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun newDocument(): Order? = null
         }
-        val failingViewModel = TestDocumentViewModel(failingRepository, logger)
+        val failingViewModel = TestDocumentViewModel(failingRepository, logger, kotlinx.coroutines.Dispatchers.Unconfined)
 
         // Act
         failingViewModel.testInitNewDocument()
@@ -271,7 +271,7 @@ class DocumentViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        assertThat(viewModel.saveResult.value).isTrue()
+        assertThat(viewModel.saveResultFlow.value).isTrue()
     }
 
     @Test
@@ -317,7 +317,7 @@ class DocumentViewModelTest {
         val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun updateDocument(document: Order): Boolean = false
         }
-        val failingViewModel = TestDocumentViewModel(failingRepository, logger)
+        val failingViewModel = TestDocumentViewModel(failingRepository, logger, kotlinx.coroutines.Dispatchers.Unconfined)
         val order = TestFixtures.createOrder1()
 
         // Act
@@ -340,7 +340,7 @@ class DocumentViewModelTest {
         val failingRepository = object : FakeOrderRepository(TestFixtures.TEST_ACCOUNT_GUID) {
             override suspend fun updateDocument(document: Order): Boolean = false
         }
-        val failingViewModel = TestDocumentViewModel(failingRepository, logger)
+        val failingViewModel = TestDocumentViewModel(failingRepository, logger, kotlinx.coroutines.Dispatchers.Unconfined)
         val order = TestFixtures.createOrder1()
 
         // Act
@@ -348,7 +348,7 @@ class DocumentViewModelTest {
         advanceUntilIdle()
 
         // Assert
-        assertThat(failingViewModel.saveResult.value).isFalse()
+        assertThat(failingViewModel.saveResultFlow.value).isFalse()
     }
 
     // ========== Delete Document Tests ==========

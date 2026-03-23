@@ -1,5 +1,7 @@
 package ua.com.programmer.agentventa.domain.usecase.cash
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.data.local.entity.Cash
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
@@ -10,7 +12,9 @@ import javax.inject.Inject
 /**
  * Use case for validating a cash document before save.
  */
-class ValidateCashUseCase @Inject constructor() : SuspendUseCase<Cash, Cash>() {
+class ValidateCashUseCase @Inject constructor(
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Cash, Cash>(dispatcher) {
 
     override suspend fun execute(params: Cash): Result<Cash> {
         if (params.clientGuid.isEmpty()) {
@@ -34,8 +38,9 @@ class ValidateCashUseCase @Inject constructor() : SuspendUseCase<Cash, Cash>() {
  */
 class SaveCashUseCase @Inject constructor(
     private val cashRepository: CashRepository,
-    private val validateCashUseCase: ValidateCashUseCase
-) : SuspendUseCase<SaveCashUseCase.Params, Cash>() {
+    private val validateCashUseCase: ValidateCashUseCase,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<SaveCashUseCase.Params, Cash>(dispatcher) {
 
     data class Params(
         val cash: Cash,
@@ -97,8 +102,9 @@ class DeleteCashUseCase @Inject constructor(
  * Use case for enabling edit mode on a processed cash document.
  */
 class EnableCashEditUseCase @Inject constructor(
-    private val cashRepository: CashRepository
-) : SuspendUseCase<Cash, Cash>() {
+    private val cashRepository: CashRepository,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Cash, Cash>(dispatcher) {
 
     override suspend fun execute(params: Cash): Result<Cash> {
         val editableCash = params.copy(isProcessed = 0, isSent = 0)

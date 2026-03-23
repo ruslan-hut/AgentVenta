@@ -62,6 +62,21 @@ fun Double.roundToInt(multi: Int): Int {
  * @return The formatted String. Returns the value of 'ifNull' if the Double is 0.0.
  */
 
+/**
+ * Calculates the total sum for an order content line (price * quantity)
+ * using integer arithmetic to avoid floating-point precision issues.
+ *
+ * Price is scaled by 100, quantity by 1000, then divided by 100000.
+ */
+fun calculateLineSum(price: Double, quantity: Double): Double {
+    val p = price.roundToInt(100).toLong()
+    val q = quantity.roundToInt(1000).toLong()
+    return BigDecimal(p * q)
+        .divide(BigDecimal(100000))
+        .setScale(2, RoundingMode.HALF_UP)
+        .toDouble()
+}
+
 fun Double.formatAsInt(digits: Int, ifNull: String = "", append: String = ""): String {
     if (this == 0.0) return ifNull
     return if (this % 1 == 0.0) String.format(Locale.getDefault(),"%.0f", this).plus(" $append")

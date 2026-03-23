@@ -71,6 +71,7 @@ abstract class DocumentViewModel<T>(
 
     // Save result for backward compatibility with observe()
     private val _saveResult = MutableStateFlow<Boolean?>(null)
+    val saveResultFlow: StateFlow<Boolean?> = _saveResult.asStateFlow()
     val saveResult: androidx.lifecycle.LiveData<Boolean?> = _saveResult.asLiveData()
 
     /**

@@ -152,7 +152,8 @@ open class FakeOrderRepository(
 
     override suspend fun getContentLine(guid: String, productGuid: String): OrderContent {
         val content = orderContent.value[guid] ?: emptyList()
-        return content.first { it.productGuid == productGuid }
+        return content.firstOrNull { it.productGuid == productGuid }
+            ?: OrderContent(orderGuid = guid, productGuid = productGuid)
     }
 
     override suspend fun updateContentLine(contentLine: OrderContent): Boolean {

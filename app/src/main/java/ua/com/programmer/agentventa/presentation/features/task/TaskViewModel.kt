@@ -2,6 +2,8 @@ package ua.com.programmer.agentventa.presentation.features.task
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.data.local.entity.Task
 import ua.com.programmer.agentventa.presentation.common.document.DocumentViewModel
@@ -10,6 +12,7 @@ import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.task.MarkTaskDoneUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.SaveTaskUseCase
 import ua.com.programmer.agentventa.domain.usecase.task.ValidateTaskUseCase
+import ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.TaskRepository
 import ua.com.programmer.agentventa.presentation.common.viewmodel.DocumentEvent
@@ -21,12 +24,14 @@ class TaskViewModel @Inject constructor(
     private val validateTaskUseCase: ValidateTaskUseCase,
     private val saveTaskUseCase: SaveTaskUseCase,
     private val markTaskDoneUseCase: MarkTaskDoneUseCase,
-    logger: Logger
+    logger: Logger,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : DocumentViewModel<Task>(
     repository = taskRepository,
     logger = logger,
     logTag = "TaskVM",
-    emptyDocument = { Task(guid = "", time = 0L) }
+    emptyDocument = { Task(guid = "", time = 0L) },
+    ioDispatcher = ioDispatcher
 ) {
 
     // In-memory editable task to avoid race conditions with StateFlow updates

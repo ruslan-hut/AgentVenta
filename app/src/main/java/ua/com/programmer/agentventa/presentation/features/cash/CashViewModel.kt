@@ -2,6 +2,7 @@ package ua.com.programmer.agentventa.presentation.features.cash
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -14,6 +15,7 @@ import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.cash.EnableCashEditUseCase
 import ua.com.programmer.agentventa.domain.usecase.cash.SaveCashUseCase
 import ua.com.programmer.agentventa.domain.usecase.cash.ValidateCashUseCase
+import ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.CashRepository
 import javax.inject.Inject
@@ -24,12 +26,14 @@ class CashViewModel @Inject constructor(
     private val validateCashUseCase: ValidateCashUseCase,
     private val saveCashUseCase: SaveCashUseCase,
     private val enableCashEditUseCase: EnableCashEditUseCase,
-    logger: Logger
+    logger: Logger,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : DocumentViewModel<Cash>(
     repository = cashRepository,
     logger = logger,
     logTag = "CashVM",
-    emptyDocument = { Cash(guid = "") }
+    emptyDocument = { Cash(guid = "") },
+    ioDispatcher = ioDispatcher
 ) {
 
     private val cash get() = currentDocument

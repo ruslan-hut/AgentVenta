@@ -1,5 +1,7 @@
 package ua.com.programmer.agentventa.domain.usecase.task
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.data.local.entity.Task
 import ua.com.programmer.agentventa.domain.result.DomainException
 import ua.com.programmer.agentventa.domain.result.Result
@@ -10,7 +12,9 @@ import javax.inject.Inject
 /**
  * Use case for validating a task before save.
  */
-class ValidateTaskUseCase @Inject constructor() : SuspendUseCase<Task, Task>() {
+class ValidateTaskUseCase @Inject constructor(
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Task, Task>(dispatcher) {
 
     override suspend fun execute(params: Task): Result<Task> {
         if (params.description.isBlank()) {
@@ -28,8 +32,9 @@ class ValidateTaskUseCase @Inject constructor() : SuspendUseCase<Task, Task>() {
  */
 class SaveTaskUseCase @Inject constructor(
     private val taskRepository: TaskRepository,
-    private val validateTaskUseCase: ValidateTaskUseCase
-) : SuspendUseCase<Task, Task>() {
+    private val validateTaskUseCase: ValidateTaskUseCase,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<Task, Task>(dispatcher) {
 
     override suspend fun execute(params: Task): Result<Task> {
         val validationResult = validateTaskUseCase(params)
@@ -80,8 +85,9 @@ class DeleteTaskUseCase @Inject constructor(
  * Use case for marking a task as done/undone.
  */
 class MarkTaskDoneUseCase @Inject constructor(
-    private val taskRepository: TaskRepository
-) : SuspendUseCase<MarkTaskDoneUseCase.Params, Task>() {
+    private val taskRepository: TaskRepository,
+    @ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher dispatcher: CoroutineDispatcher = Dispatchers.IO
+) : SuspendUseCase<MarkTaskDoneUseCase.Params, Task>(dispatcher) {
 
     data class Params(
         val task: Task,

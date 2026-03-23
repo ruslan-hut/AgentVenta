@@ -120,8 +120,7 @@ class ProductViewModelTest {
     fun `initial product is empty`() = runTest {
         viewModel.productFlow.test {
             val product = awaitItem()
-            assertThat(product?.guid).isEmpty()
-            assertThat(product?.description).isEmpty()
+            assertThat(product).isNull()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -208,9 +207,13 @@ class ProductViewModelTest {
         val product = createTestProduct()
         mockProductFlow.value = product
 
-        // Act
-        viewModel.setProductParameters(product.guid, "order-123", "P1")
-        advanceUntilIdle()
+        // Act - collect to activate WhileSubscribed flow
+        viewModel.productFlow.test {
+            skipItems(1) // initial null
+            viewModel.setProductParameters(product.guid, "order-123", "P1")
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(productRepository).getProduct(product.guid, "order-123", "P1")
@@ -222,9 +225,13 @@ class ProductViewModelTest {
         val product = createTestProduct()
         mockProductFlow.value = product
 
-        // Act
-        viewModel.setProductParameters(product.guid, "", "P2")
-        advanceUntilIdle()
+        // Act - collect to activate WhileSubscribed flow
+        viewModel.productFlow.test {
+            skipItems(1) // initial null
+            viewModel.setProductParameters(product.guid, "", "P2")
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(productRepository).getProduct(product.guid, "", "P2")
@@ -299,9 +306,13 @@ class ProductViewModelTest {
         // Arrange
         mockPriceListFlow.value = createTestPrices()
 
-        // Act
-        viewModel.setProductParameters("product-1", "", "P2")
-        advanceUntilIdle()
+        // Act - collect to activate WhileSubscribed flow
+        viewModel.priceListFlow.test {
+            skipItems(1) // initial empty
+            viewModel.setProductParameters("product-1", "", "P2")
+            advanceUntilIdle()
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(productRepository).fetchProductPrices("product-1", "P2")
@@ -313,17 +324,27 @@ class ProductViewModelTest {
 
     @Test
     fun `changing parameters reloads product and prices`() = runTest {
-        // Arrange: First parameters
-        val product1 = createTestProduct("product-1")
-        viewModel.setProductParameters("product-1", "order-1", "P1")
-        mockProductFlow.value = product1
-        advanceUntilIdle()
+        // Collect both flows to activate WhileSubscribed
+        viewModel.productFlow.test {
+            viewModel.priceListFlow.test {
+                skipItems(1) // initial empty prices
 
-        // Act: Change parameters
-        val product2 = createTestProduct("product-2")
-        viewModel.setProductParameters("product-2", "order-2", "P2")
-        mockProductFlow.value = product2
-        advanceUntilIdle()
+                // Arrange: First parameters
+                val product1 = createTestProduct("product-1")
+                viewModel.setProductParameters("product-1", "order-1", "P1")
+                mockProductFlow.value = product1
+                advanceUntilIdle()
+
+                // Act: Change parameters
+                val product2 = createTestProduct("product-2")
+                viewModel.setProductParameters("product-2", "order-2", "P2")
+                mockProductFlow.value = product2
+                advanceUntilIdle()
+
+                cancelAndIgnoreRemainingEvents()
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert: New repository calls
         verify(productRepository).getProduct("product-2", "order-2", "P2")
@@ -336,13 +357,20 @@ class ProductViewModelTest {
         val product = createTestProduct()
         mockProductFlow.value = product
 
-        // Act
-        viewModel.setProductParameters(
-            guid = "product-123",
-            orderGuid = "order-456",
-            priceType = "P3"
-        )
-        advanceUntilIdle()
+        // Act - collect both flows to activate WhileSubscribed
+        viewModel.productFlow.test {
+            viewModel.priceListFlow.test {
+                skipItems(1) // initial empty prices
+                viewModel.setProductParameters(
+                    guid = "product-123",
+                    orderGuid = "order-456",
+                    priceType = "P3"
+                )
+                advanceUntilIdle()
+                cancelAndIgnoreRemainingEvents()
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(productRepository).getProduct("product-123", "order-456", "P3")
@@ -540,15 +568,17 @@ class ProductViewModelTest {
     @Test
     fun `multiple parameter updates emit correctly`() = runTest {
         viewModel.productFlow.test {
-            skipItems(1) // Skip initial
+            skipItems(1) // Skip initial null
 
-            // Rapid parameter changes
+            // Rapid parameter changes - flatMapLatest will cancel intermediate ones
             viewModel.setProductParameters("p1", "", "")
             viewModel.setProductParameters("p2", "", "")
             viewModel.setProductParameters("p3", "", "")
+            advanceUntilIdle()
 
-            // All should be null since we didn't update flows
-            expectNoEvents()
+            // Should emit the final product from mockProductFlow (default empty product)
+            val product = awaitItem()
+            assertThat(product).isNotNull()
 
             cancelAndIgnoreRemainingEvents()
         }
@@ -633,7 +663,7 @@ class ProductViewModelTest {
         // Assert
         viewModel.productFlow.test {
             val product = awaitItem()
-            assertThat(product?.isGroup).isEqualTo(1)
+            assertThat(product?.isGroup).isTrue()
             assertThat(product?.description).isEqualTo("Product Category")
             cancelAndIgnoreRemainingEvents()
         }
@@ -662,9 +692,16 @@ class ProductViewModelTest {
         val product = createTestProduct()
         mockProductFlow.value = product
 
-        // Act
-        viewModel.setProductParameters(product.guid, "", "")
-        advanceUntilIdle()
+        // Act - collect both flows to activate WhileSubscribed
+        viewModel.productFlow.test {
+            viewModel.priceListFlow.test {
+                skipItems(1) // initial empty prices
+                viewModel.setProductParameters(product.guid, "", "")
+                advanceUntilIdle()
+                cancelAndIgnoreRemainingEvents()
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(productRepository).getProduct(product.guid, "", "")

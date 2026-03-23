@@ -45,7 +45,7 @@ class FakeCashRepository(
         list.filter { cash ->
             val matchesAccount = cash.databaseId == currentAccountGuid
 
-            val matchesFilter = filter.isEmpty() || cash.client.contains(filter, ignoreCase = true) || cash.number.toString().contains(filter, ignoreCase = true)
+            val matchesFilter = filter.isEmpty() || cash.client.contains(filter, ignoreCase = true) || cash.number.toString().contains(filter, ignoreCase = true) || cash.notes.contains(filter, ignoreCase = true)
 
             val matchesDate = listDate == null || try {
                 val cashDate = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(cash.date)

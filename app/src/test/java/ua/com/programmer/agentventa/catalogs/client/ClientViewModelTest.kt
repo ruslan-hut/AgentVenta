@@ -22,6 +22,7 @@ import ua.com.programmer.agentventa.data.local.entity.LClient
 import ua.com.programmer.agentventa.fixtures.TestFixtures
 import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.FilesRepository
+import ua.com.programmer.agentventa.utility.ResourceProvider
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 
@@ -47,6 +48,7 @@ class ClientViewModelTest {
 
     private lateinit var clientRepository: ClientRepository
     private lateinit var filesRepository: FilesRepository
+    private lateinit var resourceProvider: ResourceProvider
     private lateinit var viewModel: ClientViewModel
 
     // Mock flows
@@ -57,7 +59,6 @@ class ClientViewModelTest {
     @Before
     fun setup() {
         // Initialize mock flows
-        // Default empty client for non-nullable flow
         val defaultClient = LClient(
             guid = "",
             description = "",
@@ -82,8 +83,12 @@ class ClientViewModelTest {
             on { getClientImages(any()) } doReturn mockImagesFlow
         }
 
+        resourceProvider = mock {
+            on { getString(any()) } doReturn "Failed to set default image"
+        }
+
         viewModel = ClientViewModel(
-            resourceProvider = mock(),
+            resourceProvider = resourceProvider,
             clientRepository = clientRepository,
             filesRepository = filesRepository
         )
@@ -160,8 +165,7 @@ class ClientViewModelTest {
     fun `initial client is empty`() = runTest {
         viewModel.clientFlow.test {
             val client = awaitItem()
-            assertThat(client?.guid).isEmpty()
-            assertThat(client?.description).isEmpty()
+            assertThat(client).isNull()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -252,7 +256,7 @@ class ClientViewModelTest {
         // Assert
         viewModel.clientFlow.test {
             val client = awaitItem()
-            assertThat(client?.guid).isEmpty()
+            assertThat(client).isNull()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -266,9 +270,15 @@ class ClientViewModelTest {
         viewModel.setParameters(params)
         mockClientFlow.value = client
 
-        // Act
-        viewModel.setClientParameters(client.guid)
-        advanceUntilIdle()
+        // Act - collect to activate WhileSubscribed flow
+        viewModel.clientFlow.test {
+            skipItems(1) // initial null
+
+            viewModel.setClientParameters(client.guid)
+            advanceUntilIdle()
+
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(clientRepository).getClient(client.guid, "company-123")
@@ -344,9 +354,15 @@ class ClientViewModelTest {
         val params = SharedParameters(companyGuid = "company-456")
         viewModel.setParameters(params)
 
-        // Act
-        viewModel.setClientParameters("client-1")
-        advanceUntilIdle()
+        // Act - collect to activate WhileSubscribed flow
+        viewModel.debtListFlow.test {
+            skipItems(1) // initial empty
+
+            viewModel.setClientParameters("client-1")
+            advanceUntilIdle()
+
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert
         verify(clientRepository).getDebts("client-1", "company-456")
@@ -464,14 +480,23 @@ class ClientViewModelTest {
     fun `parameters update triggers client reload`() = runTest {
         // Arrange
         val client = createTestClient()
-        viewModel.setClientParameters(client.guid)
-        mockClientFlow.value = client
-        advanceUntilIdle()
 
-        // Act: Change company
-        val newParams = SharedParameters(companyGuid = "company-new")
-        viewModel.setParameters(newParams)
-        advanceUntilIdle()
+        // Start collecting to activate WhileSubscribed flow
+        viewModel.clientFlow.test {
+            skipItems(1) // initial null
+
+            viewModel.setClientParameters(client.guid)
+            mockClientFlow.value = client
+            advanceUntilIdle()
+            skipItems(1) // loaded client
+
+            // Act: Change company
+            val newParams = SharedParameters(companyGuid = "company-new")
+            viewModel.setParameters(newParams)
+            advanceUntilIdle()
+
+            cancelAndIgnoreRemainingEvents()
+        }
 
         // Assert: Client should be reloaded with new company GUID
         verify(clientRepository).getClient(client.guid, "company-new")

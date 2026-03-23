@@ -94,10 +94,9 @@ class ProductImageViewModelTest {
 
     @Test
     fun `initial product is empty`() = runTest {
-        // Assert
+        // Assert - MutableLiveData starts with null
         val product = viewModel.product.value
-        assertThat(product?.guid).isEmpty()
-        assertThat(product?.description).isEmpty()
+        assertThat(product).isNull()
     }
 
     // ========================================

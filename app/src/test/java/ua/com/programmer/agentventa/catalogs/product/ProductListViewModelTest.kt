@@ -145,9 +145,8 @@ class ProductListViewModelTest {
 
     @Test
     fun `initial products list is empty`() = runTest {
-        // Assert
-        val products = viewModel.products.getOrAwaitValue()
-        assertThat(products).isEmpty()
+        // Assert - MediatorLiveData starts with null before loadData is triggered
+        assertThat(viewModel.products.value).isNull()
     }
 
     @Test
@@ -228,7 +227,10 @@ class ProductListViewModelTest {
         viewModel.setListParams(params)
         advanceUntilIdle()
 
-        // Assert
+        // Assert - observe products first to trigger MediatorLiveData source callback
+        val loadedProducts = viewModel.products.getOrAwaitValue()
+        assertThat(loadedProducts).isNotEmpty()
+
         val visibility = viewModel.noDataTextVisibility.getOrAwaitValue()
         assertThat(visibility).isEqualTo(View.GONE)
     }

@@ -312,7 +312,4 @@ interface ProductDao {
         WHERE product.barcode LIKE :barcode AND product.db_guid = :currentDbGuid
     """)
     suspend fun getProductByBarcode(currentDbGuid: String, barcode: String, order: String, type: String): LProduct?
-
-    @Query("SELECT IFNULL(price, 0.0) FROM product_prices WHERE product_guid = :productGuid AND price_type = :priceType AND db_guid = :dbGuid LIMIT 1")
-    suspend fun getProductPrice(dbGuid: String, productGuid: String, priceType: String): Double?
 }
