@@ -15,12 +15,7 @@ import org.robolectric.annotation.Config
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import ua.com.programmer.agentventa.data.local.entity.Client
-import ua.com.programmer.agentventa.data.local.entity.Order
-import ua.com.programmer.agentventa.data.local.entity.PaymentType
-import ua.com.programmer.agentventa.domain.result.DomainException
-import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.GenerateOrderPrintUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
@@ -268,7 +263,7 @@ class OrderViewModelTest {
         var popUpCalled = false
 
         // Act
-        viewModel.onClientClick(client) { popUpCalled = true }
+        viewModel.onClientClick(client, setClientPrice = true) { popUpCalled = true }
         advanceUntilIdle()
 
         // Assert

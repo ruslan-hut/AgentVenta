@@ -1,7 +1,7 @@
 package ua.com.programmer.agentventa.data.repository
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import ua.com.programmer.agentventa.data.local.dao.ClientDao
@@ -15,13 +15,12 @@ import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ClientRepositoryImpl @Inject constructor(
     private val dao: ClientDao,
     private val updateDao: DataExchangeDao,
     private val userAccountRepository: UserAccountRepository
 ): ClientRepository {
-
-    private suspend fun getCurrentDbGuid(): String = userAccountRepository.currentAccountGuid.first()
 
     override fun getClient(guid: String, companyGuid: String): Flow<LClient> {
         return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->

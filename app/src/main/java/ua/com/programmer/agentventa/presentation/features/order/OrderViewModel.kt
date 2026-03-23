@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ua.com.programmer.agentventa.data.local.entity.Client
 import ua.com.programmer.agentventa.data.local.entity.LClient
 import ua.com.programmer.agentventa.data.local.entity.LProduct
 import ua.com.programmer.agentventa.data.local.entity.Order
@@ -155,25 +154,23 @@ class OrderViewModel @Inject constructor(
         ignoreBarcodes = ignoreBarcodeReads
     }
 
-    fun setClient(clientGuid: String?) {
+    fun setClient(clientGuid: String?, setClientPrice: Boolean = true) {
         if (clientGuid.isNullOrEmpty() || order.guid.isEmpty()) return
         if ((order.clientGuid ?: "").isNotEmpty()) return
         viewModelScope.launch {
             val client = orderRepository.getClient(clientGuid) ?: return@launch
             val currentOrder = orderRepository.getOrder(order.guid) ?: return@launch
-            currentOrder.setClient(client.toUi())
+            currentOrder.setClient(client.toUi(), setClientPrice)
             orderRepository.updateDocument(currentOrder)
         }
     }
 
-    fun onClientClick(client: LClient, popUp: () -> Unit) {
+    fun onClientClick(client: LClient, setClientPrice: Boolean, popUp: () -> Unit) {
         val orderGuid = order.guid
         viewModelScope.launch {
-            val clientData = Client(
-                guid = client.guid,
-                description = client.description,
-            )
-            orderRepository.setClient(orderGuid, clientData)
+            val currentOrder = orderRepository.getOrder(orderGuid) ?: return@launch
+            currentOrder.setClient(client, setClientPrice)
+            orderRepository.updateDocument(currentOrder)
             popUp()
         }
     }

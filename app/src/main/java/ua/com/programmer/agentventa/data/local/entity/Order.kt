@@ -69,11 +69,13 @@ data class DocumentTotals(
     val quantity: Double = 0.0
 )
 
-fun Order.setClient(client: LClient){
+fun Order.setClient(client: LClient, setClientPrice: Boolean = true){
     clientGuid = client.guid
     clientCode2 = client.code
     clientDescription = client.description
-    priceType = client.priceType
+    if (setClientPrice && client.priceType.isNotEmpty()) {
+        priceType = client.priceType
+    }
     discount = client.discount
 
     // calculate distance to client

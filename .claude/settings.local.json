@@ -65,7 +65,25 @@
       "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest.updateDocumentWithResult saves and sets save result to true\" --info)",
       "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest\")",
       "Bash(python3 -c \"import sys,html; sys.stdout.write\\(html.unescape\\(sys.stdin.read\\(\\)\\)\\)\")",
-      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateViewModelTest\")"
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentListViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.document.DocumentViewModelTest\" --tests \"ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateViewModelTest\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.documents.order.*\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.features.order.*\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.features.order.OrderViewModelTest.client selection updates order\")",
+      "Bash(./gradlew testStandartDebugUnitTest --tests \"ua.com.programmer.agentventa.presentation.features.order.OrderViewModelTest.isReturn flag updates correctly\")",
+      "Bash(__NEW_LINE_4fdea069a4f60e33__ echo:*)",
+      "Bash(__NEW_LINE_7014aa5f8c59b24f__ echo:*)",
+      "Bash(__NEW_LINE_9e79efeb69b78646__ echo:*)",
+      "Bash(__NEW_LINE_adcb882ffe3c704a__ echo:*)",
+      "Bash(__NEW_LINE_e50b326af2c7ebe9__ echo:*)",
+      "Bash(__NEW_LINE_717610148b0aa4ae__ echo:*)",
+      "Bash(__NEW_LINE_d800b2eb817d8a2e__ echo:*)",
+      "Bash(__NEW_LINE_b4ab9a0f2ae06934__ echo:*)",
+      "Bash(__NEW_LINE_6cadd2d8c001f1d2__ echo:*)",
+      "Bash(__NEW_LINE_b6b88cba95816e11__ echo:*)",
+      "Bash(__NEW_LINE_8093c8248d0d32da__ for:*)",
+      "Bash(do)",
+      "Bash(echo \"=== infrastructure/$subdir ===\")",
+      "Read(//Users/ruslanhut/projects/AgentVenta/app/src/main/java/ua/com/programmer/agentventa/infrastructure/**)"
     ]
   }
 }

@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.data.local.entity.hasLocation
 import ua.com.programmer.agentventa.databinding.ClientFragmentBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
+import ua.com.programmer.agentventa.extensions.visibleIf
 import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 
@@ -73,8 +74,11 @@ class ClientInfoFragment: Fragment(){
             itemName.text = client.description
             itemGroup.text = client.groupName
             itemCode.text = client.code
-            itemPrice.text = client.priceType
+            itemPrice.text = sharedModel.priceTypes
+                .find { it.priceType == client.priceType }?.description
+                ?: client.priceType
             itemDiscount.text = client.discount.formatAsInt(1,"-", "%")
+            lineBonus.visibleIf(client.bonus != 0.0)
             itemBonus.text = client.bonus.format(2,"-")
             itemDebt.text = client.debt.format(2,"-.--")
             itemPhone.text = client.phone
