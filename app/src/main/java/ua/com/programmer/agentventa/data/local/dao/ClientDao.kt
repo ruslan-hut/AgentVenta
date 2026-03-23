@@ -50,7 +50,7 @@ interface ClientDao {
         ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid
         LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1 AND company_guid=:company) AS debts
         ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid
-        LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
+        LEFT OUTER JOIN (SELECT client_guid, db_guid, latitude, longitude FROM client_locations) AS location
         ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
         WHERE
         CASE :filter WHEN '' THEN clients.group_guid=:group
@@ -60,6 +60,7 @@ interface ClientDao {
         AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END
         AND clients.db_guid = :currentDbGuid
         ORDER BY clients.is_group DESC, clients.description
+        LIMIT 1000
     """)
     fun getClients(currentDbGuid: String, group: String, filter: String, company: String): Flow<List<LClient>>
 
@@ -89,7 +90,7 @@ interface ClientDao {
         ON clients.group_guid=client_groups.guid AND clients.db_guid=client_groups.db_guid
         LEFT OUTER JOIN (SELECT client_guid, db_guid, sum FROM debts WHERE is_total=1 AND company_guid=:companyGuid) AS debts
         ON clients.guid=debts.client_guid AND clients.db_guid=debts.db_guid
-        LEFT OUTER JOIN (SELECT * FROM client_locations) AS location
+        LEFT OUTER JOIN (SELECT client_guid, db_guid, latitude, longitude FROM client_locations) AS location
         ON clients.guid=location.client_guid AND clients.db_guid=location.db_guid
         WHERE
         clients.guid=:guid AND clients.db_guid = :currentDbGuid
