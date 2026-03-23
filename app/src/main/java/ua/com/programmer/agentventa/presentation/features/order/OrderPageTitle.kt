@@ -10,7 +10,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.findNavController
 import com.google.android.material.datepicker.MaterialDatePicker
 import dagger.hilt.android.AndroidEntryPoint
-import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.Order
 import ua.com.programmer.agentventa.data.local.entity.getDistanceText
 import ua.com.programmer.agentventa.data.local.entity.hasLocation
@@ -19,7 +18,6 @@ import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
 import ua.com.programmer.agentventa.extensions.visibleIf
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
-import ua.com.programmer.agentventa.utility.Constants
 import java.util.Date
 
 @AndroidEntryPoint
@@ -112,6 +110,7 @@ class OrderPageTitle: Fragment() {
                 titleStore.visibleIf(options.useStores)
                 docIsFiscal.visibleIf(order.isFiscal == 1)
                 elementReturns.visibleIf(options.allowReturn)
+                elementPaymentType.visibleIf(options.allowPaymentType)
 
                 if (order.isProcessed > 0) {
                     docClient.isEnabled = false

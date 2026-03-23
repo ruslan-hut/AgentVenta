@@ -96,8 +96,11 @@ class OrderRepositoryImpl @Inject constructor(
         val defaultPaymentType = if (paymentTypes.isEmpty()) {
             PaymentType()
         } else {
-            val payment = paymentTypes.find { it.isDefault == 1 } ?: paymentTypes.first()
-            payment
+            if (options.defaultPaymentType.isNotBlank()) {
+                paymentTypes.find { it.paymentType == options.defaultPaymentType } ?: paymentTypes.first()
+            } else {
+                paymentTypes.find { it.isDefault == 1 } ?: paymentTypes.first()
+            }
         }
 
         val client = if (options.defaultClient.isNotBlank()) {

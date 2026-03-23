@@ -330,6 +330,8 @@
     <string name="option_title_fiscal_number">Фіскальний номер</string>
     <string name="option_title_fiscal_cashier">Касир</string>
     <string name="option_title_fiscal_device_id">ID фіскального пристрою</string>
+    <string name="option_title_allow_payment_type">Дозволити вибір типу розрахунку</string>
+    <string name="option_title_default_payment_type">Тип розрахунку за умовчанням</string>
     <string name="option_value_not_set">Не вказано</string>
     <string name="task">Завдання</string>
     <string name="open_account_settings">Відкрити налаштування</string>

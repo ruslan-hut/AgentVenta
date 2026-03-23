@@ -11,7 +11,6 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
-import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.databinding.ModelContentOrderGoodsBinding
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
@@ -63,10 +62,12 @@ class OrderPageContent: Fragment() {
         }
         viewModel.document.observe(viewLifecycleOwner) {
             val editable = it.isProcessed == 0
+            val options = sharedModel.options
             binding.apply {
                 orderTotalPrice.text = it.price.format(2)
                 orderTotalWeight.text = it.weight.format(3)
                 docPaymentType.isEnabled = editable
+                elementPaymentType.visibility = if (options.allowPaymentType) View.VISIBLE else View.GONE
                 fabAddGoods.visibility = if (editable) View.VISIBLE else View.GONE
             }
             adapter.setClickable(editable)

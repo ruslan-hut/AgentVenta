@@ -100,11 +100,8 @@ class PickerFragment: Fragment(), MenuProvider {
         viewModel.priceList.observe(viewLifecycleOwner) { list ->
             loadedPriceList = list
             adapter.submitList(list)
-            if (list.isEmpty()) {
-                binding?.blockPriceList?.visibility = View.GONE
-            } else {
-                binding?.blockPriceList?.visibility = View.VISIBLE
-            }
+            val hidePrices = list.isEmpty() || !sharedModel.options.allowPriceTypeChoose
+            binding?.blockPriceList?.visibility = if (hidePrices) View.GONE else View.VISIBLE
         }
 
         viewModel.product.observe(viewLifecycleOwner) {

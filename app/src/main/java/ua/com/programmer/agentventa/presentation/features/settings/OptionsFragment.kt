@@ -41,6 +41,8 @@ class OptionsFragment: PreferenceFragmentCompat() {
                 addCheckBox(R.string.pref_title_package_mark, options.usePackageMark)
                 addCheckBox(R.string.option_title_use_demands, options.useDemands)
                 addCheckBox(R.string.pref_title_check_order_location, options.checkOrderLocation)
+                addCheckBox(R.string.option_title_allow_payment_type, options.allowPaymentType)
+                addText(R.string.option_title_default_payment_type, options.defaultPaymentType, notSet)
             }
 
             // Clients

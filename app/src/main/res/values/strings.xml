@@ -420,6 +420,8 @@
     <string name="option_title_fiscal_number">Fiscal number</string>
     <string name="option_title_fiscal_cashier">Fiscal cashier</string>
     <string name="option_title_fiscal_device_id">Fiscal device ID</string>
+    <string name="option_title_allow_payment_type">Allow payment type selection</string>
+    <string name="option_title_default_payment_type">Default payment type</string>
     <string name="option_value_not_set">Not set</string>
     <string name="task">Task</string>
     <string name="open_account_settings">Open account settings</string>
