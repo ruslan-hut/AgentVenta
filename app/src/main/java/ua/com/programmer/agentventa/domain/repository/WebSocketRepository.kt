@@ -113,6 +113,13 @@ interface WebSocketRepository {
     suspend fun clearPendingMessages()
 
     /**
+     * Cancels any pending reconnection attempt.
+     * Used when an external trigger initiates a new connection to prevent
+     * overlapping connection attempts from the internal backoff scheduler.
+     */
+    fun cancelReconnection()
+
+    /**
      * Sets the current account GUID for database operations on incoming data.
      * Must be called before data can be received and saved.
      */

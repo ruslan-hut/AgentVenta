@@ -207,8 +207,9 @@ class WebSocketConnectionManager @Inject constructor(
 
         val account = currentAccount ?: return
 
-        // Cancel any existing connection attempt
+        // Cancel any existing connection/reconnection attempt
         connectionJob?.cancel()
+        webSocketRepository.cancelReconnection()
 
         connectionJob = scope.launch {
             // Connection success and sync trigger handled by connectionState observer

@@ -388,7 +388,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         return calculatedDelay.coerceAtMost(maxDelay)
     }
 
-    private fun cancelReconnection() {
+    override fun cancelReconnection() {
         reconnectionJob?.cancel()
         reconnectionJob = null
     }
@@ -1022,6 +1022,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             logger.d(TAG, "Closed: $code - $reason")
             cancelPing()
 
+            // Ignore events from stale (replaced) connections
+            if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
+                logger.d(TAG, "Ignoring onClosed from stale connection")
+                return
+            }
+
             // Don't reconnect if device is pending approval
             if (isPendingDevice) {
                 logger.d(TAG, "Connection closed for pending device - no reconnection")
@@ -1045,6 +1051,12 @@ class WebSocketRepositoryImpl @Inject constructor(
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             logger.e(TAG, "Connection failed: ${t.message}")
             cancelPing()
+
+            // Ignore events from stale (replaced) connections
+            if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
+                logger.d(TAG, "Ignoring onFailure from stale connection")
+                return
+            }
 
             // Don't reconnect if device is pending approval
             if (isPendingDevice) {
