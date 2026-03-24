@@ -100,6 +100,9 @@ class ClientListViewModel @Inject constructor(
 
     fun setSelectMode(mode: Boolean) {
         selectMode = mode
+        if (mode) {
+            _searchVisibility.value = View.VISIBLE
+        }
     }
 
     init {

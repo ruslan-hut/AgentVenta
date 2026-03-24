@@ -54,6 +54,7 @@ class OrderFragment: Fragment(), MenuProvider {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel.setCurrentDocument(navigationArgs.orderGuid)
+        viewModel.setNavigatePage(-1)
     }
 
     override fun onCreateView(

@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.presentation.features.client
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,6 +9,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.MenuHost
@@ -60,6 +62,14 @@ class ClientListFragment: Fragment(), MenuProvider {
         super.onViewCreated(view, savedInstanceState)
         val recyclerView = binding.clientsList
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        if (navigationArgs.modeSelect) {
+            binding.editSearch.requestFocus()
+            binding.editSearch.postDelayed({
+                val imm = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(binding.editSearch, InputMethodManager.SHOW_IMPLICIT)
+            }, 200)
+        }
 
         binding.clientsSwipe.setOnRefreshListener {
             //TODO on swipe listener
