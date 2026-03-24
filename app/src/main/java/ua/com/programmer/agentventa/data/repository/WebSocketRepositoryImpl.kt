@@ -483,7 +483,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_DATA -> {
                     val dataMessage = WebSocketMessageFactory.parseDataMessage(message)
                     if (dataMessage != null) {
-                        logger.d(TAG, "Data received: ${dataMessage.dataType} (status: ${dataMessage.status})")
 
                         // Handle unified array payload - route by examining value_id in items
                         when (dataMessage.dataType) {
