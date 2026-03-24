@@ -34,10 +34,6 @@ class OrderPageContent: Fragment() {
 
         setupPaymentDropdown()
 
-        binding.fabAddGoods.setOnClickListener {
-            (parentFragment as? OrderFragment)?.openProductList()
-        }
-
         return binding.root
     }
 
@@ -68,7 +64,7 @@ class OrderPageContent: Fragment() {
                 orderTotalWeight.text = it.weight.format(3)
                 docPaymentType.isEnabled = editable
                 elementPaymentType.visibility = if (options.allowPaymentType) View.VISIBLE else View.GONE
-                fabAddGoods.visibility = if (editable) View.VISIBLE else View.GONE
+                // Bottom menu visibility is managed by OrderFragment
             }
             adapter.setClickable(editable)
             setSelectedPaymentType(it.paymentType)

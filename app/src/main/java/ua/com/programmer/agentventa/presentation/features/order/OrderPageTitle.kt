@@ -78,10 +78,6 @@ class OrderPageTitle: Fragment() {
         setupPriceDropdown()
         setupPaymentDropdown()
 
-        binding.fabSave.setOnClickListener {
-            (parentFragment as? OrderFragment)?.saveDocument()
-        }
-
         return binding.root
     }
 
@@ -121,7 +117,6 @@ class OrderPageTitle: Fragment() {
                     docPaymentType.isEnabled = false
                     docIsReturn.isEnabled = false
                     docNotes.isEnabled = false
-                    fabSave.visibility = View.GONE
                 } else {
                     docClient.isEnabled = true
                     docDeliveryDate.isEnabled = true
@@ -130,7 +125,6 @@ class OrderPageTitle: Fragment() {
                     docPaymentType.isEnabled = true
                     docIsReturn.isEnabled = true
                     docNotes.isEnabled = true
-                    fabSave.visibility = View.VISIBLE
                 }
 
                 if (order.hasLocation()) {

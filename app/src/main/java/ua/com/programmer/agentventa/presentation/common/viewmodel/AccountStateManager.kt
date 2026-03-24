@@ -99,7 +99,10 @@ class AccountStateManager @Inject constructor(
                     loadAccountData()
 
                     if (!userAccount.isDemo()) {
-                        FirebaseCrashlytics.getInstance().setUserId(userAccount.guid)
+                        FirebaseCrashlytics.getInstance().apply {
+                            setUserId(userAccount.guid)
+                            setCustomKey("device_id", userAccount.guid)
+                        }
                     }
                 }
 

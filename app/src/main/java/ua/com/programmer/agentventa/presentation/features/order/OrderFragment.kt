@@ -89,6 +89,20 @@ class OrderFragment: Fragment(), MenuProvider {
             }.attach()
         }
 
+        val onMenuAction = { itemId: Int ->
+            when (itemId) {
+                R.id.action_add_product -> openProductList()
+                R.id.action_save -> saveDocument()
+            }
+        }
+        binding?.orderBottomMenu?.setOnItemSelectedListener { item ->
+            onMenuAction(item.itemId)
+            true
+        }
+        binding?.orderBottomMenu?.setOnItemReselectedListener { item ->
+            onMenuAction(item.itemId)
+        }
+
         viewModel.document.observe(this.viewLifecycleOwner) {order ->
             var title = getString(R.string.order)
 
@@ -103,7 +117,8 @@ class OrderFragment: Fragment(), MenuProvider {
                 sharedModel.setPriceByCode(order.priceType)
             }
 
-            // FAB visibility is handled by child fragments via ViewModel
+            binding?.orderBottomMenu?.visibility = if (isProcessed) View.GONE else View.VISIBLE
+
             // will run once if document has GUID an client is not already set
             viewModel.setClient(navigationArgs.clientGuid, sharedModel.options.setClientPrice)
         }

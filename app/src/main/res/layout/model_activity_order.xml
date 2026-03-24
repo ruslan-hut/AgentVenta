@@ -27,15 +27,29 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_below="@+id/order_tabs"
+            android:layout_above="@+id/order_bottom_menu"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         </androidx.viewpager2.widget.ViewPager2>
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/order_bottom_menu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:layout_alignParentBottom="true"
+            android:visibility="gone"
+            app:labelVisibilityMode="unlabeled"
+            app:itemActiveIndicatorStyle="@style/BottomNavIndicator"
+            app:menu="@menu/menu_order_bottom" />
 
         <ProgressBar
             android:id="@+id/menu_progress"
             android:layout_width="match_parent"
             android:layout_height="4dp"
-            android:layout_alignParentBottom="true"
+            android:layout_above="@+id/order_bottom_menu"
             android:visibility="gone"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:indeterminate="true" />

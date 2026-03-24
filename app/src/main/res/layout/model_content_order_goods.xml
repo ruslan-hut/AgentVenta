@@ -85,20 +85,9 @@
                 android:id="@+id/goods_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingBottom="72dp"
                 android:clipToPadding="false" />
 
         </LinearLayout>
-
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/fab_add_goods"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:text="@string/doc_goods"
-            app:icon="@drawable/baseline_add_24" />
 
     </FrameLayout>
 </layout>
