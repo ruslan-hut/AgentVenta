@@ -15,6 +15,7 @@
     <string name="attr_code">Код</string>
     <string name="attr_description">Найменування</string>
     <string name="attr_price">Ціна</string>
+    <string name="attr_total">Разом:</string>
     <string name="attr_quantity">Кількість</string>
     <string name="order">Замовлення</string>
     <string name="new_element">нове</string>
@@ -82,6 +83,8 @@
     <string name="out_of_memory">Помилка: недостатньо пам\'яті</string>
     <string name="attr_group">Група</string>
     <string name="attr_discount">Знижка</string>
+    <string name="discounts_list">Знижки</string>
+    <string name="discount_all_products">Усі товари</string>
     <string name="pref_desc_use_discounts">Показувати і обчислювати в документах знижку покупця або показувати категорію цін</string>
     <string name="pref_title_use_discounts">Використовувати знижки</string>
     <string name="pref_title_payment_type_switch">Ознака оплати готівкою</string>

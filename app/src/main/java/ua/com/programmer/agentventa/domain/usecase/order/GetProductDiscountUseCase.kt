@@ -5,6 +5,7 @@ import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.di.CoroutineModule.IoDispatcher
 import ua.com.programmer.agentventa.domain.result.Result
 import ua.com.programmer.agentventa.domain.usecase.SuspendUseCase
+import ua.com.programmer.agentventa.extensions.DiscountResolver
 import javax.inject.Inject
 
 class GetProductDiscountUseCase @Inject constructor(
@@ -16,19 +17,15 @@ class GetProductDiscountUseCase @Inject constructor(
         val dbGuid: String,
         val clientGuid: String,
         val productGuid: String,
-        val groupGuid: String = "",
     )
 
     override suspend fun execute(params: Params): Result<Double> {
-        val groupGuid = params.groupGuid.ifEmpty {
-            discountDao.getProductGroupGuid(params.dbGuid, params.productGuid) ?: ""
-        }
-        val discount = discountDao.getDiscount(
+        val discount = DiscountResolver.resolve(
+            discountDao = discountDao,
             dbGuid = params.dbGuid,
             clientGuid = params.clientGuid,
             productGuid = params.productGuid,
-            groupGuid = groupGuid
-        ) ?: 0.0
+        )
         return Result.Success(discount)
     }
 }

@@ -366,7 +366,7 @@ Two discount modes controlled by `UserOptions.complexDiscounts` (default: `false
 
 **Complex Mode (complexDiscounts = true):**
 - Uses `discounts` table synced from 1C with priority-based per-product per-client discount lookup
-- Discount is a **percentage** (can be negative = surcharge/price increase)
+- Discount is a **percentage** (negative = discount/price reduction, positive = surcharge/price increase)
 - Applied automatically when adding products to orders (`OrderViewModel.onProductClick()`)
 - Also recalculated when price type changes (`OrderRepositoryImpl.recalculateContentPrices()`)
 - NOT applied when copying from previous orders (those are historical snapshots)
@@ -375,7 +375,7 @@ Two discount modes controlled by `UserOptions.complexDiscounts` (default: `false
 ```
 Table: discounts
 PK: (db_guid, client_guid, product_guid)
-Fields: discount (REAL, percentage), timestamp (INTEGER)
+Fields: discount (REAL, percentage; negative = discount, positive = surcharge), timestamp (INTEGER)
 Convention: empty string "" = wildcard (any client / any product)
 ```
 
@@ -393,8 +393,8 @@ Convention: empty string "" = wildcard (any client / any product)
 **Key Implementation Details:**
 - `DiscountDao.getDiscount()` — single SQL query resolves all 5 priority levels
 - `GetProductDiscountUseCase` — wraps DAO call, auto-resolves `groupGuid` via `product.group_guid` when not provided
-- `OrderContent.discount` stores the **monetary amount** (not percentage): `lineSum × discountPercent / 100`
-- `OrderContent.sum` = `calculateLineSum(price, quantity) - discount`
+- `OrderContent.discount` stores the **monetary adjustment** (not percentage): `lineSum × discountPercent / 100` (negative = price reduced, positive = price increased)
+- `OrderContent.sum` = `calculateLineSum(price, quantity) + discount` (adding negative discount reduces the sum)
 - `DocumentTotals.discount` = SUM of all `OrderContent.discount` values
 - `Order.discountValue` stores the total discount amount across all lines
 - Product groups identified by `Product.isGroup = 1`, linked via `Product.groupGuid` (single-level hierarchy only)

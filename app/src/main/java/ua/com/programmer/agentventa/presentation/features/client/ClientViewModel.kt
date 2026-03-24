@@ -15,11 +15,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.LClient
+import ua.com.programmer.agentventa.data.local.entity.LDiscount
 import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.FilesRepository
+import ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateManager
 import ua.com.programmer.agentventa.presentation.common.viewmodel.EventChannel
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
 import ua.com.programmer.agentventa.utility.ResourceProvider
@@ -38,7 +41,9 @@ sealed class ClientEvent {
 class ClientViewModel @Inject constructor(
     private val resourceProvider: ResourceProvider,
     private val clientRepository: ClientRepository,
-    private val filesRepository: FilesRepository
+    private val filesRepository: FilesRepository,
+    private val discountDao: DiscountDao,
+    private val accountStateManager: AccountStateManager
 ): ViewModel() {
 
     private val _events = EventChannel<ClientEvent>()
@@ -94,6 +99,24 @@ class ClientViewModel @Inject constructor(
         )
     val clientImagesFlow: StateFlow<List<ClientImage>> = _clientImagesFlow
     val clientImages = _clientImagesFlow.asLiveData()
+
+    // Client discounts as StateFlow
+    private val _clientDiscountsFlow: StateFlow<List<LDiscount>> = _clientGuid
+        .flatMapLatest { guid ->
+            if (guid.isEmpty()) flowOf(emptyList())
+            else {
+                val dbGuid = accountStateManager.currentAccount.value.guid
+                if (dbGuid.isEmpty()) flowOf(emptyList())
+                else discountDao.getClientDiscounts(dbGuid, guid)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    val clientDiscountsFlow: StateFlow<List<LDiscount>> = _clientDiscountsFlow
+    val clientDiscounts = _clientDiscountsFlow.asLiveData()
 
     val paramsFlow: StateFlow<SharedParameters> = _params.asStateFlow()
 

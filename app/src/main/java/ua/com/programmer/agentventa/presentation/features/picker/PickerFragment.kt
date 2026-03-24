@@ -2,6 +2,8 @@ package ua.com.programmer.agentventa.presentation.features.picker
 
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -27,6 +29,7 @@ import ua.com.programmer.agentventa.data.local.entity.LProduct
 import ua.com.programmer.agentventa.data.local.entity.convertPricePerDefaultUnit
 import ua.com.programmer.agentventa.data.local.entity.convertQuantityPerDefaultUnit
 import ua.com.programmer.agentventa.databinding.PickerFragmentBinding
+import ua.com.programmer.agentventa.extensions.PriceCalculator
 import ua.com.programmer.agentventa.extensions.format
 import ua.com.programmer.agentventa.extensions.formatAsInt
 import ua.com.programmer.agentventa.extensions.round
@@ -113,7 +116,20 @@ class PickerFragment: Fragment(), MenuProvider {
             loadedProduct = it
             currentUnit = it.unitType
             updateView()
+            updateDiscountTotal()
         }
+
+        viewModel.discountPercent.observe(viewLifecycleOwner) {
+            updateDiscountTotal()
+        }
+
+        val totalWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) { updateDiscountTotal() }
+        }
+        binding?.editPrice?.addTextChangedListener(totalWatcher)
+        binding?.editQuantity?.addTextChangedListener(totalWatcher)
 
         binding?.apply {
             editQuantity.requestFocus()
@@ -198,6 +214,31 @@ class PickerFragment: Fragment(), MenuProvider {
         } else {
             baseLabel
         }
+    }
+
+    private fun updateDiscountTotal() {
+        val b = binding ?: return
+        val discountPercent = viewModel.discountPercent.value ?: 0.0
+
+        val priceText = b.editPrice.text.toString().replace(",", ".")
+        val quantityText = b.editQuantity.text.toString().replace(",", ".")
+
+        val price = priceText.toDoubleOrNull() ?: (loadedProduct?.price ?: 0.0)
+        val quantity = quantityText.toDoubleOrNull() ?: (loadedProduct?.quantity ?: 0.0)
+
+        if (discountPercent != 0.0) {
+            val sign = if (discountPercent >= 0) "+" else ""
+            b.discountLabel.text = if (discountPercent % 1.0 == 0.0) {
+                "${sign}${discountPercent.toInt()}%"
+            } else {
+                String.format(java.util.Locale.getDefault(), "%+.2f%%", discountPercent)
+            }
+        } else {
+            b.discountLabel.text = ""
+        }
+
+        val result = PriceCalculator.calculateLineWithDiscount(price, quantity, discountPercent)
+        b.totalValue.text = result.sum.format(2, "0.00")
     }
 
     private fun unitName(type: String, default: String): String {

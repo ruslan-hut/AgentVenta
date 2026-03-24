@@ -208,7 +208,7 @@ Data is sent as a **flat array of objects** in the `data` field of the push requ
     { "value_id": "client", "guid": "client-001", "description": "ТОВ Продукти", "phone": "+380501234567" },
     { "value_id": "price", "item_guid": "prod-001", "price_type": "1", "price_name": "Роздріб", "price": 45.50 },
     { "value_id": "debt", "client_guid": "client-001", "doc_id": "ЗАМ-001", "sum": 1250.75 },
-    { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": 5.0 }
+    { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": -5.0 }
   ]
 }
 ```
@@ -433,7 +433,7 @@ Per-client per-product discount rules. Only sent when `complexDiscounts: true` i
 | value_id | string | Value: `"discount"` |
 | client_guid | string | Client identifier (empty string `""` = applies to all clients) |
 | item_guid | string | Product or product group identifier (empty string `""` = applies to all products) |
-| discount | number | Discount percentage. Positive = discount, negative = surcharge (price increase) |
+| discount | number | Discount percentage. Negative = discount (price reduction), positive = surcharge (price increase) |
 
 **Wildcard convention:** Empty string `""` in `client_guid` or `item_guid` means "any". This allows defining discounts at different specificity levels.
 
@@ -453,18 +453,18 @@ The device selects the **first matching** rule by priority. If no rule matches, 
 
 ```json
 [
-  { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": 10.0, "timestamp": 1710583200000 },
-  { "value_id": "discount", "client_guid": "client-001", "item_guid": "group-dairy", "discount": 5.0, "timestamp": 1710583200000 },
-  { "value_id": "discount", "client_guid": "client-001", "item_guid": "", "discount": 3.0, "timestamp": 1710583200000 },
-  { "value_id": "discount", "client_guid": "", "item_guid": "prod-expensive", "discount": -2.0, "timestamp": 1710583200000 }
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "prod-001", "discount": -10.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "group-dairy", "discount": -5.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "client-001", "item_guid": "", "discount": -3.0, "timestamp": 1710583200000 },
+  { "value_id": "discount", "client_guid": "", "item_guid": "prod-expensive", "discount": 2.0, "timestamp": 1710583200000 }
 ]
 ```
 
 In this example:
-- Client "client-001" gets 10% off product "prod-001" (priority 1)
+- Client "client-001" gets 10% off product "prod-001" (negative value = discount, priority 1)
 - Client "client-001" gets 5% off all dairy products in group "group-dairy" (priority 2)
 - Client "client-001" gets 3% off everything else (priority 3)
-- All other clients pay 2% **more** for product "prod-expensive" (negative discount = surcharge, priority 4)
+- All other clients pay 2% **more** for product "prod-expensive" (positive value = surcharge, priority 4)
 
 **Note:** `item_guid` can reference either a product GUID or a product group GUID (products with `is_group: 1`). The device uses the product's `group_guid` field to match group-level rules.
 

@@ -70,6 +70,7 @@
     <string name="attr_code">Code</string>
     <string name="attr_description">Description</string>
     <string name="attr_price">Price</string>
+    <string name="attr_total">Total:</string>
     <string name="attr_quantity">Quantity</string>
 
     <string name="data_inserted">Inserted</string>
@@ -169,6 +170,8 @@
     <string name="out_of_memory">Out of memory error</string>
     <string name="attr_group">Group</string>
     <string name="attr_discount">Discount</string>
+    <string name="discounts_list">Discounts</string>
+    <string name="discount_all_products">All products</string>
     <string name="pref_title_use_discounts">Use discounts</string>
     <string name="pref_desc_use_discounts">Show in documents and calculate client\'s discount</string>
     <string name="pref_title_payment_type_switch">Payment type switch</string>

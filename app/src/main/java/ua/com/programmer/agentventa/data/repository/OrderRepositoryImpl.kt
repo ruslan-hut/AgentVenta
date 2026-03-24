@@ -22,6 +22,8 @@ import ua.com.programmer.agentventa.data.local.entity.Store
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.interval
 import ua.com.programmer.agentventa.data.local.entity.updateDistance
+import ua.com.programmer.agentventa.extensions.DiscountResolver
+import ua.com.programmer.agentventa.extensions.PriceCalculator
 import ua.com.programmer.agentventa.extensions.calculateLineSum
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
@@ -293,16 +295,14 @@ class OrderRepositoryImpl @Inject constructor(
         val lines = orderDao.getContentLines(orderGuid)
         for (line in lines) {
             val newPrice = orderDao.getProductPrice(dbGuid, line.productGuid, priceType) ?: continue
-            val lineSum = calculateLineSum(newPrice, line.quantity)
-            val discount = if (options.complexDiscounts && clientGuid.isNotEmpty()) {
-                val groupGuid = discountDao.getProductGroupGuid(dbGuid, line.productGuid) ?: ""
-                val discountPercent = discountDao.getDiscount(dbGuid, clientGuid, line.productGuid, groupGuid) ?: 0.0
-                if (discountPercent != 0.0) lineSum * discountPercent / 100.0 else 0.0
+            val discountPercent = if (options.complexDiscounts && clientGuid.isNotEmpty()) {
+                DiscountResolver.resolve(discountDao, dbGuid, clientGuid, line.productGuid)
             } else 0.0
+            val result = PriceCalculator.calculateLineWithDiscount(newPrice, line.quantity, discountPercent)
             orderDao.insertContentLine(line.copy(
                 price = newPrice,
-                sum = lineSum - discount,
-                discount = discount,
+                sum = result.sum,
+                discount = result.discount,
             ))
         }
     }

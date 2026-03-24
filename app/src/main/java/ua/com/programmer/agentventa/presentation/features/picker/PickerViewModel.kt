@@ -5,16 +5,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.entity.LPrice
 import ua.com.programmer.agentventa.data.local.entity.LProduct
+import ua.com.programmer.agentventa.extensions.DiscountResolver
 import ua.com.programmer.agentventa.extensions.round
+import ua.com.programmer.agentventa.domain.repository.OrderRepository
 import ua.com.programmer.agentventa.domain.repository.ProductRepository
+import ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateManager
 import ua.com.programmer.agentventa.utility.Constants
 import javax.inject.Inject
 
 @HiltViewModel
 class PickerViewModel @Inject constructor(
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val orderRepository: OrderRepository,
+    private val discountDao: DiscountDao,
+    private val accountStateManager: AccountStateManager,
 ): ViewModel() {
 
     private val _product = MutableLiveData<LProduct>()
@@ -23,8 +30,13 @@ class PickerViewModel @Inject constructor(
     private val _priceList = MutableLiveData<List<LPrice>>()
     val priceList get() = _priceList
 
+    private val _discountPercent = MutableLiveData(0.0)
+    val discountPercent get() = _discountPercent
+
     fun setProductParameters(guid: String, orderGuid: String, priceType: String) {
         viewModelScope.launch {
+            resolveDiscount(guid, orderGuid)
+
             productRepository.getProduct(guid, orderGuid, priceType).collect { prod ->
                 _product.value = prod
 
@@ -37,6 +49,17 @@ class PickerViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private suspend fun resolveDiscount(productGuid: String, orderGuid: String) {
+        val options = accountStateManager.options.value
+        if (!options.complexDiscounts) return
+        val order = orderRepository.getOrder(orderGuid) ?: return
+        val clientGuid = order.clientGuid ?: return
+        if (clientGuid.isEmpty()) return
+        val dbGuid = accountStateManager.currentAccount.value.guid
+        if (dbGuid.isEmpty()) return
+        _discountPercent.value = DiscountResolver.resolve(discountDao, dbGuid, clientGuid, productGuid)
     }
 
     private fun updatePriceList(k: Double) {

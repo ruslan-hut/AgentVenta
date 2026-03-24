@@ -28,3 +28,16 @@ data class Discount(
 fun Discount.isValid(): Boolean {
     return databaseId.isNotEmpty()
 }
+
+data class LDiscount(
+    val productGuid: String = "",
+    val description: String = "",
+    val discount: Double = 0.0,
+    val isGroup: Boolean = false,
+)
+
+data class DiscountMatch(
+    val clientGuid: String = "",
+    val productGuid: String = "",
+    val discount: Double = 0.0,
+)

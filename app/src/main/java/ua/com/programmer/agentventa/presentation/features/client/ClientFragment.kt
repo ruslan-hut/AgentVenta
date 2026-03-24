@@ -47,10 +47,12 @@ class ClientFragment: Fragment(), MenuProvider {
         val menuHost : MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        binding.container.adapter = ClientMenuPagerAdapter(this)
+        val showDiscounts = sharedModel.options.complexDiscounts
+        binding.container.adapter = ClientMenuPagerAdapter(this, showDiscounts)
         TabLayoutMediator(binding.clientTabs, binding.container) { tab, position ->
             when (position) {
                 1 -> tab.text = getString(R.string.debts_list)
+                2 -> tab.text = getString(R.string.discounts_list)
                 else -> tab.text = getString(R.string.title_data)
             }
         }.attach()
@@ -94,16 +96,19 @@ class ClientFragment: Fragment(), MenuProvider {
 
 }
 
-private class ClientMenuPagerAdapter(fragment: Fragment): FragmentStateAdapter(fragment) {
+private class ClientMenuPagerAdapter(
+    fragment: Fragment,
+    private val showDiscounts: Boolean
+) : FragmentStateAdapter(fragment) {
 
-    override fun getItemCount(): Int = 2
+    override fun getItemCount(): Int = if (showDiscounts) 3 else 2
 
     override fun createFragment(position: Int): Fragment {
-        val fragment: Fragment = when (position) {
+        return when (position) {
             1 -> ClientDebtsFragment()
+            2 -> ClientDiscountsFragment()
             else -> ClientInfoFragment()
         }
-        return fragment
     }
 
 }

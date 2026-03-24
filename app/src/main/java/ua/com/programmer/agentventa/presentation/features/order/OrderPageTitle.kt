@@ -99,6 +99,7 @@ class OrderPageTitle: Fragment() {
                 docStore.setText(order.store)
                 docClient.setText(order.clientDescription)
                 docDiscount.text = order.discount.toString()
+                elementDiscount.visibleIf(!options.complexDiscounts)
                 docIsReturn.isChecked = order.isReturn == 1
                 docTotalPrice.text = order.price.format(2)
                 docTotalQuantity.text = order.quantity.formatAsInt(3)

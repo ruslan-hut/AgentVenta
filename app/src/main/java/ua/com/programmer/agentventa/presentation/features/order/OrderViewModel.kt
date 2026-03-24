@@ -35,6 +35,7 @@ import ua.com.programmer.agentventa.domain.usecase.order.toPrintData
 import ua.com.programmer.agentventa.infrastructure.printer.WebhookPrintService
 import ua.com.programmer.agentventa.extensions.localFormatted
 import ua.com.programmer.agentventa.extensions.calculateLineSum
+import ua.com.programmer.agentventa.extensions.PriceCalculator
 import ua.com.programmer.agentventa.extensions.round
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.OrderRepository
@@ -163,7 +164,8 @@ class OrderViewModel @Inject constructor(
             val oldPriceType = currentOrder.priceType
             currentOrder.setClient(client.toUi(), setClientPrice)
             orderRepository.updateDocument(currentOrder)
-            if (currentOrder.priceType != oldPriceType) {
+            val priceChanged = currentOrder.priceType != oldPriceType
+            if (priceChanged || accountStateManager.options.value.complexDiscounts) {
                 recalculateContent(currentOrder)
             }
         }
@@ -176,7 +178,8 @@ class OrderViewModel @Inject constructor(
             val oldPriceType = currentOrder.priceType
             currentOrder.setClient(client, setClientPrice)
             orderRepository.updateDocument(currentOrder)
-            if (currentOrder.priceType != oldPriceType) {
+            val priceChanged = currentOrder.priceType != oldPriceType
+            if (priceChanged || accountStateManager.options.value.complexDiscounts) {
                 recalculateContent(currentOrder)
             }
             popUp()
@@ -198,22 +201,18 @@ class OrderViewModel @Inject constructor(
         ))
     }
 
-    private suspend fun calculateLineDiscount(
-        price: Double,
-        quantity: Double,
-        productGuid: String,
-        groupGuid: String,
-    ): Double {
+    /**
+     * Resolves the discount percentage for a product in the current order context.
+     * Returns 0.0 if complexDiscounts is disabled or no discount rule matches.
+     */
+    private suspend fun resolveDiscountPercent(productGuid: String): Double {
         val options = accountStateManager.options.value
         if (!options.complexDiscounts) return 0.0
         val clientGuid = order.clientGuid ?: return 0.0
         if (clientGuid.isEmpty()) return 0.0
-        val dbGuid = order.databaseId
-        val params = GetProductDiscountUseCase.Params(dbGuid, clientGuid, productGuid, groupGuid)
+        val params = GetProductDiscountUseCase.Params(order.databaseId, clientGuid, productGuid)
         val result = getProductDiscountUseCase(params)
-        val discountPercent = (result as? Result.Success)?.data ?: return 0.0
-        if (discountPercent == 0.0) return 0.0
-        return calculateLineSum(price, quantity) * discountPercent / 100.0
+        return (result as? Result.Success)?.data ?: 0.0
     }
 
     fun onProductClick(product: LProduct?, popUp: () -> Unit) {
@@ -224,17 +223,17 @@ class OrderViewModel @Inject constructor(
 
         viewModelScope.launch {
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
-            val lineSum = calculateLineSum(product.price, product.quantity)
-            val discount = calculateLineDiscount(
-                product.price, product.quantity, product.guid, product.groupGuid
+            val discountPercent = resolveDiscountPercent(product.guid)
+            val line = PriceCalculator.calculateLineWithDiscount(
+                product.price, product.quantity, discountPercent
             )
 
             val updated = contentLine.copy(
                 unitCode = product.unit,
                 price = product.price,
                 quantity = product.quantity,
-                sum = lineSum - discount,
-                discount = discount,
+                sum = line.sum,
+                discount = line.discount,
                 weight = product.weight * product.quantity,
                 isPacked = if (product.isPacked) 1 else 0,
                 isDemand = if (product.isDemand) 1 else 0,

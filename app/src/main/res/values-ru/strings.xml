@@ -15,6 +15,7 @@
     <string name="attr_code">Код</string>
     <string name="attr_description">Наименование</string>
     <string name="attr_price">Цена</string>
+    <string name="attr_total">Итого:</string>
     <string name="attr_quantity">Количество</string>
     <string name="order">Заказ</string>
     <string name="new_element">новый</string>
@@ -82,6 +83,8 @@
     <string name="out_of_memory">Ошибка: недостаточно памяти</string>
     <string name="attr_group">Группа</string>
     <string name="attr_discount">Скидка</string>
+    <string name="discounts_list">Скидки</string>
+    <string name="discount_all_products">Все товары</string>
     <string name="pref_desc_use_discounts">Показывать в документах и рассчитывать скидку покупателя или отображать категорию цен</string>
     <string name="pref_title_use_discounts">Использовать скидки</string>
     <string name="pref_title_payment_type_switch">Признак наличной оплаты</string>

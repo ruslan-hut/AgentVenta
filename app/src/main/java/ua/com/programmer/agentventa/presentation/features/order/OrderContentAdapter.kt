@@ -5,12 +5,14 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import android.view.View
 import ua.com.programmer.agentventa.data.local.entity.LOrderContent
 import ua.com.programmer.agentventa.data.local.entity.getPriceFormatted
 import ua.com.programmer.agentventa.data.local.entity.getQuantityFormatted
 import ua.com.programmer.agentventa.data.local.entity.getSumFormatted
 import ua.com.programmer.agentventa.databinding.OrderContentLineBinding
 import ua.com.programmer.agentventa.extensions.visibleOrInvisibleIf
+import java.util.Locale
 
 class OrderContentAdapter(
     private val onItemClicked: (LOrderContent) -> Unit,
@@ -34,6 +36,24 @@ class OrderContentAdapter(
                 itemSum.text = item.getSumFormatted()
                 itemIsPacked.visibleOrInvisibleIf(item.isPacked)
                 itemIsDemand.visibleOrInvisibleIf(item.isDemand)
+                if (item.discount != 0.0) {
+                    itemDiscount.visibility = View.VISIBLE
+                    itemDiscount.text = formatDiscountPercent(item.discount, item.sum)
+                } else {
+                    itemDiscount.visibility = View.GONE
+                }
+            }
+        }
+
+        private fun formatDiscountPercent(discount: Double, sum: Double): String {
+            val lineSum = sum - discount
+            if (lineSum == 0.0) return ""
+            val percent = discount / lineSum * 100.0
+            val sign = if (percent >= 0) "+" else ""
+            return if (percent % 1.0 == 0.0) {
+                "${sign}${percent.toInt()}%"
+            } else {
+                String.format(Locale.getDefault(), "%+.2f%%", percent)
             }
         }
     }
