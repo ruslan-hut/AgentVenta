@@ -52,6 +52,10 @@ class PickerFragment: Fragment(), MenuProvider {
     private var currentUnit = Constants.UNIT_DEFAULT
     private var currentPriceType = ""
 
+    // Guards to prevent infinite recalculation loops between percent ↔ discounted price
+    private var updatingDiscountPercent = false
+    private var updatingDiscountPrice = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         sharedModel.sharedParams.observe(this) {
@@ -73,7 +77,7 @@ class PickerFragment: Fragment(), MenuProvider {
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         binding?.editQuantity?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
-        binding?.editPrice?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+        binding?.editDiscountPrice?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
 
         binding?.buttonCancel?.setOnClickListener {
             it.findNavController().navigateUp()
@@ -94,6 +98,7 @@ class PickerFragment: Fragment(), MenuProvider {
             onItemClicked = {
                 if (it.price > 0) {
                     binding?.editPrice?.setText(it.price.format(2))
+                    recalcDiscountPrice()
                 }
                 updatePriceHint(it.description)
             },
@@ -116,20 +121,71 @@ class PickerFragment: Fragment(), MenuProvider {
             loadedProduct = it
             currentUnit = it.unitType
             updateView()
-            updateDiscountTotal()
+            recalcDiscountPrice()
         }
 
         viewModel.discountPercent.observe(viewLifecycleOwner) {
-            updateDiscountTotal()
+            setDiscountPercentText(it)
+            recalcDiscountPrice(asText = it != 0.0)
         }
 
-        val totalWatcher = object : TextWatcher {
+        // Quantity changes → recalc total
+        binding?.editQuantity?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) { updateDiscountTotal() }
+            override fun afterTextChanged(s: Editable?) { updateTotal() }
+        })
+
+        // Discount percent edited → recalc discounted price as visible text
+        binding?.editDiscountPercent?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingDiscountPercent) return
+                recalcDiscountPrice(asText = true)
+            }
+        })
+
+        // Discounted price edited → recalc percent
+        binding?.editDiscountPrice?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingDiscountPrice) return
+                recalcDiscountPercent()
+            }
+        })
+
+        // When quantity loses focus with empty text, fill in the hint value
+        binding?.editQuantity?.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val editText = binding?.editQuantity ?: return@setOnFocusChangeListener
+                if (editText.text.isNullOrEmpty()) {
+                    val qty = loadedProduct?.quantity ?: 0.0
+                    if (qty > 0) {
+                        editText.setText(qty.formatAsInt(3, ""))
+                    }
+                }
+            }
         }
-        binding?.editPrice?.addTextChangedListener(totalWatcher)
-        binding?.editQuantity?.addTextChangedListener(totalWatcher)
+
+        // When discount price loses focus with empty text, fill in the placeholder value
+        binding?.editDiscountPrice?.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val editText = binding?.editDiscountPrice ?: return@setOnFocusChangeListener
+                if (editText.text.isNullOrEmpty()) {
+                    val placeholder = binding?.itemDiscountPrice?.placeholderText?.toString()
+                        ?: return@setOnFocusChangeListener
+                    val price = placeholder.replace(",", ".").toDoubleOrNull()
+                        ?: return@setOnFocusChangeListener
+                    if (price > 0) {
+                        updatingDiscountPrice = true
+                        editText.setText(price.format(2))
+                        updatingDiscountPrice = false
+                    }
+                }
+            }
+        }
 
         binding?.apply {
             editQuantity.requestFocus()
@@ -158,11 +214,18 @@ class PickerFragment: Fragment(), MenuProvider {
             itemUnit.text = currentUnitName
             restUnit.text = currentUnitName
 
-            val priceUnitText = "${options.currency}/$currentUnitName"
-            priceUnit.text = priceUnitText
+            val currency = options.currency
+            priceUnit.text = currency
+            discountPriceUnit.text = currency
 
+            // Price is always read-only (display only)
             editPrice.setText(product.price.format(2))
-            editPrice.isEnabled = !(product.price > 0 && !options.allowPriceTypeChoose)
+            editPrice.isEnabled = false
+
+            // Discount fields: editable only when complexDiscounts is enabled
+            val canEditDiscount = options.complexDiscounts
+            editDiscountPercent.isEnabled = canEditDiscount
+            editDiscountPrice.isEnabled = canEditDiscount
 
             when (currentUnit) {
                 Constants.UNIT_WEIGHT -> {
@@ -216,29 +279,97 @@ class PickerFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun updateDiscountTotal() {
-        val b = binding ?: return
-        val discountPercent = viewModel.discountPercent.value ?: 0.0
+    /**
+     * Sets the discount percent text field without triggering the TextWatcher loop.
+     */
+    private fun setDiscountPercentText(percent: Double) {
+        updatingDiscountPercent = true
+        val text = if (percent == 0.0) "" else percent.format(2)
+        binding?.editDiscountPercent?.setText(text)
+        updatingDiscountPercent = false
+    }
 
-        val priceText = b.editPrice.text.toString().replace(",", ".")
-        val quantityText = b.editQuantity.text.toString().replace(",", ".")
+    /**
+     * Sets the discount price as placeholder, so user can easily type a new value without deleting.
+     */
+    private fun setDiscountPriceHint(discountPrice: Double) {
+        binding?.itemDiscountPrice?.placeholderText = discountPrice.format(2)
+        updateTotal()
+    }
 
-        val price = priceText.toDoubleOrNull() ?: (loadedProduct?.price ?: 0.0)
-        val quantity = quantityText.toDoubleOrNull() ?: (loadedProduct?.quantity ?: 0.0)
-
-        if (discountPercent != 0.0) {
-            val sign = if (discountPercent >= 0) "+" else ""
-            b.discountLabel.text = if (discountPercent % 1.0 == 0.0) {
-                "${sign}${discountPercent.toInt()}%"
-            } else {
-                String.format(java.util.Locale.getDefault(), "%+.2f%%", discountPercent)
-            }
-        } else {
-            b.discountLabel.text = ""
+    /**
+     * Recalculates the discounted price from the current base price and discount percent.
+     * @param asText true = set as visible text (user edited percent), false = set as placeholder (initial load)
+     */
+    private fun recalcDiscountPrice(asText: Boolean = false) {
+        val price = getCurrentPrice()
+        val percent = getCurrentDiscountPercent()
+        val discountPrice = price + price * percent / 100.0
+        updatingDiscountPrice = true
+        binding?.editDiscountPrice?.text?.clear()
+        updatingDiscountPrice = false
+        if (asText) {
+            updatingDiscountPrice = true
+            binding?.editDiscountPrice?.setText(discountPrice.format(2))
+            updatingDiscountPrice = false
         }
+        setDiscountPriceHint(discountPrice)
+    }
 
-        val result = PriceCalculator.calculateLineWithDiscount(price, quantity, discountPercent)
-        b.totalValue.text = result.sum.format(2, "0.00")
+    /**
+     * Recalculates the discount percent from the current base price and discounted price.
+     * Called when the discounted price field is edited.
+     */
+    private fun recalcDiscountPercent() {
+        val price = getCurrentPrice()
+        val discountPrice = getCurrentDiscountPrice()
+        val percent = if (price != 0.0) {
+            (discountPrice - price) / price * 100.0
+        } else {
+            0.0
+        }
+        updatingDiscountPercent = true
+        val text = if (percent == 0.0) "" else percent.format(2)
+        binding?.editDiscountPercent?.setText(text)
+        updatingDiscountPercent = false
+        updateTotal()
+    }
+
+    /**
+     * Updates the total label: total = quantity × discountedPrice
+     */
+    private fun updateTotal() {
+        val b = binding ?: return
+        val quantity = getCurrentQuantity()
+        val discountPrice = getCurrentDiscountPrice()
+        val total = PriceCalculator.calculateLineWithDiscount(
+            discountPrice, quantity, 0.0
+        )
+        b.totalValue.text = total.sum.format(2, "0.00")
+    }
+
+    private fun getCurrentPrice(): Double {
+        val priceText = binding?.editPrice?.text.toString().replace(",", ".")
+        return priceText.toDoubleOrNull() ?: (loadedProduct?.price ?: 0.0)
+    }
+
+    private fun getCurrentQuantity(): Double {
+        val quantityText = binding?.editQuantity?.text.toString().replace(",", ".")
+        return quantityText.toDoubleOrNull() ?: (loadedProduct?.quantity ?: 0.0)
+    }
+
+    private fun getCurrentDiscountPercent(): Double {
+        val text = binding?.editDiscountPercent?.text.toString().replace(",", ".")
+        return text.toDoubleOrNull() ?: 0.0
+    }
+
+    private fun getCurrentDiscountPrice(): Double {
+        val text = binding?.editDiscountPrice?.text.toString().replace(",", ".")
+        val fromText = text.toDoubleOrNull()
+        if (fromText != null) return fromText
+        // Fall back to placeholder value (calculated discount price)
+        val placeholder = binding?.itemDiscountPrice?.placeholderText?.toString()?.replace(",", ".")
+        return placeholder?.toDoubleOrNull() ?: getCurrentPrice()
     }
 
     private fun unitName(type: String, default: String): String {
@@ -323,17 +454,27 @@ class PickerFragment: Fragment(), MenuProvider {
         }
     }
 
+    private fun sanitizeNumericInput(text: String): String {
+        return text.replace(",", ".").trim()
+            .trimEnd('.')
+            .let { if (it.startsWith(".")) "0$it" else it }
+    }
+
     private fun saveAndExit() {
-        val enteredQuantity = binding?.editQuantity?.text.toString().replace(",",".")
-        val enteredPrice = binding?.editPrice?.text.toString().replace(",",".")
+        val enteredQuantity = sanitizeNumericInput(
+            binding?.editQuantity?.text.toString()
+        )
+        val enteredPrice = sanitizeNumericInput(
+            binding?.editPrice?.text.toString()
+        )
 
         var quantity = utils.round(loadedProduct?.quantity ?: 0.0, 3)
 
         if (enteredQuantity.isNotEmpty()) {
             quantity = if (!enteredQuantity.contains(".") && enteredQuantity.startsWith("0")) {
-                "0.$enteredQuantity".toDouble()
+                "0.$enteredQuantity".toDoubleOrNull() ?: 0.0
             } else {
-                enteredQuantity.toDouble()
+                enteredQuantity.toDoubleOrNull() ?: 0.0
             }
         }
         quantity = loadedProduct?.convertQuantityPerDefaultUnit(quantity, currentUnit) ?: quantity
@@ -341,17 +482,20 @@ class PickerFragment: Fragment(), MenuProvider {
         if (wrongQuantityAlert(quantity)) return
 
         var price = if (enteredPrice.isNotEmpty()) {
-            enteredPrice.round(2).toDouble()
+            enteredPrice.round(2).toDoubleOrNull() ?: 0.0
         } else {
             loadedProduct?.price ?: 0.0
         }
         price = loadedProduct?.convertPricePerDefaultUnit(price, currentUnit) ?: price
+
+        val discountPercent = getCurrentDiscountPercent()
 
         val updatedProduct = loadedProduct?.copy(
             quantity = quantity,
             price = price,
             isDemand = binding?.boxIsDemand?.isChecked ?: false,
             isPacked = binding?.boxIsPacked?.isChecked ?: false,
+            discountPercent = discountPercent,
         )
         sharedModel.selectProductAction(updatedProduct) {
             view?.findNavController()?.popBackStack()

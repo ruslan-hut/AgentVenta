@@ -38,6 +38,13 @@ class PickerViewModel @Inject constructor(
             resolveDiscount(guid, orderGuid)
 
             productRepository.getProduct(guid, orderGuid, priceType).collect { prod ->
+                // If the order line already has a discount, reverse-calculate percent from it
+                val existingDiscount = prod.orderDiscount ?: 0.0
+                if (existingDiscount != 0.0 && prod.quantity != 0.0 && prod.price != 0.0) {
+                    val lineSum = prod.price * prod.quantity
+                    _discountPercent.value = existingDiscount / lineSum * 100.0
+                }
+
                 _product.value = prod
 
                 productRepository.fetchProductPrices(guid, priceType).collect { list ->

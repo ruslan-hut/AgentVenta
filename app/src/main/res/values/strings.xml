@@ -170,6 +170,8 @@
     <string name="out_of_memory">Out of memory error</string>
     <string name="attr_group">Group</string>
     <string name="attr_discount">Discount</string>
+    <string name="attr_discount_percent">Discount, %</string>
+    <string name="attr_price_with_discount">Price with discount</string>
     <string name="discounts_list">Discounts</string>
     <string name="discount_all_products">All products</string>
     <string name="pref_title_use_discounts">Use discounts</string>

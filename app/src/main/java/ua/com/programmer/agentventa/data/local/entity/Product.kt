@@ -105,6 +105,8 @@ data class LProduct(
     val imageUrl: String? = "",
     val imageGuid: String? = "",
     val groupGuid: String = "",
+    val orderDiscount: Double? = null,
+    val discountPercent: Double? = null,
 )
 
 fun Product.isValid(): Boolean {

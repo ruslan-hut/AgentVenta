@@ -220,12 +220,13 @@ interface ProductDao {
             IFNULL(doc_order.is_packed, 0) AS isPacked,
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
+            IFNULL(doc_order.discount, 0.0) AS orderDiscount,
             IFNULL(images.url, '') AS imageUrl,
             IFNULL(images.guid, '') AS imageGuid,
             product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
-            SELECT product_guid, quantity, price, sum, is_packed, is_demand
+            SELECT product_guid, quantity, price, sum, discount, is_packed, is_demand
             FROM order_content
             WHERE order_guid = :order
         ) AS doc_order ON product.guid = doc_order.product_guid
@@ -301,12 +302,13 @@ interface ProductDao {
             IFNULL(doc_order.is_packed, 0) AS isPacked,
             IFNULL(doc_order.is_demand, 0) AS isDemand,
             IFNULL(doc_order.quantity, 0.0) AS quantity,
+            IFNULL(doc_order.discount, 0.0) AS orderDiscount,
             IFNULL(images.url, '') AS imageUrl,
             IFNULL(images.guid, '') AS imageGuid,
             product.group_guid AS groupGuid
         FROM products AS product
         LEFT OUTER JOIN (
-            SELECT product_guid, quantity, price, sum, is_packed, is_demand
+            SELECT product_guid, quantity, price, sum, discount, is_packed, is_demand
             FROM order_content WHERE order_guid=:order
         ) AS doc_order ON product.guid=doc_order.product_guid
         LEFT OUTER JOIN (SELECT guid, description, db_guid FROM products WHERE is_group=1) AS product_groups

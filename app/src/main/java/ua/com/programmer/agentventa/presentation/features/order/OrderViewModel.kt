@@ -223,7 +223,7 @@ class OrderViewModel @Inject constructor(
 
         viewModelScope.launch {
             val contentLine = orderRepository.getContentLine(orderGuid, product.guid)
-            val discountPercent = resolveDiscountPercent(product.guid)
+            val discountPercent = product.discountPercent ?: resolveDiscountPercent(product.guid)
             val line = PriceCalculator.calculateLineWithDiscount(
                 product.price, product.quantity, discountPercent
             )

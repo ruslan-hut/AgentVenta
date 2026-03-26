@@ -84,7 +84,8 @@
       "Bash(do)",
       "Bash(echo \"=== infrastructure/$subdir ===\")",
       "Read(//Users/ruslanhut/projects/AgentVenta/app/src/main/java/ua/com/programmer/agentventa/infrastructure/**)",
-      "Bash(./gradlew :app:compileStandartDebugKotlin)"
+      "Bash(./gradlew :app:compileStandartDebugKotlin)",
+      "Bash(./gradlew assembleStandartDebug --info)"
     ]
   }
 }

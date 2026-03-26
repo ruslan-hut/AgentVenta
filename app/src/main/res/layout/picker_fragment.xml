@@ -40,18 +40,21 @@
             android:paddingBottom="8dp"
             app:layout_constraintTop_toBottomOf="@+id/item_description" />
 
+        <!-- Row 1: [quantity] unit [price] $ -->
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/item_quantity"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="12dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="4dp"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:hint="@string/attr_quantity"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/item_unit"
-            app:layout_constraintTop_toBottomOf="@+id/item_code">
+            app:layout_constraintTop_toBottomOf="@+id/item_code"
+            app:layout_constraintHorizontal_weight="1">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edit_quantity"
@@ -69,10 +72,48 @@
             android:layout_height="wrap_content"
             android:text="@string/holder_text"
             android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:layout_marginEnd="16dp"
-            app:layout_constraintEnd_toEndOf="parent"
+            android:gravity="center"
+            android:minWidth="32dp"
+            app:layout_constraintStart_toEndOf="@+id/item_quantity"
+            app:layout_constraintEnd_toStartOf="@+id/item_price"
             app:layout_constraintBottom_toBottomOf="@+id/item_quantity"
             app:layout_constraintTop_toTopOf="@+id/item_quantity" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/item_price"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:hint="@string/attr_price"
+            app:layout_constraintStart_toEndOf="@+id/item_unit"
+            app:layout_constraintEnd_toStartOf="@+id/price_unit"
+            app:layout_constraintTop_toTopOf="@+id/item_quantity"
+            app:layout_constraintHorizontal_weight="1">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_price"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textStyle="bold"
+                android:enabled="false" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/price_unit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/holder_text"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/item_price"
+            app:layout_constraintTop_toTopOf="@+id/item_price" />
+
+        <!-- Available quantity info (left-aligned, under quantity+price row) -->
 
         <LinearLayout
             android:id="@+id/available_quantity_view"
@@ -81,15 +122,10 @@
             android:orientation="horizontal"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/item_quantity">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/available_quantity_title"
@@ -115,7 +151,7 @@
                 android:text="@string/holder_text" />
             <TextView
                 android:layout_width="8dp"
-                android:layout_height="wrap_content"  />
+                android:layout_height="wrap_content" />
 
             <TextView
                 android:id="@+id/package_info_title"
@@ -135,65 +171,76 @@
                 android:text="@string/holder_number" />
         </LinearLayout>
 
+        <!-- Row 2: [discount %] (spacer) [price with discount] $ -->
+
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/item_price"
+            android:id="@+id/item_discount_percent"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:hint="@string/attr_price"
+            android:hint="@string/attr_discount_percent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/price_unit"
+            app:layout_constraintEnd_toStartOf="@+id/item_unit"
             app:layout_constraintTop_toBottomOf="@+id/available_quantity_view">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/edit_price"
+                android:id="@+id/edit_discount_percent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal|numberSigned"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/item_discount_price"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_marginTop="4dp"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:hint="@string/attr_price_with_discount"
+            app:layout_constraintStart_toEndOf="@+id/item_unit"
+            app:layout_constraintEnd_toStartOf="@+id/discount_price_unit"
+            app:layout_constraintTop_toBottomOf="@+id/available_quantity_view">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_discount_price"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="numberDecimal"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
-            android:id="@+id/price_unit"
+            android:id="@+id/discount_price_unit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/holder_text"
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:layout_marginEnd="16dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="@+id/item_price"
-            app:layout_constraintTop_toTopOf="@+id/item_price" />
+            app:layout_constraintBottom_toBottomOf="@+id/item_discount_price"
+            app:layout_constraintTop_toTopOf="@+id/item_discount_price" />
+
+        <!-- Row 3: total (right-aligned) -->
 
         <LinearLayout
             android:id="@+id/discount_total_row"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:gravity="end|center_vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/item_price">
-
-            <TextView
-                android:id="@+id/discount_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textStyle="bold"
-                android:textColor="?attr/colorTertiary" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
+            app:layout_constraintTop_toBottomOf="@+id/item_discount_percent">
 
             <TextView
                 android:id="@+id/total_label"
@@ -208,10 +255,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
                 android:textStyle="bold" />
 
         </LinearLayout>
+
+        <!-- Checkboxes -->
 
         <LinearLayout
             android:id="@+id/item_is_packed"
@@ -264,6 +314,8 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/box_is_demand" />
         </LinearLayout>
+
+        <!-- Price list -->
 
         <LinearLayout
             android:id="@+id/block_price_list"
@@ -340,6 +392,8 @@
 
         </LinearLayout>
 
+        <!-- Competitor prices -->
+
         <LinearLayout
             android:id="@+id/block_competitor_price_list"
             android:visibility="gone"
@@ -373,6 +427,8 @@
             </androidx.recyclerview.widget.RecyclerView>
 
         </LinearLayout>
+
+        <!-- Buttons -->
 
         <LinearLayout
             android:id="@+id/buttons"

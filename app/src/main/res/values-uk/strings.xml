@@ -83,6 +83,8 @@
     <string name="out_of_memory">Помилка: недостатньо пам\'яті</string>
     <string name="attr_group">Група</string>
     <string name="attr_discount">Знижка</string>
+    <string name="attr_discount_percent">Знижка, %</string>
+    <string name="attr_price_with_discount">Ціна зі знижкою</string>
     <string name="discounts_list">Знижки</string>
     <string name="discount_all_products">Усі товари</string>
     <string name="pref_desc_use_discounts">Показувати і обчислювати в документах знижку покупця або показувати категорію цін</string>
