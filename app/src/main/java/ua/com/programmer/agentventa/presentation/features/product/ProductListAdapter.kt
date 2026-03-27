@@ -50,7 +50,6 @@ class ProductListAdapter(
             onImageClicked: (LProduct) -> Unit) {
             binding.apply {
                 itemName.text = product.description
-                itemGroup.text = product.groupName
                 itemQuantity.text = product.rest.formatAsInt(3,"-",product.unit)
                 itemCode.text = product.code
                 itemPrice.text = product.price.format(2, "--")
