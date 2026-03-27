@@ -81,7 +81,6 @@ class ProductListAdapter(
 
             binding.apply {
                 itemName.text = product.description
-                itemGroup.text = product.groupName
                 itemUnit.text = product.unit
                 itemPrice.text = product.price.format(2,"--")
                 itemRest.text = product.rest.formatAsInt(3,"-")
