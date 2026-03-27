@@ -1,9 +1,11 @@
 package ua.com.programmer.agentventa.data.websocket
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonSyntaxException
+import com.google.gson.Strictness
 import ua.com.programmer.agentventa.utility.Constants
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,7 +23,9 @@ import java.util.TimeZone
  */
 object WebSocketMessageFactory {
 
-    private val gson = Gson()
+    private val gson: Gson = GsonBuilder()
+        .setStrictness(Strictness.LENIENT)
+        .create()
 
     // ISO 8601 timestamp formatter (UTC) - compatible with API 23+
     private val timestampFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
@@ -248,14 +252,26 @@ object WebSocketMessageFactory {
      * @return Parsed message or null if parsing fails
      */
     fun parseMessage(text: String): WebSocketMessage? {
+        return parseMessages(text).firstOrNull()
+    }
+
+    /**
+     * Parses incoming WebSocket text that may contain multiple concatenated JSON objects.
+     * @return List of parsed messages (empty if all parsing fails)
+     */
+    fun parseMessages(text: String): List<WebSocketMessage> {
         return try {
-            gson.fromJson(text, WebSocketMessage::class.java)
-        } catch (e: JsonSyntaxException) {
-            android.util.Log.e("WSMessageFactory", "JSON parse error: ${e.message}")
-            null
+            val reader = com.google.gson.stream.JsonReader(text.reader())
+            reader.strictness = Strictness.LENIENT
+            val messages = mutableListOf<WebSocketMessage>()
+            while (reader.peek() != com.google.gson.stream.JsonToken.END_DOCUMENT) {
+                val message = gson.getAdapter(WebSocketMessage::class.java).read(reader)
+                if (message != null) messages.add(message)
+            }
+            messages
         } catch (e: Exception) {
-            android.util.Log.e("WSMessageFactory", "Parse error: ${e.message}")
-            null
+            android.util.Log.e("WSMessageFactory", "JSON parse error: ${e.message}")
+            emptyList()
         }
     }
 

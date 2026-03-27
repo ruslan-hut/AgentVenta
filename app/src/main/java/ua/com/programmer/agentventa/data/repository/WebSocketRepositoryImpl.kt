@@ -473,12 +473,18 @@ class WebSocketRepositoryImpl @Inject constructor(
     }
 
     private fun handleIncomingMessage(text: String) {
-        try {
-            val message = WebSocketMessageFactory.parseMessage(text) ?: run {
-                logger.e(TAG, "Failed to parse WebSocket message")
-                return
-            }
+        val messages = WebSocketMessageFactory.parseMessages(text)
+        if (messages.isEmpty()) {
+            logger.e(TAG, "Failed to parse WebSocket message")
+            return
+        }
+        for (message in messages) {
+            handleSingleMessage(message)
+        }
+    }
 
+    private fun handleSingleMessage(message: WebSocketMessage) {
+        try {
             when (message.type) {
                 Constants.WEBSOCKET_MESSAGE_TYPE_DATA -> {
                     val dataMessage = WebSocketMessageFactory.parseDataMessage(message)
