@@ -55,6 +55,7 @@ class PickerFragment: Fragment(), MenuProvider {
     // Guards to prevent infinite recalculation loops between percent ↔ discounted price
     private var updatingDiscountPercent = false
     private var updatingDiscountPrice = false
+    private var canEditDiscount = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -222,8 +223,8 @@ class PickerFragment: Fragment(), MenuProvider {
             editPrice.setText(product.price.format(2))
             editPrice.isEnabled = false
 
-            // Discount fields: editable only when complexDiscounts is enabled
-            val canEditDiscount = options.complexDiscounts
+            // Discount fields: editable only when complexDiscounts and allowPriceEdit
+            canEditDiscount = options.complexDiscounts && options.allowPriceEdit
             editDiscountPercent.isEnabled = canEditDiscount
             editDiscountPrice.isEnabled = canEditDiscount
 
@@ -290,10 +291,18 @@ class PickerFragment: Fragment(), MenuProvider {
     }
 
     /**
-     * Sets the discount price as placeholder, so user can easily type a new value without deleting.
+     * Sets the discount price as placeholder (editable) or text (read-only).
      */
     private fun setDiscountPriceHint(discountPrice: Double) {
-        binding?.itemDiscountPrice?.placeholderText = discountPrice.format(2)
+        val formatted = discountPrice.format(2)
+        if (canEditDiscount) {
+            binding?.itemDiscountPrice?.placeholderText = formatted
+        } else {
+            // Disabled fields don't show placeholder, so set as text
+            updatingDiscountPrice = true
+            binding?.editDiscountPrice?.setText(formatted)
+            updatingDiscountPrice = false
+        }
         updateTotal()
     }
 

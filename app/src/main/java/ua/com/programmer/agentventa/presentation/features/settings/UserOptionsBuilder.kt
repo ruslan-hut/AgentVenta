@@ -47,6 +47,7 @@ class UserOptionsBuilder {
             allowPaymentType = if (optionsMap.getString("allowPaymentType").isEmpty()) true else optionsMap.getBoolean("allowPaymentType"),
             defaultPaymentType = optionsMap.getString("defaultPaymentType"),
             complexDiscounts = optionsMap.getBoolean("complexDiscounts"),
+            allowPriceEdit = optionsMap.getBoolean("allowPriceEdit"),
         )
     }
 
