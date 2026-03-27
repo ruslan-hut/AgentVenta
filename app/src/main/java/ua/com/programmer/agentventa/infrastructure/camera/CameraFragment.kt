@@ -114,7 +114,7 @@ class CameraFragment : Fragment() {
                 provider.unbindAll()
                 provider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             } catch (e: Exception) {
-                Log.e("Camera", "setupCamera", e)
+                Log.e("AV-Camera", "setupCamera", e)
             }
         }, ContextCompat.getMainExecutor(requireContext()))
         binding.fab.setOnClickListener {
@@ -131,7 +131,7 @@ class CameraFragment : Fragment() {
                 stopCamera()
             }
             override fun onError(exception: ImageCaptureException) {
-                Log.e("Camera", "take photo", exception)
+                Log.e("AV-Camera", "take photo", exception)
             }
         })
     }
@@ -145,7 +145,7 @@ class CameraFragment : Fragment() {
             try {
                 cameraProvider.get().unbindAll()
             } catch (e: Exception) {
-                Log.e("Camera", "stopCamera", e)
+                Log.e("AV-Camera", "stopCamera", e)
             }
             binding.root.findNavController().navigateUp()
         }

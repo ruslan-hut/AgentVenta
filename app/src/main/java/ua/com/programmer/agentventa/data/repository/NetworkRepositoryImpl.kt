@@ -60,7 +60,7 @@ class NetworkRepositoryImpl @Inject constructor(
     private var token = ""
     private val counters = mutableMapOf<String, Int>()
 
-    private val logTag = "NetworkRepo"
+    private val logTag = "AV-NetworkRepo"
 
     private val gson = Gson()
 

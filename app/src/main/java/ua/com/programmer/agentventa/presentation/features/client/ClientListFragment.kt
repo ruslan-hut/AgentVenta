@@ -2,7 +2,6 @@ package ua.com.programmer.agentventa.presentation.features.client
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
@@ -91,7 +90,6 @@ class ClientListFragment: Fragment(), MenuProvider {
         sharedModel.sharedParams.observe(this.viewLifecycleOwner) { params ->
 
             viewModel.setListParameters(params)
-            Log.d("ClientList", "params: $params")
 
             if (params.companyGuid.isNotBlank()) {
                 binding.filterChipGroup.visibility = View.VISIBLE

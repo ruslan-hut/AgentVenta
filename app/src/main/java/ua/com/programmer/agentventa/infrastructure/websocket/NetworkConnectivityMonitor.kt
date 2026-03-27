@@ -22,7 +22,7 @@ class NetworkConnectivityMonitor @Inject constructor(
     @ApplicationContext private val context: Context,
     private val logger: Logger
 ) {
-    private val TAG = "NetworkMonitor"
+    private val TAG = "AV-NetworkMonitor"
 
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 

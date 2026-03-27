@@ -21,10 +21,6 @@ class LocationHistoryViewModel@Inject constructor(
     fun setMapParameters(guid: String) {
         clientGuid = guid
         viewModelScope.launch {
-//            repository.getClientHistory(guid).collect { location ->
-//                _clientsLocation.value = location
-//                Log.d("ClientsMapViewModel", "clientsLocation: $location")
-//            }
         }
     }
 

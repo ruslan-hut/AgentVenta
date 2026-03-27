@@ -180,7 +180,7 @@ class FiscalViewModel @Inject constructor(
                 }
             }
             if (!actionResult.success) {
-                logger.w("FS", actionResult.message)
+                logger.w("AV-Fiscal", actionResult.message)
             }
             state.value = fiscalService?.currentState() ?: FiscalState()
             isLoading.value = false

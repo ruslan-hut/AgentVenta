@@ -54,7 +54,7 @@ class SharedViewModel @Inject constructor(
     private val syncManager: SyncManager,
 ) : ViewModel() {
 
-    private val logTag = "Shared"
+    private val logTag = "AV-Shared"
 
     // Account state from AccountStateManager
     private val _currentAccount = MutableStateFlow(UserAccount(guid = ""))

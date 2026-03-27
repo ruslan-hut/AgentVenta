@@ -17,7 +17,7 @@ class PendingDataChecker @Inject constructor(
     private val userAccountRepository: UserAccountRepository,
     private val logger: Logger
 ) {
-    private val TAG = "PendingDataChecker"
+    private val TAG = "AV-PendingDataChecker"
 
     /**
      * Check if there is any pending data to sync.

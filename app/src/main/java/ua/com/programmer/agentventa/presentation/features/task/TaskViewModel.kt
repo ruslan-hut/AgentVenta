@@ -29,7 +29,7 @@ class TaskViewModel @Inject constructor(
 ) : DocumentViewModel<Task>(
     repository = taskRepository,
     logger = logger,
-    logTag = "TaskVM",
+    logTag = "AV-TaskVM",
     emptyDocument = { Task(guid = "", time = 0L) },
     ioDispatcher = ioDispatcher
 ) {

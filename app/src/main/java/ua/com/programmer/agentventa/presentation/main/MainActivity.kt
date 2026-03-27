@@ -323,7 +323,7 @@ class MainActivity : AppCompatActivity() {
                 if (barcode.length >= scannerSettings.minBarcodeLength) {
                     val raw = barcode.toString()
                     val cleaned = scannerSettings.cleanBarcode(raw)
-                    Log.d("AV_MainActivity", "barcode: $cleaned")
+                    Log.d("AV-MainActivity", "barcode: $cleaned")
                     diagnostics.recordDetection(raw, cleaned, success = true)
                     sharedViewModel.onBarcodeRead(cleaned)
                     barcode.clear()
@@ -333,7 +333,7 @@ class MainActivity : AppCompatActivity() {
                 // Buffer had some chars but too few — still consume the
                 // terminator to prevent TAB from switching tabs.
                 if (barcode.isNotEmpty()) {
-                    Log.d("AV_MainActivity", "barcode too short: $barcode (${barcode.length} < ${scannerSettings.minBarcodeLength})")
+                    Log.d("AV-MainActivity", "barcode too short: $barcode (${barcode.length} < ${scannerSettings.minBarcodeLength})")
                     diagnostics.recordDetection(barcode.toString(), "", success = false)
                     barcode.clear()
                     barcodeConsumed = false

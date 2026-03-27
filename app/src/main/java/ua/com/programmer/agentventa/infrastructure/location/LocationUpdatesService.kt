@@ -86,12 +86,12 @@ class LocationUpdatesService: Service() {
                 Looper.getMainLooper()
             )
         } catch (e: SecurityException) {
-            Log.e("LocationService","request updates: $e")
+            Log.e("AV-LocationService","request updates: $e")
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.w("LocationService", "service destroyed")
+        Log.w("AV-LocationService", "service destroyed")
     }
 }

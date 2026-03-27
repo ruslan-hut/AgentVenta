@@ -32,7 +32,7 @@ class XMap {
                 val json = JSONObject(text)
                 loadValuesFromJson(json)
             }catch (e: Exception) {
-                Log.e("XMap", "String constructor failed: $e")
+                Log.e("AV-XMap", "String constructor failed: $e")
             }
         }
     }

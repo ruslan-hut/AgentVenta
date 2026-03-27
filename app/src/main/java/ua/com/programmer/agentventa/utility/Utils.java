@@ -16,7 +16,7 @@ import ua.com.programmer.agentventa.R;
 
 public class Utils implements UtilsInterface {
 
-    private final String LOG_MARK = "XBUG";
+    private final String LOG_MARK = "AV-XBUG";
 
     public double round (double i, int accuracy) {
         try {

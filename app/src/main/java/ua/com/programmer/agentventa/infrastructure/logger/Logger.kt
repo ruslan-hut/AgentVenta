@@ -33,7 +33,7 @@ class Logger @Inject constructor(
     fun cleanUp() {
         CoroutineScope(dispatcher).launch {
             val deleted = repository.cleanUp()
-            if (deleted > 0) d("Logger", "Deleted $deleted old log events")
+            if (deleted > 0) d("AV-Logger", "Deleted $deleted old log events")
         }
     }
 

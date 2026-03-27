@@ -10,11 +10,9 @@ class CommonRepositoryImpl @Inject constructor(
     private val logger: Logger
 ) : CommonRepository {
 
-    val tag = "CommonRepo"
+    val tag = "AV-CommonRepo"
 
     override suspend fun cleanup(from: Long): Int {
-        //logger.d(tag, "deleteOldData: from = $from")
-
         // content deletion must be called first
         val orderContent = commonDao.deleteOrderContent(from)
 

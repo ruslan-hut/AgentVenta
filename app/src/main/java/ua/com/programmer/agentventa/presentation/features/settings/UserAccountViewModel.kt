@@ -26,7 +26,7 @@ class UserAccountViewModel @Inject constructor(
     private val logger: Logger
 ) : ViewModel() {
 
-    private val TAG = "UserAccountVM"
+    private val TAG = "AV-UserAccountVM"
 
     private val _guid = MutableLiveData("")
     val formatSpinner = MutableLiveData<List<String>>()

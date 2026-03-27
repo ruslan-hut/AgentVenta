@@ -35,7 +35,7 @@ class WebSocketTestViewModel @Inject constructor(
     private val logger: Logger
 ) : ViewModel() {
 
-    private val TAG = "WSStatusViewModel"
+    private val TAG = "AV-WSStatusViewModel"
 
     private val _connectionState = MutableLiveData(resourceProvider.getString(R.string.websocket_disconnected))
     val connectionState: LiveData<String> = _connectionState

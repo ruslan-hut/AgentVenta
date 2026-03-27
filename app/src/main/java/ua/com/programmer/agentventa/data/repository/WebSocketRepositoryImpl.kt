@@ -39,7 +39,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val TAG = "WebSocket"
+    private val TAG = "AV-WebSocket"
 
     // Connection state management
     private val _connectionState = MutableStateFlow<WebSocketState>(WebSocketState.Disconnected)

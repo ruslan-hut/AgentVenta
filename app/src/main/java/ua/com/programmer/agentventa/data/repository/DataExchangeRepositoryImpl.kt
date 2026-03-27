@@ -30,7 +30,7 @@ class DataExchangeRepositoryImpl @Inject constructor(
     private val logger: Logger
 ) : DataExchangeRepository {
 
-    private val logTag = "DataExRepo"
+    private val logTag = "AV-DataExRepo"
 
     override suspend fun saveData(data: List<XMap>) {
         separator(data)

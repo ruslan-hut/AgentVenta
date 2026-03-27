@@ -27,7 +27,7 @@ class WebSocketSyncWorker @AssistedInject constructor(
     private val logger: Logger
 ) : CoroutineWorker(context, workerParams) {
 
-    private val TAG = "WebSocketSyncWorker"
+    private val TAG = "AV-WebSocketSyncWorker"
 
     override suspend fun doWork(): Result {
         logger.d(TAG, "Periodic sync worker started")

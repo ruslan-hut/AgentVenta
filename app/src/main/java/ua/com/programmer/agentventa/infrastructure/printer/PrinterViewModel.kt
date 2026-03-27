@@ -112,9 +112,6 @@ class PrinterViewModel @Inject constructor(
                 outputStream.write(testString.toByteArray(charset))
                 outputStream.write(byteArrayOf(13, 10)) // CR
 
-//                val text = "Съешь еще этих мягких французских булок"
-//                val byteArray = text.toByteArray(Charset.forName("CP866"))
-//                Log.d("Printer", "byteArray: $byteArray")
 
                 outputStream.write("<-- End\n".toByteArray())
 

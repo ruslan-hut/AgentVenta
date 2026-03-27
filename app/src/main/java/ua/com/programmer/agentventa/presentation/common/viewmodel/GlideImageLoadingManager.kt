@@ -34,7 +34,7 @@ class GlideImageLoadingManager @Inject constructor(
     private val logger: Logger
 ) : ImageLoadingManager {
 
-    private val logTag = "ImageLoading"
+    private val logTag = "AV-ImageLoading"
 
     private var baseUrl: String = ""
     private var headers: LazyHeaders? = null

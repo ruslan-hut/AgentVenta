@@ -270,7 +270,7 @@ object WebSocketMessageFactory {
             }
             messages
         } catch (e: Exception) {
-            android.util.Log.e("WSMessageFactory", "JSON parse error: ${e.message}")
+            android.util.Log.e("AV-WSMessageFactory", "JSON parse error: ${e.message}")
             emptyList()
         }
     }
@@ -346,7 +346,7 @@ object WebSocketMessageFactory {
                 null
             }
         } catch (e: Exception) {
-            android.util.Log.e("WSMessageFactory", "Error parsing data message: ${e.message}")
+            android.util.Log.e("AV-WSMessageFactory", "Error parsing data message: ${e.message}")
             null
         }
     }

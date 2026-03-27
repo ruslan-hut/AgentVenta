@@ -51,7 +51,7 @@ class UserAccountRepositoryImpl @Inject constructor(
         del += userAccountDao.deleteByGuidOrders(guid)
         del += userAccountDao.deleteByGuidCash(guid)
         del +=  userAccountDao.deleteByGuid(guid)
-        Log.w("UserAccountRepository", "deleted account: $guid; data elements: $del")
+        Log.w("AV-UserAccountRepo", "deleted account: $guid; data elements: $del")
         return del
     }
 

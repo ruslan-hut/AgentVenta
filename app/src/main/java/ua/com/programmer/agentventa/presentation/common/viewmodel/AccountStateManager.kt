@@ -38,7 +38,7 @@ class AccountStateManager @Inject constructor(
     private val orderRepository: OrderRepository,
     private val logger: Logger
 ) {
-    private val logTag = "AccountStateManager"
+    private val logTag = "AV-AccountStateManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Account state

@@ -62,7 +62,7 @@ class OrderViewModel @Inject constructor(
 ) : DocumentViewModel<Order>(
     repository = orderRepository,
     logger = logger,
-    logTag = "OrderVM",
+    logTag = "AV-OrderVM",
     emptyDocument = { Order(guid = "") },
     ioDispatcher = ioDispatcher
 ) {

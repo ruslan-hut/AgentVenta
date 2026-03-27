@@ -35,7 +35,7 @@ class TokenManagerImpl @Inject constructor(
     private val logger: Logger
 ) : TokenManager {
 
-    private val logTag = "TokenManager"
+    private val logTag = "AV-TokenManager"
 
     private var account: UserAccount? = null
     private var apiService: HttpClientApi? = null

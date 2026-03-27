@@ -52,7 +52,7 @@ class WebSocketConnectionManager @Inject constructor(
     private val logger: Logger
 ) : DefaultLifecycleObserver {
 
-    private val TAG = "WsConnectionManager"
+    private val TAG = "AV-WsConnectionManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Connection state exposed for UI observation

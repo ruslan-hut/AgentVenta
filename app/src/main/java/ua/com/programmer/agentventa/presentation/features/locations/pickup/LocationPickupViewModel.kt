@@ -66,7 +66,7 @@ class LocationPickupViewModel @Inject constructor(
                 latitude = lat
                 longitude = lng
             } catch (e: Exception) {
-                logger.w("Geocode", "get address: $e")
+                logger.w("AV-Geocode", "get address: $e")
             }
         }
     }

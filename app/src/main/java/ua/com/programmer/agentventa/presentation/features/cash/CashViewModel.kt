@@ -31,7 +31,7 @@ class CashViewModel @Inject constructor(
 ) : DocumentViewModel<Cash>(
     repository = cashRepository,
     logger = logger,
-    logTag = "CashVM",
+    logTag = "AV-CashVM",
     emptyDocument = { Cash(guid = "") },
     ioDispatcher = ioDispatcher
 ) {

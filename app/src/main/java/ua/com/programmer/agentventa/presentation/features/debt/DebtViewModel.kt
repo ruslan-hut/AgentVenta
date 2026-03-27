@@ -46,7 +46,7 @@ class DebtViewModel @Inject constructor(
                     _content.value = gson.fromJson(debt.content, Content::class.java)
                 }catch (e: Exception) {
                     _content.value = Content()
-                    Log.e("DebtViewModel", "read content: $e")
+                    Log.e("AV-DebtViewModel", "read content: $e")
                 }
             }
         }
