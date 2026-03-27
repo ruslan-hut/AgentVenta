@@ -127,7 +127,7 @@ class PickerFragment: Fragment(), MenuProvider {
 
         viewModel.discountPercent.observe(viewLifecycleOwner) {
             setDiscountPercentText(it)
-            recalcDiscountPrice(asText = it != 0.0)
+            recalcDiscountPrice()
         }
 
         // Quantity changes → recalc total
@@ -143,7 +143,7 @@ class PickerFragment: Fragment(), MenuProvider {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 if (updatingDiscountPercent) return
-                recalcDiscountPrice(asText = true)
+                recalcDiscountPrice()
             }
         })
 
@@ -291,37 +291,23 @@ class PickerFragment: Fragment(), MenuProvider {
     }
 
     /**
-     * Sets the discount price as placeholder (editable) or text (read-only).
+     * Sets the discount price as regular text value.
      */
     private fun setDiscountPriceHint(discountPrice: Double) {
         val formatted = discountPrice.format(2)
-        if (canEditDiscount) {
-            binding?.itemDiscountPrice?.placeholderText = formatted
-        } else {
-            // Disabled fields don't show placeholder, so set as text
-            updatingDiscountPrice = true
-            binding?.editDiscountPrice?.setText(formatted)
-            updatingDiscountPrice = false
-        }
+        updatingDiscountPrice = true
+        binding?.editDiscountPrice?.setText(formatted)
+        updatingDiscountPrice = false
         updateTotal()
     }
 
     /**
      * Recalculates the discounted price from the current base price and discount percent.
-     * @param asText true = set as visible text (user edited percent), false = set as placeholder (initial load)
      */
-    private fun recalcDiscountPrice(asText: Boolean = false) {
+    private fun recalcDiscountPrice() {
         val price = getCurrentPrice()
         val percent = getCurrentDiscountPercent()
         val discountPrice = price + price * percent / 100.0
-        updatingDiscountPrice = true
-        binding?.editDiscountPrice?.text?.clear()
-        updatingDiscountPrice = false
-        if (asText) {
-            updatingDiscountPrice = true
-            binding?.editDiscountPrice?.setText(discountPrice.format(2))
-            updatingDiscountPrice = false
-        }
         setDiscountPriceHint(discountPrice)
     }
 
