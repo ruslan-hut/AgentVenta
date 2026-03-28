@@ -117,7 +117,15 @@ class MainActivity : AppCompatActivity() {
 
         NavigationUI.setupWithNavController(binding.toolbar, navController, appBarConfiguration)
         NavigationUI.setupWithNavController(binding.navigationView, navController)
-        NavigationUI.setupWithNavController(binding.bottomNavigation, navController)
+        // Manual setup instead of NavigationUI.setupWithNavController to avoid NPE
+        // when getCurrentDestination() is null during navigation transitions
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            if (navController.currentDestination != null) {
+                NavigationUI.onNavDestinationSelected(item, navController)
+            } else {
+                false
+            }
+        }
 
         // Handle select mode and group navigation: hide bottom nav, lock drawer, show back arrow
         navController.addOnDestinationChangedListener { _, destination, arguments ->
@@ -128,6 +136,16 @@ class MainActivity : AppCompatActivity() {
 
             binding.bottomNavigation.visibility =
                 if (isTopLevel && !showAsNested) View.VISIBLE else View.GONE
+
+            // Sync bottom nav selected item with current destination
+            val menu = binding.bottomNavigation.menu
+            for (i in 0 until menu.size()) {
+                val item = menu.getItem(i)
+                if (destination.id == item.itemId) {
+                    item.isChecked = true
+                    break
+                }
+            }
 
             if (isTopLevel && showAsNested) {
                 drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
