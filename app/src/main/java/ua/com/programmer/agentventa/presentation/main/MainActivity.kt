@@ -116,9 +116,19 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
 
         NavigationUI.setupWithNavController(binding.toolbar, navController, appBarConfiguration)
-        NavigationUI.setupWithNavController(binding.navigationView, navController)
         // Manual setup instead of NavigationUI.setupWithNavController to avoid NPE
         // when getCurrentDestination() is null during navigation transitions
+        binding.navigationView.setNavigationItemSelectedListener { item ->
+            val handled = if (navController.currentDestination != null) {
+                NavigationUI.onNavDestinationSelected(item, navController)
+            } else {
+                false
+            }
+            if (handled) {
+                drawerLayout.closeDrawer(binding.navigationView)
+            }
+            handled
+        }
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             if (navController.currentDestination != null) {
                 NavigationUI.onNavDestinationSelected(item, navController)
