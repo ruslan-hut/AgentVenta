@@ -41,6 +41,8 @@ import ua.com.programmer.agentventa.presentation.features.settings.ScannerSettin
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 import ua.com.programmer.agentventa.presentation.common.viewmodel.WebSocketSnackbarEvent
+import androidx.core.view.size
+import androidx.core.view.get
 
 private lateinit var drawerLayout: DrawerLayout
 
@@ -149,8 +151,8 @@ class MainActivity : AppCompatActivity() {
 
             // Sync bottom nav selected item with current destination
             val menu = binding.bottomNavigation.menu
-            for (i in 0 until menu.size()) {
-                val item = menu.getItem(i)
+            for (i in 0 until menu.size) {
+                val item = menu[i]
                 if (destination.id == item.itemId) {
                     item.isChecked = true
                     break
@@ -283,7 +285,7 @@ class MainActivity : AppCompatActivity() {
     private fun startLocationUpdatesService() {
         try {
             startService(Intent(this, LocationUpdatesService::class.java))
-        } catch (e: IllegalStateException) {
+        } catch (_: IllegalStateException) {
             // Android 12+: not allowed to start service from background
             // Will be retried when the activity is fully in foreground
         }
