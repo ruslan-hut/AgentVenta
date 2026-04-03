@@ -27,6 +27,7 @@ import ua.com.programmer.agentventa.data.remote.SendResult
 import ua.com.programmer.agentventa.data.remote.TokenManager
 import ua.com.programmer.agentventa.data.websocket.SendResult as WebSocketSendResult
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
@@ -164,31 +165,75 @@ class NetworkRepositoryImpl @Inject constructor(
 
     /**
      * Checks if device is approved for data operations via WebSocket connection state.
-     * Device must be approved before any HTTP data exchange is allowed.
+     * Flow: try WebSocket first, if it fails fall back to cached license check.
+     *
+     * - If WebSocket is already Connected → approved
+     * - If WebSocket is Pending/LicenseError → definitive server rejection → block
+     * - If WebSocket is in transient state → wait up to LICENSE_CHECK_TIMEOUT for resolution
+     *   - If Connected within timeout → approved
+     *   - If Pending/LicenseError within timeout → block
+     *   - If timeout expires → check lastLicenseCheckTime cache (valid for 24h)
      *
      * @return Pair<Boolean, String> - (isApproved, errorMessage)
      */
-    private fun checkDeviceApproval(): Pair<Boolean, String> {
+    private suspend fun checkDeviceApproval(): Pair<Boolean, String> {
         val wsState = webSocketRepository.connectionState.value
-        return when (wsState) {
-            is WebSocketState.Connected -> Pair(true, "")
-            is WebSocketState.Pending -> Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
-            is WebSocketState.LicenseError -> Pair(false, "License error: ${wsState.reason}")
-            is WebSocketState.Error -> {
-                // For connection errors, we may allow retry but inform user
-                if (!wsState.canRetry) {
-                    Pair(false, "Connection error: ${wsState.error}")
-                } else {
-                    // Allow operation with warning - connection might recover
-                    Pair(true, "")
-                }
-            }
-            is WebSocketState.Disconnected, is WebSocketState.Connecting, is WebSocketState.Reconnecting -> {
-                // Not yet connected - HTTP operations should wait for approval
-                // Return error to force user to wait for connection
-                Pair(false, "Connecting to server... Please wait for connection to establish.")
+
+        // Already connected — license is valid
+        if (wsState is WebSocketState.Connected) {
+            return Pair(true, "")
+        }
+
+        // Definitive server rejections — no fallback
+        if (wsState is WebSocketState.Pending) {
+            return Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
+        }
+        if (wsState is WebSocketState.LicenseError) {
+            return Pair(false, "License error: ${wsState.reason}")
+        }
+
+        // Non-retryable error — no fallback
+        if (wsState is WebSocketState.Error && !wsState.canRetry) {
+            return Pair(false, "Connection error: ${wsState.error}")
+        }
+
+        // Transient state — try reconnect and wait for resolution
+        logger.d(logTag, "WebSocket in transient state ($wsState), attempting connection for license check...")
+        try {
+            webSocketRepository.reconnect()
+        } catch (e: Exception) {
+            logger.w(logTag, "WebSocket reconnect attempt failed: ${e.message}")
+        }
+
+        val resolvedState = withTimeoutOrNull(Constants.LICENSE_CHECK_TIMEOUT) {
+            webSocketRepository.connectionState.first { state ->
+                state is WebSocketState.Connected ||
+                state is WebSocketState.Pending ||
+                state is WebSocketState.LicenseError ||
+                (state is WebSocketState.Error && !state.canRetry)
             }
         }
+
+        if (resolvedState != null) {
+            return when (resolvedState) {
+                is WebSocketState.Connected -> Pair(true, "")
+                is WebSocketState.Pending -> Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
+                is WebSocketState.LicenseError -> Pair(false, "License error: ${resolvedState.reason}")
+                is WebSocketState.Error -> Pair(false, "Connection error: ${resolvedState.error}")
+                else -> Pair(false, "Unexpected state: $resolvedState")
+            }
+        }
+
+        // Timeout — fall back to cached license check
+        val lastCheck = webSocketRepository.lastLicenseCheckTime.value
+        val elapsed = System.currentTimeMillis() - lastCheck
+        if (lastCheck > 0 && elapsed < Constants.LICENSE_CHECK_VALIDITY_PERIOD) {
+            val hoursAgo = elapsed / (60 * 60 * 1000)
+            logger.d(logTag, "WebSocket unavailable, using cached license check (${hoursAgo}h ago)")
+            return Pair(true, "")
+        }
+
+        return Pair(false, "Cannot verify license. No server connection and last check was over 24 hours ago.")
     }
 
     private val prepare: Flow<Result> = flow {
@@ -302,6 +347,7 @@ class NetworkRepositoryImpl @Inject constructor(
             }
         }.onFailure {
             logger.w(logTag, "prepare: $it")
+            emit(Result.Error(it.message ?: "Preparation failed"))
             return@flow
         }
 
@@ -386,6 +432,7 @@ class NetworkRepositoryImpl @Inject constructor(
             }
         }.onFailure {
             logger.w(logTag, "prepare: $it")
+            emit(Result.Error(it.message ?: "Preparation failed"))
             return@flow
         }
 

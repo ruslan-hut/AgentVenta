@@ -1,5 +1,6 @@
 package ua.com.programmer.agentventa.di
 
+import android.content.SharedPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -97,14 +98,16 @@ class NetworkModule {
         logger: Logger,
         apiKeyProvider: ApiKeyProvider,
         dataExchangeRepository: DataExchangeRepository,
-        userAccountRepository: UserAccountRepository
+        userAccountRepository: UserAccountRepository,
+        sharedPreferences: SharedPreferences
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
             logger = logger,
             apiKeyProvider = apiKeyProvider,
             dataExchangeRepository = dataExchangeRepository,
-            userAccountRepository = userAccountRepository
+            userAccountRepository = userAccountRepository,
+            sharedPreferences = sharedPreferences
         )
     }
 

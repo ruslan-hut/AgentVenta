@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.XMap
+import android.content.SharedPreferences
 import com.google.gson.Gson
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -35,7 +36,8 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val logger: Logger,
     private val apiKeyProvider: ApiKeyProvider,
     private val dataExchangeRepository: DataExchangeRepository,
-    private val userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository
+    private val userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository,
+    private val sharedPreferences: SharedPreferences
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -44,6 +46,12 @@ class WebSocketRepositoryImpl @Inject constructor(
     // Connection state management
     private val _connectionState = MutableStateFlow<WebSocketState>(WebSocketState.Disconnected)
     override val connectionState: StateFlow<WebSocketState> = _connectionState.asStateFlow()
+
+    // Last successful license check timestamp (persisted)
+    private val _lastLicenseCheckTime = MutableStateFlow(
+        sharedPreferences.getLong(Constants.PREF_LAST_LICENSE_CHECK, 0L)
+    )
+    override val lastLicenseCheckTime: StateFlow<Long> = _lastLicenseCheckTime.asStateFlow()
 
     // Incoming message stream
     private val _incomingMessages = MutableSharedFlow<IncomingDataMessage>(replay = 0, extraBufferCapacity = 100)
@@ -1005,6 +1013,12 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
     }
 
+    private fun updateLicenseCheckTime() {
+        val now = System.currentTimeMillis()
+        _lastLicenseCheckTime.value = now
+        sharedPreferences.edit().putLong(Constants.PREF_LAST_LICENSE_CHECK, now).apply()
+    }
+
     // OkHttp WebSocket listener
     private inner class WebSocketListener : okhttp3.WebSocketListener() {
 
@@ -1012,6 +1026,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             reconnectAttempt = 0
             val deviceUuid = currentAccount?.guid ?: "unknown"
             _connectionState.value = WebSocketState.Connected(deviceUuid)
+            updateLicenseCheckTime()
             startPingScheduler()
         }
 

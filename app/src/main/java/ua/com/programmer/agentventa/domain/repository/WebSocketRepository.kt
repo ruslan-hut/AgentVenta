@@ -22,6 +22,13 @@ interface WebSocketRepository {
     val connectionState: StateFlow<WebSocketState>
 
     /**
+     * Timestamp (millis) of the last successful license check via WebSocket.
+     * Updated when WebSocket reaches Connected state (license validated by server).
+     * Persisted across app restarts via SharedPreferences.
+     */
+    val lastLicenseCheckTime: StateFlow<Long>
+
+    /**
      * Flow of incoming data messages from the server.
      * Emits when new data arrives from accounting system.
      */

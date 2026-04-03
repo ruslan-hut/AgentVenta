@@ -155,6 +155,13 @@ public final class Constants {
     public static final String VALUE_ID_BATCH_COMPLETE = "batch_complete";
 
     /**
+     * License check configuration
+     */
+    public static final long LICENSE_CHECK_VALIDITY_PERIOD = 24 * 60 * 60 * 1000L; // 24 hours
+    public static final long LICENSE_CHECK_TIMEOUT = 15_000L; // 15 seconds
+    public static final String PREF_LAST_LICENSE_CHECK = "last_license_check_time";
+
+    /**
      * Device status values from server
      */
     public static final String DEVICE_STATUS_PENDING = "pending";
