@@ -59,7 +59,7 @@ class PendingDataChecker @Inject constructor(
      */
     private suspend fun getPendingOrdersCount(accountGuid: String): Int {
         return try {
-            dataExchangeDao.getOrders(accountGuid)?.size ?: 0
+            dataExchangeDao.countPendingOrders(accountGuid)
         } catch (e: Exception) {
             logger.e(TAG, "Error counting pending orders: ${e.message}")
             0
@@ -71,7 +71,7 @@ class PendingDataChecker @Inject constructor(
      */
     private suspend fun getPendingCashCount(accountGuid: String): Int {
         return try {
-            dataExchangeDao.getCash(accountGuid)?.size ?: 0
+            dataExchangeDao.countPendingCash(accountGuid)
         } catch (e: Exception) {
             logger.e(TAG, "Error counting pending cash: ${e.message}")
             0
@@ -83,7 +83,7 @@ class PendingDataChecker @Inject constructor(
      */
     private suspend fun getPendingImagesCount(accountGuid: String): Int {
         return try {
-            dataExchangeDao.getClientImages(accountGuid)?.size ?: 0
+            dataExchangeDao.countPendingClientImages(accountGuid)
         } catch (e: Exception) {
             logger.e(TAG, "Error counting pending images: ${e.message}")
             0
@@ -95,7 +95,7 @@ class PendingDataChecker @Inject constructor(
      */
     private suspend fun getPendingLocationsCount(accountGuid: String): Int {
         return try {
-            dataExchangeDao.getClientLocations(accountGuid)?.size ?: 0
+            dataExchangeDao.countPendingClientLocations(accountGuid)
         } catch (e: Exception) {
             logger.e(TAG, "Error counting pending locations: ${e.message}")
             0

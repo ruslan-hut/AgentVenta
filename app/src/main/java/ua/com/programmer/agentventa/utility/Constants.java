@@ -172,6 +172,14 @@ public final class Constants {
     public static final String PREF_PENDING_CLEANUP_ACCOUNT = "pending_cleanup_account";
 
     /**
+     * Hard safety limit on the number of pages a single catalog fetch is
+     * allowed to consume. At ~50 rows/page that's ~500k rows per type; larger
+     * than any realistic catalog and prevents a buggy server from spinning the
+     * client forever.
+     */
+    public static final int SYNC_MAX_PAGES = 10_000;
+
+    /**
      * Device status values from server
      */
     public static final String DEVICE_STATUS_PENDING = "pending";

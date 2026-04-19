@@ -367,7 +367,7 @@ class NetworkRepositoryImpl @Inject constructor(
 
         for (item in queue) {
             try {
-                makeDataRequest(accountGuid, _timestamp, item, "")
+                makeDataRequest(accountGuid, _timestamp, item)
                 for (c in counters) {
                     emit(Result.Progress("${c.key}: ${c.value}"))
                 }
@@ -507,28 +507,60 @@ class NetworkRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun makeDataRequest(account: String, time: Long, type: String, element: String) {
-
+    /**
+     * Pulls a full catalog from the server, page by page, following the
+     * opaque `more` cursor the server sets on each response. The server
+     * decides when pagination ends by either omitting `more` or returning it
+     * empty; we additionally stop if the cursor fails to advance (server bug
+     * protection) or if we exceed [Constants.SYNC_MAX_PAGES] (runaway guard).
+     */
+    private suspend fun makeDataRequest(account: String, time: Long, type: String) {
         if (token.isBlank()) throw Exception("get: token is empty")
 
-        val more = if (element.isNotBlank()) {
-            "-more$element"
-        } else {
-            ""
+        val api = apiService ?: return
+        var cursor = ""
+        var pages = 0
+
+        while (pages < Constants.SYNC_MAX_PAGES) {
+            val suffix = if (cursor.isEmpty()) "" else "-more$cursor"
+            val response = api.get(type, token, suffix)
+
+            (response["data"] as? List<*>)?.let { saveData(account, time, it) }
+
+            val nextCursor = parseMoreCursor(response["more"]) ?: return
+            if (nextCursor.isEmpty()) return
+            if (nextCursor == cursor) {
+                logger.w(logTag, "pagination ($type): cursor did not advance ('$cursor'), stopping")
+                return
+            }
+            cursor = nextCursor
+            pages++
         }
+        logger.w(logTag, "pagination ($type): reached max page limit ${Constants.SYNC_MAX_PAGES}")
+    }
 
-        val response = apiService?.get(type, token, more)
-
-        if (response != null) {
-            if (response.containsKey("data")){
-                val data = response["data"] as List<*>
-                saveData(account, time, data)
+    /**
+     * Parses the server's pagination cursor. Gson deserialises JSON numbers as
+     * [Number], so handle that directly rather than round-tripping through
+     * `toString()`. Returns `""` to signal "stop paginating" and `null` on
+     * unparseable input (also treated as stop, with a log line).
+     */
+    private fun parseMoreCursor(raw: Any?): String? {
+        return when (raw) {
+            null -> ""
+            is Number -> raw.toLong().toString()
+            is String -> {
+                if (raw.isBlank()) return ""
+                raw.toDoubleOrNull()?.toLong()?.toString()
+                    ?: run {
+                        logger.e(logTag, "pagination: cannot parse more='$raw'")
+                        null
+                    }
             }
-            if (response.containsKey("more")){
-                val nextElement = getMoreNumber("${response["more"]}")
-                makeDataRequest(account, time, type, nextElement)
+            else -> {
+                logger.e(logTag, "pagination: unexpected more type=${raw::class.java.simpleName}")
+                null
             }
-        } else {
         }
     }
 
@@ -594,8 +626,9 @@ class NetworkRepositoryImpl @Inject constructor(
         val type = Constants.DOCUMENT_ORDER
 
         if (documents.isNotEmpty()) {
+            val contentByOrder = dataRepository.getPendingOrdersContent(account)
             for (document in documents) {
-                val content = dataRepository.getOrderContent(account, document.guid).map { it.toMap() }
+                val content = (contentByOrder[document.guid] ?: emptyList()).map { it.toMap() }
                 val documentData = document.toMap(account, content)
                 val json = gson.toJsonTree(documentData).asJsonObject
                 makePostRequest(json, account, document.guid, type)
@@ -669,9 +702,9 @@ class NetworkRepositoryImpl @Inject constructor(
         val documents = dataRepository.getOrders(account)
         if (documents.isNotEmpty()) {
             emit(Result.Progress("Uploading ${documents.size} orders via WebSocket..."))
+            val contentByOrder = dataRepository.getPendingOrdersContent(account)
             for (document in documents) {
-                val content = dataRepository.getOrderContent(account, document.guid)
-                // Use LOrderContent directly from DAO
+                val content = contentByOrder[document.guid] ?: emptyList()
                 uploadOrderViaWebSocket(document, content).collect { result ->
                     when (result) {
                         is Result.Success -> totalDocuments++
@@ -807,16 +840,7 @@ class NetworkRepositoryImpl @Inject constructor(
         return !(it?.isValidForHttpConnection() ?: false)
     }
 
-    private fun getMoreNumber(more: String): String {
-        return try {
-            more.toDouble().toInt().toString()
-        } catch (e: NumberFormatException) {
-            logger.e(logTag, "more from $more: $e")
-            ""
-        }
-    }
-
-    private fun processPrintData(guid: String, data: String, storage: File): Boolean {
+private fun processPrintData(guid: String, data: String, storage: File): Boolean {
         if (data.isEmpty()) return false
 
         val fileName = "$guid.pdf"

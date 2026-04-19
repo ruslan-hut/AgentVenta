@@ -223,6 +223,10 @@ class DataExchangeRepositoryImpl @Inject constructor(
         return dataExchangeDao.getOrderContent(accountGuid, orderGuid) ?: emptyList()
     }
 
+    override suspend fun getPendingOrdersContent(accountGuid: String): Map<String, List<LOrderContent>> {
+        return dataExchangeDao.getPendingOrdersContent(accountGuid).groupBy { it.orderGuid }
+    }
+
     override suspend fun saveDebtContent(accountGuid: String, debtGuid: String, content: String) {
         dataExchangeDao.updateDebtContent(accountGuid, debtGuid, content)
     }

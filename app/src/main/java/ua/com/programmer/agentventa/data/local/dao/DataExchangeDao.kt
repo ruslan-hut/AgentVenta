@@ -251,6 +251,18 @@ interface DataExchangeDao {
     @Query("SELECT * FROM cash WHERE db_guid=:accountGuid AND is_processed=1 AND is_sent=0")
     suspend fun getCash(accountGuid: String): List<Cash>?
 
+    @Query("SELECT COUNT(*) FROM orders WHERE db_guid=:accountGuid AND is_processed=1 AND is_sent=0")
+    suspend fun countPendingOrders(accountGuid: String): Int
+
+    @Query("SELECT COUNT(*) FROM cash WHERE db_guid=:accountGuid AND is_processed=1 AND is_sent=0")
+    suspend fun countPendingCash(accountGuid: String): Int
+
+    @Query("SELECT COUNT(*) FROM client_images WHERE db_guid=:accountGuid AND is_sent=0 AND is_local=1")
+    suspend fun countPendingClientImages(accountGuid: String): Int
+
+    @Query("SELECT COUNT(*) FROM client_locations WHERE db_guid=:accountGuid AND is_modified=1")
+    suspend fun countPendingClientLocations(accountGuid: String): Int
+
     @Query("SELECT " +
             "content._id AS id," +
             "content.order_guid AS orderGuid," +
@@ -278,6 +290,42 @@ interface DataExchangeDao {
             "ON product.guid=content.product_guid " +
             "WHERE content.order_guid=:orderGuid")
     fun getOrderContent(accountGuid: String, orderGuid: String): List<LOrderContent>?
+
+    /**
+     * Batch-load content for every order that is pending send (is_processed=1
+     * AND is_sent=0) for the given account, in a single query. The caller
+     * groups by orderGuid and joins back to its parent order. Keeps the same
+     * column mapping as [getOrderContent].
+     */
+    @Query("SELECT " +
+            "content._id AS id," +
+            "content.order_guid AS orderGuid," +
+            "content.product_guid AS productGuid," +
+            "IFNULL(product.description, '<?>') AS description," +
+            "IFNULL(product.code1, '<?>') AS code," +
+            "IFNULL(product.code2, '<?>') AS code2," +
+            "'' AS groupName," +
+            "content.unit_code AS unit," +
+            "content.quantity," +
+            "content.weight," +
+            "content.price," +
+            "content.sum," +
+            "content.discount," +
+            "content.is_packed AS isPacked," +
+            "content.is_demand AS isDemand " +
+            "FROM order_content AS content " +
+            "INNER JOIN orders AS o " +
+            "ON o.guid=content.order_guid AND o.db_guid=:accountGuid " +
+            "AND o.is_processed=1 AND o.is_sent=0 " +
+            "LEFT OUTER JOIN (" +
+            "SELECT " +
+            "products.guid, " +
+            "products.description, " +
+            "products.code1, " +
+            "products.code2 " +
+            "FROM products WHERE products.db_guid=:accountGuid) AS product " +
+            "ON product.guid=content.product_guid")
+    suspend fun getPendingOrdersContent(accountGuid: String): List<LOrderContent>
 
     @Query("UPDATE orders " +
             "SET is_processed=2, is_sent=1, status=:status " +

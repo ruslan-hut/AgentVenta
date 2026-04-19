@@ -14,6 +14,7 @@ interface DataExchangeRepository {
     suspend fun saveSendResult(result: SendResult)
     suspend fun getOrders(accountGuid: String): List<Order>
     suspend fun getOrderContent(accountGuid: String, orderGuid: String): List<LOrderContent>
+    suspend fun getPendingOrdersContent(accountGuid: String): Map<String, List<LOrderContent>>
     suspend fun saveDebtContent(accountGuid: String, debtGuid: String, content: String)
     suspend fun getClientImages(accountGuid: String): List<ClientImage>
     suspend fun getClientLocations(accountGuid: String): List<ClientLocation>
