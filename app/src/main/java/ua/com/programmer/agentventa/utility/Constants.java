@@ -162,6 +162,16 @@ public final class Constants {
     public static final String PREF_LAST_LICENSE_CHECK = "last_license_check_time";
 
     /**
+     * Pending catalog-cleanup checkpoint (WebSocket batch_complete recovery).
+     * Written before running cleanup, cleared after it succeeds. If the app is
+     * killed in between, the checkpoint is replayed on the next session so stale
+     * rows are still removed. Bound to a specific account to avoid cross-account
+     * deletes if the user switches accounts while a cleanup is pending.
+     */
+    public static final String PREF_PENDING_CLEANUP_TIMESTAMP = "pending_cleanup_timestamp";
+    public static final String PREF_PENDING_CLEANUP_ACCOUNT = "pending_cleanup_account";
+
+    /**
      * Device status values from server
      */
     public static final String DEVICE_STATUS_PENDING = "pending";

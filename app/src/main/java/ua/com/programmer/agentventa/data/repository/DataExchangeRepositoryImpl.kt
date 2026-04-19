@@ -197,6 +197,9 @@ class DataExchangeRepositoryImpl @Inject constructor(
             del += dataExchangeDao.deleteClients(accountGuid, timestamp)
             del += dataExchangeDao.deleteDebts(accountGuid, timestamp)
             del += dataExchangeDao.deleteDiscounts(accountGuid, timestamp)
+            del += dataExchangeDao.deleteStores(accountGuid, timestamp)
+            del += dataExchangeDao.deleteRests(accountGuid, timestamp)
+            del += dataExchangeDao.deleteCompanies(accountGuid, timestamp)
             if (del > 0) logger.d(logTag, "cleanUp: $del")
         } catch (e: Exception) {
             logger.e(logTag, "cleanUp: ${e.message}")

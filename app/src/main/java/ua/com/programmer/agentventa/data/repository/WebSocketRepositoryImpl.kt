@@ -3,6 +3,8 @@ package ua.com.programmer.agentventa.data.repository
 import android.util.Base64
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.*
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.getWebSocketUrl
@@ -42,6 +44,14 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val TAG = "AV-WebSocket"
+
+    // Serializes catalog apply + cleanup so that: (a) multiple incoming WS data
+    // messages process in arrival order (saves cannot overlap), and (b) the
+    // post-batch cleanup runs strictly after every save in the same batch.
+    // Without this, batch_complete in message K could fire while message K-1's
+    // save is still in flight, and cleanup would delete rows that were just
+    // written.
+    private val catalogProcessingMutex = Mutex()
 
     // Connection state management
     private val _connectionState = MutableStateFlow<WebSocketState>(WebSocketState.Disconnected)
@@ -305,6 +315,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     override fun setCurrentAccountGuid(guid: String) {
         currentAccountGuid = guid
         logger.d(TAG, "Current account GUID set: ${guid.take(8)}...")
+        recoverPendingCleanup(guid)
     }
 
     // Private implementation methods
@@ -778,104 +789,163 @@ class WebSocketRepositoryImpl @Inject constructor(
      */
     private fun handleUnifiedPayload(dataMessage: IncomingDataMessage) {
         scope.launch {
-            try {
-                // Extract data array from the message
-                val dataArray = dataMessage.data.getAsJsonArray("data")
-                if (dataArray == null || dataArray.size() == 0) {
-                    logger.w(TAG, "Empty data array in unified payload")
-                    sendAck(dataMessage.messageId, "unified", 0)
-                    return@launch
-                }
+            // Serialize with other catalog messages and with cleanup replay so
+            // batch_complete in a later message cannot overtake an in-flight
+            // save from an earlier message.
+            catalogProcessingMutex.withLock {
+                processUnifiedPayloadLocked(dataMessage)
+            }
+        }
+    }
 
-                // Get current account guid for database operations
-                val accountGuid = currentAccountGuid ?: currentAccount?.guid ?: run {
-                    logger.e(TAG, "No current account for unified payload")
-                    return@launch
-                }
+    private suspend fun processUnifiedPayloadLocked(dataMessage: IncomingDataMessage) {
+        try {
+            // Extract data array from the message
+            val dataArray = dataMessage.data.getAsJsonArray("data")
+            if (dataArray == null || dataArray.size() == 0) {
+                logger.w(TAG, "Empty data array in unified payload")
+                sendAck(dataMessage.messageId, "unified", 0)
+                return
+            }
 
-                val optionsItems = mutableListOf<com.google.gson.JsonObject>()
-                val counters = mutableMapOf<String, Int>()
-                val batchSize = 500
-                val batch = ArrayList<XMap>(batchSize)
-                val gson = Gson()
-                var batchCompleteTimestamp: Long? = null
+            // Get current account guid for database operations
+            val accountGuid = currentAccountGuid ?: currentAccount?.guid ?: run {
+                logger.e(TAG, "No current account for unified payload")
+                return
+            }
 
-                for (i in 0 until dataArray.size()) {
-                    try {
-                        val item = dataArray.get(i).asJsonObject
+            val optionsItems = mutableListOf<com.google.gson.JsonObject>()
+            val counters = mutableMapOf<String, Int>()
+            val batchSize = 500
+            val batch = ArrayList<XMap>(batchSize)
+            val gson = Gson()
+            var batchCompleteTimestamp: Long? = null
 
-                        // Check for batch_complete sentinel from server
-                        val itemType = item.get("type")?.asString
-                        if (itemType == Constants.VALUE_ID_BATCH_COMPLETE) {
-                            batchCompleteTimestamp = item.get("timestamp")?.asLong
-                            logger.d(TAG, "Batch complete signal received, timestamp=$batchCompleteTimestamp")
-                            continue
-                        }
+            for (i in 0 until dataArray.size()) {
+                try {
+                    val item = dataArray.get(i).asJsonObject
 
-                        val valueId = item.get("value_id")?.asString
-
-                        if (valueId.isNullOrEmpty()) {
-                            logger.w(TAG, "Item $i missing value_id, skipping")
-                            continue
-                        }
-
-                        when (valueId) {
-                            Constants.VALUE_ID_OPTIONS -> {
-                                optionsItems.add(item)
-                            }
-                            else -> {
-                                // 1C embeds a UTC timestamp in every data element;
-                                // XMap picks it up from the map automatically.
-                                // We only set databaseId (account GUID) here.
-                                val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
-                                val xMap = XMap(itemMap)
-                                xMap.setDatabaseId(accountGuid)
-                                batch.add(xMap)
-                            }
-                        }
-
-                        counters[valueId] = (counters[valueId] ?: 0) + 1
-
-                        // Save in batches to avoid holding all items in memory
-                        if (batch.size >= batchSize) {
-                            dataExchangeRepository.saveData(batch)
-                            batch.clear()
-                        }
-                    } catch (e: Exception) {
-                        logger.e(TAG, "Error processing item $i: ${e.message}")
+                    // Check for batch_complete sentinel from server
+                    val itemType = item.get("type")?.asString
+                    if (itemType == Constants.VALUE_ID_BATCH_COMPLETE) {
+                        batchCompleteTimestamp = item.get("timestamp")?.asLong
+                        logger.d(TAG, "Batch complete signal received, timestamp=$batchCompleteTimestamp")
+                        continue
                     }
-                }
 
-                // Save remaining items
-                if (batch.isNotEmpty()) {
-                    dataExchangeRepository.saveData(batch)
-                    batch.clear()
-                }
+                    val valueId = item.get("value_id")?.asString
 
-                // Process options items
-                if (optionsItems.isNotEmpty()) {
-                    processOptionsItems(optionsItems, dataMessage.messageId)
-                }
+                    if (valueId.isNullOrEmpty()) {
+                        logger.w(TAG, "Item $i missing value_id, skipping")
+                        continue
+                    }
 
-                val totalItems = counters.values.sum() - optionsItems.size
-                if (totalItems > 0 || optionsItems.isNotEmpty()) {
-                    logger.d(TAG, "Saved $totalItems catalog items: $counters")
-                    sendAck(dataMessage.messageId, "catalog", totalItems)
-                } else if (batchCompleteTimestamp == null) {
-                    logger.w(TAG, "No valid items in unified payload")
-                    sendAck(dataMessage.messageId, "unified", 0)
-                } else {
-                    sendAck(dataMessage.messageId, "batch_complete", 0)
-                }
+                    when (valueId) {
+                        Constants.VALUE_ID_OPTIONS -> {
+                            optionsItems.add(item)
+                        }
+                        else -> {
+                            // 1C embeds a UTC timestamp in every data element;
+                            // XMap picks it up from the map automatically.
+                            // We only set databaseId (account GUID) here.
+                            val itemMap = gson.fromJson(item, Map::class.java) as Map<*, *>
+                            val xMap = XMap(itemMap)
+                            xMap.setDatabaseId(accountGuid)
+                            batch.add(xMap)
+                        }
+                    }
 
-                // Emit batch_complete event after all data is saved and ACKed
-                if (batchCompleteTimestamp != null) {
-                    _batchComplete.emit(batchCompleteTimestamp)
-                }
+                    counters[valueId] = (counters[valueId] ?: 0) + 1
 
-            } catch (e: Exception) {
-                logger.e(TAG, "Error handling unified payload: ${e.message}")
-                sendError(dataMessage.messageId, "unified", e.message ?: "Processing failed")
+                    // Save in batches to avoid holding all items in memory
+                    if (batch.size >= batchSize) {
+                        dataExchangeRepository.saveData(batch)
+                        batch.clear()
+                    }
+                } catch (e: Exception) {
+                    logger.e(TAG, "Error processing item $i: ${e.message}")
+                }
+            }
+
+            // Save remaining items
+            if (batch.isNotEmpty()) {
+                dataExchangeRepository.saveData(batch)
+                batch.clear()
+            }
+
+            // Process options items
+            if (optionsItems.isNotEmpty()) {
+                processOptionsItems(optionsItems, dataMessage.messageId)
+            }
+
+            val totalItems = counters.values.sum() - optionsItems.size
+            if (totalItems > 0 || optionsItems.isNotEmpty()) {
+                logger.d(TAG, "Saved $totalItems catalog items: $counters")
+                sendAck(dataMessage.messageId, "catalog", totalItems)
+            } else if (batchCompleteTimestamp == null) {
+                logger.w(TAG, "No valid items in unified payload")
+                sendAck(dataMessage.messageId, "unified", 0)
+            } else {
+                sendAck(dataMessage.messageId, "batch_complete", 0)
+            }
+
+            // After every item from this batch is persisted, run cleanup for
+            // stale catalog rows. We write a crash-recovery checkpoint first so
+            // that if the process dies between save and cleanup, the next
+            // session replays the same cleanup exactly once.
+            if (batchCompleteTimestamp != null) {
+                runBatchCleanup(accountGuid, batchCompleteTimestamp)
+                _batchComplete.emit(batchCompleteTimestamp)
+            }
+        } catch (e: Exception) {
+            logger.e(TAG, "Error handling unified payload: ${e.message}")
+            sendError(dataMessage.messageId, "unified", e.message ?: "Processing failed")
+        }
+    }
+
+    /**
+     * Runs the timestamp-based cleanup for stale catalog rows with a persisted
+     * checkpoint so a crash mid-cleanup can be resumed on the next session.
+     * Must be called under [catalogProcessingMutex].
+     */
+    private suspend fun runBatchCleanup(accountGuid: String, timestamp: Long) {
+        try {
+            sharedPreferences.edit()
+                .putLong(Constants.PREF_PENDING_CLEANUP_TIMESTAMP, timestamp)
+                .putString(Constants.PREF_PENDING_CLEANUP_ACCOUNT, accountGuid)
+                .apply()
+
+            dataExchangeRepository.cleanUp(accountGuid, timestamp)
+
+            sharedPreferences.edit()
+                .remove(Constants.PREF_PENDING_CLEANUP_TIMESTAMP)
+                .remove(Constants.PREF_PENDING_CLEANUP_ACCOUNT)
+                .apply()
+        } catch (e: Exception) {
+            logger.e(TAG, "Batch cleanup failed (will retry next session): ${e.message}")
+        }
+    }
+
+    /**
+     * Replays a pending cleanup written by a prior session that was killed
+     * between the save and the cleanup. No-op unless a checkpoint exists for
+     * the given account. Safe to call multiple times — the checkpoint is
+     * cleared on success.
+     */
+    private fun recoverPendingCleanup(accountGuid: String) {
+        val pendingAccount = sharedPreferences.getString(
+            Constants.PREF_PENDING_CLEANUP_ACCOUNT, null
+        ) ?: return
+        if (pendingAccount != accountGuid) return
+        val pendingTimestamp = sharedPreferences.getLong(
+            Constants.PREF_PENDING_CLEANUP_TIMESTAMP, 0L
+        )
+        if (pendingTimestamp <= 0L) return
+
+        scope.launch {
+            catalogProcessingMutex.withLock {
+                logger.d(TAG, "Replaying pending cleanup: account=$accountGuid ts=$pendingTimestamp")
+                runBatchCleanup(accountGuid, pendingTimestamp)
             }
         }
     }

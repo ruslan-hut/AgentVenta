@@ -145,16 +145,13 @@ class NetworkRepositoryImpl @Inject constructor(
             }
         }.launchIn(CoroutineScope(Dispatchers.IO))
 
-        // Subscribe to batch_complete signals from server to clean up stale catalog data.
-        // The server sends batch_complete with a UTC timestamp after all catalog data
-        // has been pushed. We use that timestamp to delete items not refreshed in this sync.
+        // batch_complete is handled inside WebSocketRepositoryImpl under the
+        // catalog-processing mutex (persisted checkpoint + cleanup + emission).
+        // We subscribe here only for logging / future UI progress hooks — the
+        // cleanup itself must not run here, or it would race with an in-flight
+        // save of a later WS data message.
         webSocketRepository.batchComplete.onEach { serverTimestamp ->
-            val accountGuid = currentSystemAccount?.guid ?: return@onEach
-            try {
-                dataRepository.cleanUp(accountGuid, serverTimestamp)
-            } catch (e: Exception) {
-                logger.e(logTag, "Error during batch_complete cleanup: ${e.message}")
-            }
+            logger.d(logTag, "batch_complete observed: ts=$serverTimestamp")
         }.launchIn(CoroutineScope(Dispatchers.IO))
     }
 
