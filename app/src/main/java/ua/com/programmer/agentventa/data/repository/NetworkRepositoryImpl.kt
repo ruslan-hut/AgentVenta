@@ -55,10 +55,17 @@ class NetworkRepositoryImpl @Inject constructor(
     private var _timestamp = 0L
     private var _options = UserOptionsBuilder.build(null)
 
-    private var currentSystemAccount: UserAccount? = null
-    private var account: UserAccount? = null
-    private var apiService: HttpClientApi? = null
-    private var token = ""
+    // The following four fields form the sync config and can be mutated from:
+    //   - the currentAccount.onEach observer (account switches)
+    //   - the token-refresh path during a sync
+    // They are @Volatile so cross-thread writes are visible and each field
+    // read is atomic. Consistency across fields is enforced by snapshotting
+    // currentSystemAccount.guid at the start of each sync and guarding against
+    // mid-sync account switches (see ensureSameAccount).
+    @Volatile private var currentSystemAccount: UserAccount? = null
+    @Volatile private var account: UserAccount? = null
+    @Volatile private var apiService: HttpClientApi? = null
+    @Volatile private var token = ""
     private val counters = mutableMapOf<String, Int>()
 
     private val logTag = "AV-NetworkRepo"
@@ -158,6 +165,20 @@ class NetworkRepositoryImpl @Inject constructor(
     private suspend fun onConnectionError() {
         token = ""
         tokenManager.clearToken()
+    }
+
+    /**
+     * Aborts the caller if the active account has changed since [expectedGuid]
+     * was captured. Prevents a mid-sync account switch from sending data from
+     * account A to the connection of account B.
+     */
+    private fun ensureSameAccount(expectedGuid: String) {
+        val current = currentSystemAccount?.guid
+        if (current != expectedGuid) {
+            throw IllegalStateException(
+                "Active account changed during sync (expected=$expectedGuid, current=$current)"
+            )
+        }
     }
 
     /**
@@ -367,6 +388,7 @@ class NetworkRepositoryImpl @Inject constructor(
 
         for (item in queue) {
             try {
+                ensureSameAccount(accountGuid)
                 makeDataRequest(accountGuid, _timestamp, item)
                 for (c in counters) {
                     emit(Result.Progress("${c.key}: ${c.value}"))
@@ -376,6 +398,10 @@ class NetworkRepositoryImpl @Inject constructor(
                 logger.e(logTag, "Http error: $item: $e")
                 onConnectionError()
                 emit(Result.Error("${e.message()} (${e.code()})"))
+                return@flow
+            } catch (e: IllegalStateException) {
+                logger.w(logTag, "aborting sync: ${e.message}")
+                emit(Result.Error(e.message ?: "account changed"))
                 return@flow
             } catch (e: Exception) {
                 logger.e(logTag, "Exception: $item: $e")
@@ -522,6 +548,7 @@ class NetworkRepositoryImpl @Inject constructor(
         var pages = 0
 
         while (pages < Constants.SYNC_MAX_PAGES) {
+            ensureSameAccount(account)
             val suffix = if (cursor.isEmpty()) "" else "-more$cursor"
             val response = api.get(type, token, suffix)
 
@@ -628,6 +655,7 @@ class NetworkRepositoryImpl @Inject constructor(
         if (documents.isNotEmpty()) {
             val contentByOrder = dataRepository.getPendingOrdersContent(account)
             for (document in documents) {
+                ensureSameAccount(account)
                 val content = (contentByOrder[document.guid] ?: emptyList()).map { it.toMap() }
                 val documentData = document.toMap(account, content)
                 val json = gson.toJsonTree(documentData).asJsonObject
