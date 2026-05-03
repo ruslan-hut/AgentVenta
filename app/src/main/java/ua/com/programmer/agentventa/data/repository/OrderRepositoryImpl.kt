@@ -24,7 +24,6 @@ import ua.com.programmer.agentventa.data.local.entity.interval
 import ua.com.programmer.agentventa.data.local.entity.updateDistance
 import ua.com.programmer.agentventa.extensions.DiscountResolver
 import ua.com.programmer.agentventa.extensions.PriceCalculator
-import ua.com.programmer.agentventa.extensions.calculateLineSum
 import ua.com.programmer.agentventa.extensions.asFilter
 import ua.com.programmer.agentventa.extensions.beginOfDay
 import ua.com.programmer.agentventa.extensions.endOfDay
