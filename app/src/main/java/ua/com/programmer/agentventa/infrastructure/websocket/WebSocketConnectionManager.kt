@@ -321,7 +321,13 @@ class WebSocketConnectionManager @Inject constructor(
         if (previousAccount?.guid != account.guid) {
             scope.launch {
                 webSocketRepository.disconnect()
-                delay(500) // Brief delay before reconnecting
+                // Wait for the socket to actually report Disconnected before
+                // starting a fresh connect. Cap the wait at 2s so a stuck
+                // teardown can't block reconnection forever.
+                withTimeoutOrNull(2_000L) {
+                    webSocketRepository.connectionState
+                        .first { it is WebSocketState.Disconnected }
+                }
                 checkAndConnect()
             }
         }

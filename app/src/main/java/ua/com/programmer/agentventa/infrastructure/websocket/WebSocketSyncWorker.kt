@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import java.util.concurrent.TimeUnit
@@ -45,14 +46,26 @@ class WebSocketSyncWorker @AssistedInject constructor(
             }
 
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.e(TAG, "Sync worker error: ${e.message}")
-            Result.retry()
+            // Cap retries on this run; on the next periodic firing the worker
+            // gets a fresh attempt count. Without a cap, a permanently broken
+            // account (invalid license, network blocked) retries forever with
+            // exponential backoff.
+            if (runAttemptCount >= MAX_RETRY_ATTEMPTS) {
+                logger.w(TAG, "Sync worker giving up after $runAttemptCount attempts")
+                Result.failure()
+            } else {
+                Result.retry()
+            }
         }
     }
 
     companion object {
         private const val WORK_NAME = "websocket_periodic_sync"
+        private const val MAX_RETRY_ATTEMPTS = 5
 
         /**
          * Schedule periodic sync worker.
