@@ -7,6 +7,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
 import retrofit2.converter.gson.GsonConverterFactory
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
@@ -53,6 +54,10 @@ class NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .authenticator(authenticator)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 
@@ -67,7 +72,10 @@ class NetworkModule {
     @WebSocketClient
     fun provideWebSocketOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
-            .pingInterval(30, java.util.concurrent.TimeUnit.SECONDS)
+            .pingInterval(30, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.MILLISECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
 
