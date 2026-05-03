@@ -21,6 +21,8 @@ import com.google.android.gms.location.Priority
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.LocationHistory
@@ -41,6 +43,7 @@ class LocationUpdatesService: Service() {
     lateinit var repo: LocationRepository
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var lastSavedLocation: Location? = null
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -55,7 +58,7 @@ class LocationUpdatesService: Service() {
                 }
                 lastSavedLocation = location
 
-                CoroutineScope(Dispatchers.IO).launch {
+                serviceScope.launch {
                     repo.saveLocation(LocationHistory(
                         time = location.time,
                         accuracy = location.accuracy.toDouble(),
@@ -149,6 +152,8 @@ class LocationUpdatesService: Service() {
     }
 
     override fun onDestroy() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+        serviceScope.cancel()
         super.onDestroy()
         Log.w("AV-LocationService", "service destroyed")
     }
