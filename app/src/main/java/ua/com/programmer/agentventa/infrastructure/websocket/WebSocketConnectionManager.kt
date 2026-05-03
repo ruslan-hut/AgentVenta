@@ -128,14 +128,9 @@ class WebSocketConnectionManager @Inject constructor(
             }
         }
 
-        // Update last sync time when catalog data is received from server
-        scope.launch {
-            webSocketRepository.incomingMessages.collect {
-                updateLastSyncTime()
-            }
-        }
-
-        // Update last sync time on batch_complete (full catalog sync finished)
+        // Update last sync time only when a full batch finishes. Updating on
+        // every incoming message would make the idle-interval check effectively
+        // never elapse while data is streaming.
         scope.launch {
             webSocketRepository.batchComplete.collect {
                 updateLastSyncTime()
@@ -302,18 +297,15 @@ class WebSocketConnectionManager @Inject constructor(
             return true
         }
 
-        // Connect if idle interval has elapsed (for license/status updates)
+        // Connect if idle interval has elapsed (for license/status updates).
+        // _lastSyncTime defaults to 0, so the very first check after app start
+        // always passes — covering the "license check on launch" case.
         val idleInterval = sharedPreferences.getLong(
             PREF_WEBSOCKET_IDLE_INTERVAL,
             Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT
         )
         val timeSinceLastSync = System.currentTimeMillis() - _lastSyncTime.value
-        if (timeSinceLastSync >= idleInterval) {
-            return true
-        }
-
-        // Always connect for license management on app start
-        return true
+        return timeSinceLastSync >= idleInterval
     }
 
     private fun handleAccountChange(account: UserAccount?) {

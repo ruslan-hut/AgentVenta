@@ -148,6 +148,12 @@ interface OrderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContentLine(line: OrderContent): Long
 
+    @Transaction
+    suspend fun replaceContent(orderGuid: String, lines: List<OrderContent>) {
+        clearContent(orderGuid)
+        lines.forEach { insertContentLine(it) }
+    }
+
     @Query("SELECT " +
             "content._id AS id," +
             "content.order_guid AS orderGuid," +

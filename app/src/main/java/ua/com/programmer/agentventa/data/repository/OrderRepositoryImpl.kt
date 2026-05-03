@@ -214,11 +214,8 @@ class OrderRepositoryImpl @Inject constructor(
         val periodEnd = periodBegin + 86400000
         val previousContent = orderDao.getContentInPeriod(periodBegin, periodEnd, clientGuid)
         if (previousContent.isEmpty()) return false
-        orderDao.clearContent(guid)
-        previousContent.forEach { contentLine ->
-            val newContent = contentLine.copy(id = 0, orderGuid = guid)
-            orderDao.insertContentLine(newContent)
-        }
+        val newLines = previousContent.map { it.copy(id = 0, orderGuid = guid) }
+        orderDao.replaceContent(guid, newLines)
         return true
     }
 

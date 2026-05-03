@@ -53,6 +53,14 @@ class WebSocketRepositoryImpl @Inject constructor(
     // written.
     private val catalogProcessingMutex = Mutex()
 
+    // Serializes connect/disconnect so an account switch (or rapid foreground/
+    // background flap) cannot leave two live WebSocket instances. Without this,
+    // a checkAndConnect() racing with disconnect() could open a new socket while
+    // the old one is still being closed; both listeners would write to the same
+    // pendingMessages/currentAccount fields, and only the listener-identity
+    // guard masks the symptom.
+    private val connectionMutex = Mutex()
+
     // Connection state management
     private val _connectionState = MutableStateFlow<WebSocketState>(WebSocketState.Disconnected)
     override val connectionState: StateFlow<WebSocketState> = _connectionState.asStateFlow()
@@ -92,7 +100,7 @@ class WebSocketRepositoryImpl @Inject constructor(
     @Volatile
     private var currentAccountGuid: String? = null
 
-    override suspend fun connect(account: UserAccount): Boolean {
+    override suspend fun connect(account: UserAccount): Boolean = connectionMutex.withLock {
         if (isConnected()) {
             logger.d(TAG, "Already connected")
             return false
@@ -137,7 +145,7 @@ class WebSocketRepositoryImpl @Inject constructor(
         return performConnection(account)
     }
 
-    override suspend fun disconnect() {
+    override suspend fun disconnect() = connectionMutex.withLock {
         logger.d(TAG, "Disconnecting...")
         cancelReconnection()
         cancelPing()

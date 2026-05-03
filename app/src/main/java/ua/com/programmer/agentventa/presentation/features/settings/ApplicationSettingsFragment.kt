@@ -46,7 +46,11 @@ class ApplicationSettingsFragment: PreferenceFragmentCompat(), SharedPreferences
                 val intervalMinutes = sharedPreferences?.getString(pref, "15")?.toIntOrNull() ?: 15
                 connectionManager.setIdleIntervalMinutes(intervalMinutes)
                 // Update WorkManager periodic task with new interval
-                WebSocketSyncWorker.schedule(requireContext(), intervalMinutes.toLong())
+                WebSocketSyncWorker.schedule(
+                    requireContext(),
+                    intervalMinutes.toLong(),
+                    androidx.work.ExistingPeriodicWorkPolicy.UPDATE
+                )
             }
         }
     }

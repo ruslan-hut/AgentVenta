@@ -59,7 +59,11 @@ class WebSocketSyncWorker @AssistedInject constructor(
          * @param context Application context
          * @param intervalMinutes Repeat interval in minutes (minimum 15 for WorkManager)
          */
-        fun schedule(context: Context, intervalMinutes: Long) {
+        fun schedule(
+            context: Context,
+            intervalMinutes: Long,
+            policy: ExistingPeriodicWorkPolicy = ExistingPeriodicWorkPolicy.KEEP
+        ) {
             // WorkManager has a minimum interval of 15 minutes
             val effectiveInterval = intervalMinutes.coerceAtLeast(15)
 
@@ -80,17 +84,18 @@ class WebSocketSyncWorker @AssistedInject constructor(
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 WORK_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
+                policy,
                 request
             )
         }
 
         /**
-         * Schedule with default interval from Constants.
+         * Schedule with default interval from Constants. Uses KEEP so app-start
+         * re-scheduling does not reset the periodic timer.
          */
         fun scheduleWithDefaultInterval(context: Context) {
             val intervalMinutes = Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT / (60 * 1000)
-            schedule(context, intervalMinutes)
+            schedule(context, intervalMinutes, ExistingPeriodicWorkPolicy.KEEP)
         }
 
         /**
