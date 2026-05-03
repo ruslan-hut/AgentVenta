@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
@@ -72,6 +73,8 @@ class NetworkRepositoryImpl @Inject constructor(
 
     private val gson = Gson()
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     init {
 
         tokenRefresh.setRefreshToken { tokenManager.refreshTokenSync() }
@@ -119,7 +122,7 @@ class NetworkRepositoryImpl @Inject constructor(
                 }
             }
 
-        }.launchIn(CoroutineScope(Dispatchers.IO))
+        }.launchIn(scope)
 
         // Subscribe to WebSocket document acknowledgments to mark documents as sent
         webSocketRepository.documentAcks.onEach { ack ->
@@ -150,7 +153,7 @@ class NetworkRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 logger.e(logTag, "Error marking document as sent: ${e.message}")
             }
-        }.launchIn(CoroutineScope(Dispatchers.IO))
+        }.launchIn(scope)
 
         // batch_complete is handled inside WebSocketRepositoryImpl under the
         // catalog-processing mutex (persisted checkpoint + cleanup + emission).
@@ -159,7 +162,7 @@ class NetworkRepositoryImpl @Inject constructor(
         // save of a later WS data message.
         webSocketRepository.batchComplete.onEach { serverTimestamp ->
             logger.d(logTag, "batch_complete observed: ts=$serverTimestamp")
-        }.launchIn(CoroutineScope(Dispatchers.IO))
+        }.launchIn(scope)
     }
 
     private suspend fun onConnectionError() {
