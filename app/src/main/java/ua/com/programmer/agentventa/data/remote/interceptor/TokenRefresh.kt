@@ -35,8 +35,20 @@ class TokenRefresh @Inject constructor(): Authenticator {
         val pathSegments = oldHttpUrl.pathSegments
         if (pathSegments.size < 2) return null
 
-        // Don't retry if the failed request was the token refresh itself
-        if (pathSegments[pathSegments.size - 2] == "check") return null
+        // Locate the token segment by endpoint shape rather than substring
+        // matching. Endpoints in HttpClientApi:
+        //   get/{type}/{token}{more}        — token at index 2 (may be followed
+        //                                      by extra segments from {more})
+        //   post/{token}                    — token at index 1 (last)
+        //   document/{type}/{guid}/{token}  — token at index 3 (last)
+        // check/{id} and print/{guid} carry no token: do not retry.
+        val tokenIndex = when (pathSegments[0]) {
+            "get" -> 2
+            "post" -> 1
+            "document" -> 3
+            else -> return null
+        }
+        if (tokenIndex >= pathSegments.size) return null
 
         // Refresh the token using the callback
         val newToken = try {
@@ -53,7 +65,6 @@ class TokenRefresh @Inject constructor(): Authenticator {
         }
 
         // Create new request with updated token in URL
-        val tokenIndex = pathSegments.size - 1
         val newHttpUrl = oldHttpUrl.newBuilder()
             .setPathSegment(tokenIndex, newToken)
             .build()

@@ -75,8 +75,8 @@ interface ProductDao {
                 WHEN '' THEN product.group_guid = :group
                 ELSE
                     CASE :group
-                        WHEN '' THEN product.is_group = 0 AND (product.description LIKE :filter OR product.code1 LIKE :filter)
-                        ELSE product.group_guid = :group AND (product.description LIKE :filter OR product.code1 LIKE :filter)
+                        WHEN '' THEN product.is_group = 0 AND (product.description_lc LIKE :filter OR product.code1 LIKE :filter)
+                        ELSE product.group_guid = :group AND (product.description_lc LIKE :filter OR product.code1 LIKE :filter)
                     END
             END
             AND product.db_guid = :dbGuid
@@ -163,8 +163,8 @@ interface ProductDao {
                 WHEN '' THEN product.group_guid = :group
                 ELSE
                     CASE :group
-                        WHEN '' THEN product.is_group = 0 AND (product.description LIKE :filter OR product.code1 LIKE :filter)
-                        ELSE product.group_guid = :group AND (product.description LIKE :filter OR product.code1 LIKE :filter)
+                        WHEN '' THEN product.is_group = 0 AND (product.description_lc LIKE :filter OR product.code1 LIKE :filter)
+                        ELSE product.group_guid = :group AND (product.description_lc LIKE :filter OR product.code1 LIKE :filter)
                     END
             END
             AND product.db_guid = :dbGuid

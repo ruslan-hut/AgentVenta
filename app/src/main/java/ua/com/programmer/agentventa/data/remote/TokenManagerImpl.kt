@@ -1,6 +1,5 @@
 package ua.com.programmer.agentventa.data.remote
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
@@ -54,9 +53,6 @@ class TokenManagerImpl @Inject constructor(
         Thread(r, "TokenRefresh-Thread").apply { isDaemon = true }
     }
     private val tokenRefreshDispatcher = tokenRefreshExecutor.asCoroutineDispatcher()
-
-    // Dedicated scope for token operations
-    private val tokenScope = CoroutineScope(Dispatchers.IO)
 
     override fun configure(account: UserAccount?) {
         this.account = account

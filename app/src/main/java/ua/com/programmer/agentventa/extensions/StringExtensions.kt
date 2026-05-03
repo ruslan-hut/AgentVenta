@@ -4,7 +4,10 @@ fun String.asFilter(): String {
     return if (isBlank()) {
         ""
     } else {
-        "%$this%"
+        // Lowercase so the filter matches the indexed *_lc columns and is
+        // case-insensitive for non-ASCII (Cyrillic) text. SQLite LIKE is only
+        // case-insensitive for ASCII, so without this Cyrillic search misses.
+        "%${lowercase()}%"
     }
 }
 

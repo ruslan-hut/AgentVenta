@@ -180,10 +180,12 @@ class WebSocketRepositoryImpl @Inject constructor(
                 logger.d(TAG, "Message sent: $messageId")
             } else {
                 pendingMessages.remove(messageId)
+                messageResults.remove(messageId)
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
             }
         } catch (e: Exception) {
             pendingMessages.remove(messageId)
+            messageResults.remove(messageId)
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
             logger.e(TAG, "Send error: ${e.message}")
         }
@@ -225,9 +227,12 @@ class WebSocketRepositoryImpl @Inject constructor(
             } else {
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
                 pendingMessages.remove(messageId)
+                messageResults.remove(messageId)
             }
         } catch (e: Exception) {
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
+            pendingMessages.remove(messageId)
+            messageResults.remove(messageId)
             logger.e(TAG, "Send error: ${e.message}")
         }
 
@@ -293,22 +298,30 @@ class WebSocketRepositoryImpl @Inject constructor(
         if (!isConnected()) return 0
 
         var retryCount = 0
-        pendingMessages.values.forEach { pending ->
-            if (!pending.hasExceededRetries() && !pending.isExpired()) {
-                try {
-                    val message = WebSocketMessageFactory.createDataMessage(
-                        pending.dataType,
-                        pending.data,
-                        pending.messageId
-                    )
-                    val sent = webSocket?.send(message) ?: false
-                    if (sent) {
-                        pendingMessages[pending.messageId] = pending.incrementRetry()
-                        retryCount++
-                    }
-                } catch (e: Exception) {
-                    logger.e(TAG, "Retry error: ${e.message}")
+        // Snapshot the IDs first; we may mutate the map while iterating.
+        val ids = pendingMessages.keys.toList()
+        for (id in ids) {
+            val pending = pendingMessages[id] ?: continue
+            // Drop expired or out-of-retries entries so the maps don't grow
+            // unboundedly when the relay never ACKs.
+            if (pending.hasExceededRetries() || pending.isExpired()) {
+                pendingMessages.remove(id)
+                messageResults.remove(id)
+                continue
+            }
+            try {
+                val message = WebSocketMessageFactory.createDataMessage(
+                    pending.dataType,
+                    pending.data,
+                    pending.messageId
+                )
+                val sent = webSocket?.send(message) ?: false
+                if (sent) {
+                    pendingMessages[pending.messageId] = pending.incrementRetry()
+                    retryCount++
                 }
+            } catch (e: Exception) {
+                logger.e(TAG, "Retry error: ${e.message}")
             }
         }
 

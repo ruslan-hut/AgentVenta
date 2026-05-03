@@ -24,16 +24,16 @@ interface TaskDao {
             "WHERE tasks.guid=:guid")
     fun getDocument(guid: String): Flow<Task>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(document: Task): Long
 
-    @Update(onConflict = OnConflictStrategy.IGNORE)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun update(document: Task): Int
 
     @Transaction
     suspend fun save(document: Task): Boolean {
         if (update(document) == 0) {
-            insert(document)
+            return insert(document) >= 0
         }
         return true
     }
@@ -45,7 +45,7 @@ interface TaskDao {
             "WHERE db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
-            "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
+            "IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0 " +
             "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
@@ -54,7 +54,7 @@ interface TaskDao {
     @Query("SELECT * FROM tasks " +
             "WHERE db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
-            "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
+            "IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0 " +
             "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END " +
             "ORDER BY time DESC LIMIT 200")
@@ -73,7 +73,7 @@ interface TaskDao {
             "db_guid = :currentDbGuid " +
             "AND time >= :startTime AND time <= :endTime " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
-            "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
+            "IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0 " +
             "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END")
     fun getDocumentsTotals(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
@@ -90,7 +90,7 @@ interface TaskDao {
             "WHERE " +
             "db_guid = :currentDbGuid " +
             "AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid " +
-            "IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0 " +
+            "IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0 " +
             "AND db_guid = :currentDbGuid) " +
             "OR description LIKE :filter END")
     fun getDocumentsTotals(currentDbGuid: String, filter: String): Flow<List<DocumentTotals>>

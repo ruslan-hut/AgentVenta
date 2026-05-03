@@ -44,7 +44,7 @@ interface OrderDao {
             "ORDER BY time DESC LIMIT 1")
     suspend fun getLastDocumentNumber(currentDbGuid: String): Int?
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(document: Order): Long
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
@@ -53,7 +53,7 @@ interface OrderDao {
     @Transaction
     suspend fun save(document: Order): Boolean {
         if (update(document) == 0) {
-            insert(document)
+            return insert(document) >= 0
         }
         return true
     }

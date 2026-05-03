@@ -55,9 +55,9 @@ interface ClientDao {
         WHERE
         CASE :filter WHEN '' THEN clients.group_guid=:group
         ELSE CASE :group WHEN '' THEN is_group=0
-        AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter)
+        AND (clients.description_lc LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter)
         ELSE clients.group_guid=:group
-        AND (clients.description LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END
+        AND (clients.description_lc LIKE :filter OR clients.code1 LIKE :filter OR clients.phone LIKE :filter) END END
         AND clients.db_guid = :currentDbGuid
         ORDER BY clients.is_group DESC, clients.description
         LIMIT 1000

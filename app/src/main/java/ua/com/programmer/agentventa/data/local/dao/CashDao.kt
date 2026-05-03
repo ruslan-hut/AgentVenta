@@ -32,16 +32,16 @@ interface CashDao {
     """)
     suspend fun getMaxDocumentNumber(currentDbGuid: String): Int?
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(document: Cash): Long
 
-    @Update(onConflict = OnConflictStrategy.IGNORE)
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun update(document: Cash): Int
 
     @Transaction
     suspend fun save(document: Cash): Boolean {
         if (update(document) == 0) {
-            insert(document)
+            return insert(document) >= 0
         }
         return true
     }
@@ -54,7 +54,7 @@ interface CashDao {
         WHERE db_guid = :currentDbGuid
         AND time >= :startTime AND time <= :endTime
         AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
-        IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
+        IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0
         AND db_guid = :currentDbGuid) END
         ORDER BY time DESC LIMIT 200
     """)
@@ -64,7 +64,7 @@ interface CashDao {
         SELECT * FROM cash
         WHERE db_guid = :currentDbGuid
         AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
-        IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
+        IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0
         AND db_guid = :currentDbGuid) END
         ORDER BY time DESC LIMIT 200
     """)
@@ -84,7 +84,7 @@ interface CashDao {
             db_guid = :currentDbGuid
             AND time >= :startTime AND time <= :endTime
             AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
-            IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
+            IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0
             AND db_guid = :currentDbGuid) END
     """)
     fun getDocumentsTotals(currentDbGuid: String, filter: String, startTime: Long, endTime: Long): Flow<List<DocumentTotals>>
@@ -102,7 +102,7 @@ interface CashDao {
         WHERE
             db_guid = :currentDbGuid
             AND CASE :filter WHEN '' THEN 1=1 ELSE client_guid
-            IN (SELECT guid FROM clients WHERE description LIKE :filter AND is_group=0
+            IN (SELECT guid FROM clients WHERE description_lc LIKE :filter AND is_group=0
             AND db_guid = :currentDbGuid) END
     """)
     fun getDocumentsTotals(currentDbGuid: String, filter: String): Flow<List<DocumentTotals>>
