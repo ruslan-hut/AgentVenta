@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -284,7 +285,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun startLocationUpdatesService() {
         try {
-            startService(Intent(this, LocationUpdatesService::class.java))
+            ContextCompat.startForegroundService(
+                this,
+                Intent(this, LocationUpdatesService::class.java)
+            )
         } catch (_: IllegalStateException) {
             // Android 12+: not allowed to start service from background
             // Will be retried when the activity is fully in foreground
