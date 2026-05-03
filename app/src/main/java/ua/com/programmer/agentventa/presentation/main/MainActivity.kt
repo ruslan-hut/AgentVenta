@@ -3,7 +3,6 @@ package ua.com.programmer.agentventa.presentation.main
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -18,7 +17,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -36,7 +34,8 @@ import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.databinding.ActivityMainBinding
-import ua.com.programmer.agentventa.infrastructure.location.LocationUpdatesService
+import ua.com.programmer.agentventa.infrastructure.location.LocationTracker
+import javax.inject.Inject
 import ua.com.programmer.agentventa.presentation.features.settings.ScannerDiagnostics
 import ua.com.programmer.agentventa.presentation.features.settings.ScannerSettings
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
@@ -50,11 +49,14 @@ private lateinit var drawerLayout: DrawerLayout
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var locationTracker: LocationTracker
+
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            startLocationUpdatesService()
+            locationTracker.start()
         }
     }
 
@@ -233,8 +235,10 @@ class MainActivity : AppCompatActivity() {
             if (!checkPermissions()) {
                 requestPermissions()
             } else {
-                startLocationUpdatesService()
+                locationTracker.start()
             }
+        } else {
+            locationTracker.stop()
         }
     }
 
@@ -281,18 +285,6 @@ class MainActivity : AppCompatActivity() {
         val permissionState = ActivityCompat.checkSelfPermission(this,
             Manifest.permission.ACCESS_FINE_LOCATION)
         return permissionState == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun startLocationUpdatesService() {
-        try {
-            ContextCompat.startForegroundService(
-                this,
-                Intent(this, LocationUpdatesService::class.java)
-            )
-        } catch (_: IllegalStateException) {
-            // Android 12+: not allowed to start service from background
-            // Will be retried when the activity is fully in foreground
-        }
     }
 
     private fun requestPermissions() {
@@ -404,6 +396,18 @@ class MainActivity : AppCompatActivity() {
         }
 
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (sharedViewModel.options.locations && checkPermissions()) {
+            locationTracker.start()
+        }
+    }
+
+    override fun onStop() {
+        locationTracker.stop()
+        super.onStop()
     }
 
     override fun onDestroy() {

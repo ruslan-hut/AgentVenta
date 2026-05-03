@@ -402,7 +402,9 @@ Convention: empty string "" = wildcard (any client / any product)
 **Sync:** Discount data synced as `DATA_DISCOUNT = "discount"` constant. HTTP mode: added to sync queue when `complexDiscounts` enabled. WebSocket mode: handled automatically via `DataExchangeRepository` routing. Cleanup follows standard timestamp-based pattern.
 
 #### Location Tracking
-Foreground service (LocationUpdatesService) continuously tracks GPS at 10-second intervals. Filtering by accuracy threshold and minimum distance. History stored in LocationHistory table. Addresses resolved via GeocodeHelper interface (GeocodeHelperImpl using Geocoding API).
+Foreground-only GPS tracking via `LocationTracker` (`@Singleton`, in-process — not a service). Requests updates from `FusedLocationProviderClient` at 10-second intervals while `MainActivity` is started; stops in `onStop`. Filtering by accuracy threshold and minimum distance. History stored in LocationHistory table. Addresses resolved via GeocodeHelper interface (GeocodeHelperImpl using Geocoding API).
+
+**No background tracking.** The app intentionally does **not** declare `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_LOCATION` and does not run a foreground service for location. This avoids the Play Console "Location in background" declaration/review requirement. Tracking is gated by `UserOptions.locations` and `ACCESS_FINE_LOCATION` runtime permission, and only runs while the user has the app in the foreground.
 
 **Location Constants:**
 - LOCATION_MIN_ACCURACY: Max acceptable GPS error
@@ -524,7 +526,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │       └── WebSocketMessageFactory.kt   # Message construction
 │
 ├── /infrastructure/                     # Infrastructure Layer
-│   ├── /location/                       # LocationUpdatesService, LocationRepositoryImpl,
+│   ├── /location/                       # LocationTracker (foreground-only), LocationRepositoryImpl,
 │   │                                    #   GeocodeHelper, GeocodeHelperImpl
 │   ├── /camera/                         # CameraFragment (CameraX photo capture)
 │   ├── /printer/                        # PrinterViewModel, PrinterSettingsFragment,

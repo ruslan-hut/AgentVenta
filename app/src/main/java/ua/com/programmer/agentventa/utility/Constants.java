@@ -124,7 +124,6 @@ public final class Constants {
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH = "upload_cash";
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE = "upload_image";
     public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION = "upload_location";
-    public static final String WEBSOCKET_MESSAGE_TYPE_DOWNLOAD_CATALOGS = "download_catalogs";
 
     /**
      * WebSocket data types (for payload.data_type field)
