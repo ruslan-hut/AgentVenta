@@ -187,17 +187,17 @@ class TokenManagerImpl @Inject constructor(
 
                 logger.d(logTag, "$tag: Token received: ${newToken.trimForLog()}")
 
-                // Read fresh account from DB to avoid overwriting user-changed fields
-                // (e.g., useWebSocket) with stale values from the cached account
-                val freshAccount = userAccountRepository.getCurrent() ?: account
-                freshAccount?.let {
-                    val updatedAccount = it.copy(
+                // Atomic read-modify-write: prevents a concurrent WS options/pong
+                // save from clobbering the new token (or vice versa).
+                val saved = userAccountRepository.updateCurrent {
+                    it.copy(
                         token = newToken,
                         options = options.toJson(),
                         license = license
                     )
-                    userAccountRepository.saveAccount(updatedAccount)
-                    account = updatedAccount
+                }
+                if (saved != null) {
+                    account = saved
                     currentToken = newToken
                 }
 

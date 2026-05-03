@@ -45,6 +45,15 @@ class FakeUserAccountRepository : UserAccountRepository {
         return 1L
     }
 
+    override suspend fun updateCurrent(
+        transform: (UserAccount) -> UserAccount
+    ): UserAccount? {
+        val current = accounts.value.firstOrNull { it.isCurrent == 1 } ?: return null
+        val updated = transform(current)
+        saveAccount(updated)
+        return updated
+    }
+
     override fun getAll(): Flow<List<UserAccount>> = accounts
 
     override fun getByGuid(guid: String): Flow<UserAccount> = accounts.map { list ->

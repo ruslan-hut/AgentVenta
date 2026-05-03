@@ -3,6 +3,8 @@ package ua.com.programmer.agentventa.data.repository
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.sanitizeConnectionSettings
@@ -13,6 +15,11 @@ import javax.inject.Inject
 class UserAccountRepositoryImpl @Inject constructor(
     private val userAccountDao: UserAccountDao
 ): UserAccountRepository {
+
+    // Serializes read-modify-write on the current account so concurrent
+    // mutations (token refresh + WS options + WS pong license) cannot clobber
+    // each other's field updates.
+    private val currentAccountMutex = Mutex()
 
     override val currentAccount = userAccountDao.watchCurrent()
         .map { it?.sanitizeConnectionSettings() }
@@ -27,6 +34,16 @@ class UserAccountRepositoryImpl @Inject constructor(
         val upd = userAccountDao.update(sanitized)
         if (upd > 0) return upd.toLong()
         return userAccountDao.insert(sanitized)
+    }
+
+    override suspend fun updateCurrent(
+        transform: (UserAccount) -> UserAccount
+    ): UserAccount? = currentAccountMutex.withLock {
+        val current = userAccountDao.getCurrent()?.sanitizeConnectionSettings()
+            ?: return@withLock null
+        val updated = transform(current).sanitizeConnectionSettings()
+        userAccountDao.update(updated)
+        updated
     }
 
     override fun getAll(): Flow<List<UserAccount>> {

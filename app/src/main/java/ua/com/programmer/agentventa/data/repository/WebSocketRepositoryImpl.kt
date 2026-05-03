@@ -979,14 +979,6 @@ class WebSocketRepositoryImpl @Inject constructor(
         messageId: String
     ) {
         try {
-            // Read fresh account from DB to avoid overwriting user-changed fields
-            // (e.g., useWebSocket) with stale values from the cached currentAccount
-            val account = userAccountRepository.getCurrent() ?: run {
-                logger.e(TAG, "No current account for options update")
-                sendError(messageId, "options", "No current account")
-                return
-            }
-
             // Use first options item (should only be one)
             val optionsObject = optionsItems.first().deepCopy()
 
@@ -998,17 +990,22 @@ class WebSocketRepositoryImpl @Inject constructor(
             val gson = Gson()
             val optionsJson = gson.toJson(optionsObject)
 
-            logger.d(TAG, "Updating options for account ${account.guid} (${optionsJson.length} chars)")
-
-            val updatedAccount = account.copy(
-                options = optionsJson,
-                license = license.ifEmpty { account.license }
-            )
-
             try {
-                userAccountRepository.saveAccount(updatedAccount)
-                currentAccount = updatedAccount
-                logger.d(TAG, "Options saved successfully")
+                // Atomic read-modify-write: prevents a concurrent token refresh
+                // from clobbering the new options/license (or vice versa).
+                val saved = userAccountRepository.updateCurrent { current ->
+                    current.copy(
+                        options = optionsJson,
+                        license = license.ifEmpty { current.license }
+                    )
+                }
+                if (saved == null) {
+                    logger.e(TAG, "No current account for options update")
+                    sendError(messageId, "options", "No current account")
+                    return
+                }
+                logger.d(TAG, "Updated options for account ${saved.guid} (${optionsJson.length} chars)")
+                currentAccount = saved
                 sendAck(messageId, "options", 1)
             } catch (e: Exception) {
                 logger.e(TAG, "Failed to save options: ${e.message}")
@@ -1045,20 +1042,17 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                // Read fresh account from DB to avoid overwriting user-changed fields
-                // (e.g., useWebSocket) with stale values from the cached currentAccount
-                val account = userAccountRepository.getCurrent() ?: return@launch
-
-                // Only update if license changed
-                if (account.license == licenseNumber) {
-                    return@launch
-                }
-
                 logger.d(TAG, "License received: ${licenseNumber.take(6)}...")
 
-                val updatedAccount = account.copy(license = licenseNumber)
-                userAccountRepository.saveAccount(updatedAccount)
-                currentAccount = updatedAccount
+                // Atomic read-modify-write: prevents a concurrent token refresh
+                // or options save from clobbering the license (or vice versa).
+                // The transform also early-outs if the license is unchanged so
+                // we don't issue a no-op DB write.
+                val saved = userAccountRepository.updateCurrent { current ->
+                    if (current.license == licenseNumber) current
+                    else current.copy(license = licenseNumber)
+                }
+                if (saved != null) currentAccount = saved
 
             } catch (e: Exception) {
                 logger.e(TAG, "Error handling pong message: ${e.message}")
