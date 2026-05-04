@@ -107,7 +107,7 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     override suspend fun connect(account: UserAccount): Boolean = connectionMutex.withLock {
         if (isOccupied()) {
-            logger.d(TAG, "Skipping connect: state=${_connectionState.value::class.simpleName}")
+            //logger.d(TAG, "Skipping connect: state=${_connectionState.value::class.simpleName}")
             return false
         }
 
@@ -174,7 +174,7 @@ class WebSocketRepositoryImpl @Inject constructor(
      */
     private fun openSocketLocked(account: UserAccount): Boolean {
         webSocket?.let { existing ->
-            logger.d(TAG, "Closing leftover socket before new connect")
+            //logger.d(TAG, "Closing leftover socket before new connect")
             try {
                 // cancel() bypasses the close handshake — we do not want the
                 // peer to interpret this as the "current" connection still
@@ -1070,7 +1070,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 logger.d(TAG, "Ignoring message from stale connection (${text.length} bytes)")
                 return
             }
-            logger.d(TAG, "Frame received: ${text.length} bytes")
             handleIncomingMessage(text)
         }
 

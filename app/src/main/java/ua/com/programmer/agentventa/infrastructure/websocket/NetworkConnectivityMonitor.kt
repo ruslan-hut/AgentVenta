@@ -46,7 +46,7 @@ class NetworkConnectivityMonitor @Inject constructor(
 
         networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                logger.d(TAG, "Network available")
+                //logger.d(TAG, "Network available")
                 _isConnected.value = true
             }
 

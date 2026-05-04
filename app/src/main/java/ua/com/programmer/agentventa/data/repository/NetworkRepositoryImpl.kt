@@ -35,6 +35,7 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
+import ua.com.programmer.agentventa.extensions.trimForLog
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptionsBuilder
 import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.XMap
@@ -117,7 +118,7 @@ class NetworkRepositoryImpl @Inject constructor(
                         tokenManager.setApiService(apiService!!)
                     }
                 } else {
-                    logger.d(logTag, "WebSocket account configured: ${it.guid}")
+                    logger.d(logTag, "WebSocket configured: ${it.guid.trimForLog()}")
                     apiService = null
                 }
             }
@@ -157,12 +158,8 @@ class NetworkRepositoryImpl @Inject constructor(
 
         // batch_complete is handled inside WebSocketRepositoryImpl under the
         // catalog-processing mutex (persisted checkpoint + cleanup + emission).
-        // We subscribe here only for logging / future UI progress hooks — the
-        // cleanup itself must not run here, or it would race with an in-flight
-        // save of a later WS data message.
-        webSocketRepository.batchComplete.onEach { serverTimestamp ->
-            logger.d(logTag, "batch_complete observed: ts=$serverTimestamp")
-        }.launchIn(scope)
+        // No subscription needed here; cleanup must not run here, or it would
+        // race with an in-flight save of a later WS data message.
     }
 
     private suspend fun onConnectionError() {
@@ -927,12 +924,12 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
 
             // Serialize order to map using LOrderContent.toMap()
             val orderMap = order.toMap(currentAccount.guid, orderContent.map { it.toMap() })
-            val orderJson = gson.toJsonTree(orderMap).asJsonObject
+            //val orderJson = gson.toJsonTree(orderMap).asJsonObject
 
             // Serialize order content
-            val contentJsonArray = orderContent.map {
-                gson.toJsonTree(it.toMap()).asJsonObject
-            }
+            //val contentJsonArray = orderContent.map {
+            //    gson.toJsonTree(it.toMap()).asJsonObject
+            //}
 
             // Create payload
             val payloadMap = mapOf(
