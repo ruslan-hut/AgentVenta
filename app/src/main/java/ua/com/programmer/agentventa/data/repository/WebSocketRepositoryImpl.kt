@@ -53,6 +53,11 @@ class WebSocketRepositoryImpl @Inject constructor(
     // written.
     private val catalogProcessingMutex = Mutex()
 
+    // Counters aggregated across catalog chunks within one batch. Logged once
+    // on batch_complete so per-chunk save events do not spam the log.
+    // Mutated only under [catalogProcessingMutex].
+    private val batchCounters = mutableMapOf<String, Int>()
+
     // Serializes connect/disconnect so an account switch (or rapid foreground/
     // background flap) cannot leave two live WebSocket instances. Without this,
     // a checkAndConnect() racing with disconnect() could open a new socket while
@@ -101,8 +106,8 @@ class WebSocketRepositoryImpl @Inject constructor(
     private var currentAccountGuid: String? = null
 
     override suspend fun connect(account: UserAccount): Boolean = connectionMutex.withLock {
-        if (isConnected()) {
-            logger.d(TAG, "Already connected")
+        if (isOccupied()) {
+            logger.d(TAG, "Skipping connect: state=${_connectionState.value::class.simpleName}")
             return false
         }
 
@@ -142,6 +147,44 @@ class WebSocketRepositoryImpl @Inject constructor(
         isLicenseError = false   // Reset license error flag on new connection attempt
         cancelReconnection()
 
+        return openSocketLocked(account)
+    }
+
+    /**
+     * State check used by all connect paths to avoid opening a duplicate socket.
+     * Treats Connecting and Reconnecting as "already in progress" — without this
+     * a second connect() racing in between performConnection() and onOpen would
+     * pass an isConnected()==false check and create a parallel socket, leaving
+     * the server with two connections for the same UUID.
+     * Must be called while [connectionMutex] is held.
+     */
+    private fun isOccupied(): Boolean {
+        return when (_connectionState.value) {
+            is WebSocketState.Connected,
+            is WebSocketState.Connecting,
+            is WebSocketState.Reconnecting -> true
+            else -> false
+        }
+    }
+
+    /**
+     * Single point of WebSocket creation. Closes any leftover socket reference
+     * before opening a new one so the server never sees two live connections
+     * for the same UUID. Must be called while [connectionMutex] is held.
+     */
+    private fun openSocketLocked(account: UserAccount): Boolean {
+        webSocket?.let { existing ->
+            logger.d(TAG, "Closing leftover socket before new connect")
+            try {
+                // cancel() bypasses the close handshake — we do not want the
+                // peer to interpret this as the "current" connection still
+                // being alive while the new one is being established.
+                existing.cancel()
+            } catch (e: Exception) {
+                logger.w(TAG, "Error cancelling leftover socket: ${e.message}")
+            }
+            webSocket = null
+        }
         return performConnection(account)
     }
 
@@ -277,13 +320,16 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun reconnect(): Boolean {
-        if (isConnected()) return false
-        val account = currentAccount ?: return false
+    override suspend fun reconnect(): Boolean = connectionMutex.withLock {
+        if (isOccupied()) {
+            logger.d(TAG, "Skipping reconnect: state=${_connectionState.value::class.simpleName}")
+            return@withLock false
+        }
+        val account = currentAccount ?: return@withLock false
 
         cancelReconnection()
         reconnectAttempt = 0
-        return performConnection(account)
+        return@withLock openSocketLocked(account)
     }
 
     override fun isConnected(): Boolean {
@@ -417,7 +463,18 @@ class WebSocketRepositoryImpl @Inject constructor(
 
         reconnectionJob = scope.launch {
             delay(delay.toLong())
-            performConnection(account)
+            // Route through the mutex + state check so a manual connect()
+            // racing with this fired job cannot result in two open sockets.
+            connectionMutex.withLock {
+                // State may have changed between scheduling and firing — for
+                // example, disconnect() ran (Disconnected) or another connect
+                // succeeded (Connected). In the latter case bail.
+                if (_connectionState.value is WebSocketState.Connected ||
+                    _connectionState.value is WebSocketState.Connecting) {
+                    return@withLock
+                }
+                openSocketLocked(account)
+            }
         }
     }
 
@@ -529,7 +586,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_DATA -> {
                     val dataMessage = WebSocketMessageFactory.parseDataMessage(message)
                     if (dataMessage != null) {
-
                         // Handle unified array payload - route by examining value_id in items
                         when (dataMessage.dataType) {
                             Constants.WEBSOCKET_DATA_TYPE_CATALOG -> {
@@ -782,7 +838,10 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             val totalItems = counters.values.sum() - optionsItems.size
             if (totalItems > 0 || optionsItems.isNotEmpty()) {
-                logger.d(TAG, "Saved $totalItems catalog items: $counters")
+                for ((key, value) in counters) {
+                    if (key == Constants.VALUE_ID_OPTIONS) continue
+                    batchCounters[key] = (batchCounters[key] ?: 0) + value
+                }
                 sendAck(dataMessage.messageId, "catalog", totalItems)
             } else if (batchCompleteTimestamp == null) {
                 logger.w(TAG, "No valid items in unified payload")
@@ -796,6 +855,11 @@ class WebSocketRepositoryImpl @Inject constructor(
             // that if the process dies between save and cleanup, the next
             // session replays the same cleanup exactly once.
             if (batchCompleteTimestamp != null) {
+                val batchTotal = batchCounters.values.sum()
+                if (batchTotal > 0) {
+                    logger.d(TAG, "Saved $batchTotal catalog items: $batchCounters")
+                }
+                batchCounters.clear()
                 runBatchCleanup(accountGuid, batchCompleteTimestamp)
                 _batchComplete.emit(batchCompleteTimestamp)
             }
@@ -923,17 +987,22 @@ class WebSocketRepositoryImpl @Inject constructor(
                     return@launch
                 }
 
-                logger.d(TAG, "License received: ${licenseNumber.take(6)}...")
-
                 // Atomic read-modify-write: prevents a concurrent token refresh
                 // or options save from clobbering the license (or vice versa).
                 // The transform also early-outs if the license is unchanged so
-                // we don't issue a no-op DB write.
+                // we don't issue a no-op DB write. Log only when the license
+                // actually changes — pong arrives on every server interaction.
+                val previousLicense = currentAccount?.license
                 val saved = userAccountRepository.updateCurrent { current ->
                     if (current.license == licenseNumber) current
                     else current.copy(license = licenseNumber)
                 }
-                if (saved != null) currentAccount = saved
+                if (saved != null) {
+                    currentAccount = saved
+                    if (previousLicense != licenseNumber) {
+                        logger.d(TAG, "License received: ${licenseNumber.take(6)}...")
+                    }
+                }
 
             } catch (e: Exception) {
                 logger.e(TAG, "Error handling pong message: ${e.message}")
@@ -997,11 +1066,32 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
+            if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
+                logger.d(TAG, "Ignoring message from stale connection (${text.length} bytes)")
+                return
+            }
+            logger.d(TAG, "Frame received: ${text.length} bytes")
             handleIncomingMessage(text)
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             logger.d(TAG, "Closing: $code - $reason")
+            if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
+                logger.d(TAG, "Ignoring onClosing from stale connection")
+                return
+            }
+            cancelPing()
+            if (isPendingDevice || isLicenseError) {
+                _connectionState.value = WebSocketState.Disconnected
+                return
+            }
+            if (code != 1000) {
+                _connectionState.value = WebSocketState.Error("Connection closing: $reason", canRetry = true)
+                scheduleReconnection()
+            } else {
+                _connectionState.value = WebSocketState.Disconnected
+                scheduleReconnection()
+            }
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {

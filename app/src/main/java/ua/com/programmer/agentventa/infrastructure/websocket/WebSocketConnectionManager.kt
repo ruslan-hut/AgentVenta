@@ -292,14 +292,22 @@ class WebSocketConnectionManager @Inject constructor(
             return false
         }
 
-        // Connect if has pending data (only for accounts using WebSocket for data)
+        // While the user is in the app, keep the socket up so 1C can push
+        // catalog updates at any moment. The idle-interval gate below would
+        // otherwise block reconnect for up to 15 min after a process restart
+        // that occurred shortly after a batch_complete (which advances
+        // _lastSyncTime in SharedPreferences).
+        if (isAppInForeground) {
+            return true
+        }
+
+        // Background path: only connect for known reasons.
+        // Pending uploads (only meaningful when this account uses WebSocket).
         if (account.shouldUseWebSocket() && _pendingDataSummary.value.hasPendingData) {
             return true
         }
 
-        // Connect if idle interval has elapsed (for license/status updates).
-        // _lastSyncTime defaults to 0, so the very first check after app start
-        // always passes — covering the "license check on launch" case.
+        // Periodic license/status refresh.
         val idleInterval = sharedPreferences.getLong(
             PREF_WEBSOCKET_IDLE_INTERVAL,
             Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT
