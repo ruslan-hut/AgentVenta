@@ -99,6 +99,9 @@
     <string name="pref_title_rests_only">Товары с остатками</string>
     <string name="pref_desc_sort_by_name">По умолчанию сортировать товары по наименованию</string>
     <string name="pref_title_sort_by_name">Сортировка по наименованию</string>
+    <string name="pref_title_diagnostics">Диагностика</string>
+    <string name="pref_title_debug_logs">Отправлять журнал диагностики</string>
+    <string name="pref_desc_debug_logs">Отправляет детальные логи WebSocket на сервер для поддержки</string>
     <string name="rests_only">Только с остатком</string>
     <string name="whole_list">Все товары</string>
     <string name="price_type">Категория цен</string>

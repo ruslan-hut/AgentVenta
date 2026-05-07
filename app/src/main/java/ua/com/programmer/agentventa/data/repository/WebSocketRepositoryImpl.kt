@@ -189,7 +189,9 @@ class WebSocketRepositoryImpl @Inject constructor(
     }
 
     override suspend fun disconnect() = connectionMutex.withLock {
-        logger.d(TAG, "Disconnecting...")
+        logger.d(TAG, "Disconnecting...", mapOf(
+            "pending_count" to pendingMessages.size,
+        ))
         cancelReconnection()
         cancelPing()
         webSocket?.close(1000, "User disconnect")
@@ -198,8 +200,14 @@ class WebSocketRepositoryImpl @Inject constructor(
         isPendingDevice = false
         isLicenseError = false
         _connectionState.value = WebSocketState.Disconnected
-        pendingMessages.clear()
-        messageResults.clear()
+        // NB: pendingMessages is intentionally NOT cleared here. Documents that
+        // were sent but not yet acknowledged when the socket dropped must be
+        // re-sent when a new socket opens — see WebSocketListener.onOpen and
+        // retryFailedMessages(). Wiping the map here is what caused "orders not
+        // arriving" reports: in-flight ACKs that landed on a fresh connection
+        // had no pending entry to match.
+        // messageResults is also kept so any caller still waiting on a flow can
+        // still receive the late ACK.
     }
 
     override suspend fun sendData(dataType: String, data: String): Flow<SendResult> {
@@ -207,8 +215,18 @@ class WebSocketRepositoryImpl @Inject constructor(
         val resultFlow = MutableSharedFlow<SendResult>(replay = 1)
         messageResults[messageId] = resultFlow
 
+        logger.d(TAG, "ws.send.start", mapOf(
+            "message_id" to messageId,
+            "type" to dataType,
+            "payload_size" to data.length,
+            "queue_size" to pendingMessages.size,
+        ))
+
         if (!isConnected()) {
             resultFlow.emit(SendResult.Failed(messageId, "Not connected", canRetry = true))
+            logger.w(TAG, "ws.send.transport", mapOf(
+                "message_id" to messageId, "sent" to false, "reason" to "not_connected"
+            ))
             return resultFlow.asSharedFlow()
         }
 
@@ -220,17 +238,28 @@ class WebSocketRepositoryImpl @Inject constructor(
             val sent = webSocket?.send(message) ?: false
             if (sent) {
                 resultFlow.emit(SendResult.Sent(messageId))
-                logger.d(TAG, "Message sent: $messageId")
+                logger.d(TAG, "ws.send.transport", mapOf(
+                    "message_id" to messageId,
+                    "type" to dataType,
+                    "sent" to true,
+                    "queue_size" to pendingMessages.size,
+                ))
+                scheduleAckTimeoutLocked(messageId, dataType, null)
             } else {
                 pendingMessages.remove(messageId)
                 messageResults.remove(messageId)
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
+                logger.w(TAG, "ws.send.transport", mapOf(
+                    "message_id" to messageId, "type" to dataType, "sent" to false
+                ))
             }
         } catch (e: Exception) {
             pendingMessages.remove(messageId)
             messageResults.remove(messageId)
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
-            logger.e(TAG, "Send error: ${e.message}")
+            logger.e(TAG, "ws.send.error", mapOf(
+                "message_id" to messageId, "type" to dataType, "error" to (e.message ?: "")
+            ))
         }
 
         return resultFlow.asSharedFlow()
@@ -241,45 +270,93 @@ class WebSocketRepositoryImpl @Inject constructor(
         val resultFlow = MutableSharedFlow<SendResult>(replay = 1)
         messageResults[messageId] = resultFlow
 
+        val documentGuid = extractDocumentGuid(type, payload)
+
+        logger.d(TAG, "ws.send.start", mapOf(
+            "message_id" to messageId,
+            "type" to type,
+            "doc_guid" to documentGuid,
+            "payload_size" to payload.length,
+            "queue_size" to pendingMessages.size,
+        ))
+
         if (!isConnected()) {
             resultFlow.emit(SendResult.Failed(messageId, "Not connected", canRetry = true))
+            logger.w(TAG, "ws.send.transport", mapOf(
+                "message_id" to messageId, "type" to type, "sent" to false, "reason" to "not_connected"
+            ))
             return resultFlow.asSharedFlow()
         }
 
         try {
             val message = WebSocketMessageFactory.createMessage(type, payload, messageId)
 
-            // Extract document_guid from payload for document upload messages
-            val documentGuid = extractDocumentGuid(type, payload)
-
-            // Track pending message for document uploads
-            if (documentGuid != null) {
-                val pending = PendingMessage(
-                    messageId = messageId,
-                    dataType = type,
-                    data = payload,
-                    documentGuid = documentGuid
-                )
-                pendingMessages[messageId] = pending
-            }
+            // Always track pending — even non-document messages, so we can
+            // detect "no ACK received" via the watchdog. Without this every
+            // non-document send was silently fire-and-forget.
+            val pending = PendingMessage(
+                messageId = messageId,
+                dataType = type,
+                data = payload,
+                documentGuid = documentGuid
+            )
+            pendingMessages[messageId] = pending
 
             val sent = webSocket?.send(message) ?: false
             if (sent) {
                 resultFlow.emit(SendResult.Sent(messageId))
-                logger.d(TAG, "Message sent: type=$type, id=$messageId${if (documentGuid != null) ", doc=$documentGuid" else ""}")
+                logger.d(TAG, "ws.send.transport", mapOf(
+                    "message_id" to messageId,
+                    "type" to type,
+                    "doc_guid" to documentGuid,
+                    "sent" to true,
+                    "queue_size" to pendingMessages.size,
+                ))
+                scheduleAckTimeoutLocked(messageId, type, documentGuid)
             } else {
                 resultFlow.emit(SendResult.Failed(messageId, "Failed to send", canRetry = true))
                 pendingMessages.remove(messageId)
                 messageResults.remove(messageId)
+                logger.w(TAG, "ws.send.transport", mapOf(
+                    "message_id" to messageId, "type" to type, "sent" to false
+                ))
             }
         } catch (e: Exception) {
             resultFlow.emit(SendResult.Failed(messageId, e.message ?: "Unknown error", canRetry = true))
             pendingMessages.remove(messageId)
             messageResults.remove(messageId)
-            logger.e(TAG, "Send error: ${e.message}")
+            logger.e(TAG, "ws.send.error", mapOf(
+                "message_id" to messageId, "type" to type, "error" to (e.message ?: "")
+            ))
         }
 
         return resultFlow.asSharedFlow()
+    }
+
+    /**
+     * After [Constants.DEBUG_LOG_ACK_TIMEOUT_MS], if [messageId] is still in
+     * [pendingMessages], emit a [SendResult.Failed] on the result flow and log
+     * `ws.ack.timeout`. Without this watchdog, callers waiting on the flow
+     * would block forever when the relay drops or fails to ACK.
+     *
+     * Important: this fires the timeout but does NOT remove the pending entry
+     * — that stays so the next reconnect's [retryFailedMessages] can re-send.
+     * The caller decides what to do with the Failed result.
+     */
+    private fun scheduleAckTimeoutLocked(messageId: String, type: String, documentGuid: String?) {
+        scope.launch {
+            kotlinx.coroutines.delay(Constants.DEBUG_LOG_ACK_TIMEOUT_MS)
+            val pending = pendingMessages[messageId] ?: return@launch
+            // Already acked between scheduling and firing
+            val flow = messageResults[messageId] ?: return@launch
+            flow.emit(SendResult.Failed(messageId, "ACK timeout", canRetry = true))
+            logger.w(TAG, "ws.ack.timeout", mapOf(
+                "message_id" to messageId,
+                "type" to type,
+                "doc_guid" to documentGuid,
+                "age_ms" to (System.currentTimeMillis() - pending.timestamp),
+            ))
+        }
     }
 
     /**
@@ -351,23 +428,53 @@ class WebSocketRepositoryImpl @Inject constructor(
             // Drop expired or out-of-retries entries so the maps don't grow
             // unboundedly when the relay never ACKs.
             if (pending.hasExceededRetries() || pending.isExpired()) {
+                logger.w(TAG, "ws.retry.drop", mapOf(
+                    "message_id" to id,
+                    "type" to pending.dataType,
+                    "doc_guid" to pending.documentGuid,
+                    "attempts" to pending.retryCount,
+                    "expired" to pending.isExpired(),
+                    "age_ms" to (System.currentTimeMillis() - pending.timestamp),
+                ))
                 pendingMessages.remove(id)
                 messageResults.remove(id)
                 continue
             }
             try {
-                val message = WebSocketMessageFactory.createDataMessage(
-                    pending.dataType,
-                    pending.data,
-                    pending.messageId
-                )
+                // Document uploads were sent via createMessage(), not
+                // createDataMessage(). Use the matching factory so the
+                // server-side handler sees the original type. Without this,
+                // upload_order/upload_cash retries were arriving as type=data
+                // and being silently ignored by the relay.
+                val isDocument = pending.documentGuid != null
+                val message = if (isDocument) {
+                    WebSocketMessageFactory.createMessage(
+                        pending.dataType,
+                        pending.data,
+                        pending.messageId
+                    )
+                } else {
+                    WebSocketMessageFactory.createDataMessage(
+                        pending.dataType,
+                        pending.data,
+                        pending.messageId
+                    )
+                }
                 val sent = webSocket?.send(message) ?: false
                 if (sent) {
                     pendingMessages[pending.messageId] = pending.incrementRetry()
                     retryCount++
+                    logger.d(TAG, "ws.retry.send", mapOf(
+                        "message_id" to id,
+                        "type" to pending.dataType,
+                        "doc_guid" to pending.documentGuid,
+                        "attempt" to pending.retryCount + 1,
+                    ))
                 }
             } catch (e: Exception) {
-                logger.e(TAG, "Retry error: ${e.message}")
+                logger.e(TAG, "ws.retry.error", mapOf(
+                    "message_id" to id, "error" to (e.message ?: "")
+                ))
             }
         }
 
@@ -430,9 +537,14 @@ class WebSocketRepositoryImpl @Inject constructor(
                 .build()
 
             webSocket = okHttpClient.newWebSocket(request, WebSocketListener())
+            logger.d(TAG, "ws.connect.start", mapOf(
+                "url_host" to backendHost,
+                "attempt" to reconnectAttempt,
+                "device_uuid" to deviceUuid,
+            ))
             return true
         } catch (e: Exception) {
-            logger.e(TAG, "Connection error: ${e.message}")
+            logger.e(TAG, "ws.connect.error", mapOf("error" to (e.message ?: "")))
             _connectionState.value = WebSocketState.Error(e.message ?: "Connection failed", canRetry = true)
             scheduleReconnection()
             return false
@@ -457,7 +569,11 @@ class WebSocketRepositoryImpl @Inject constructor(
         cancelReconnection()
 
         val delay = calculateBackoffDelay(reconnectAttempt)
-        // Reconnection delay and attempt tracked via WebSocketState.Reconnecting
+        logger.d(TAG, "ws.reconnect.schedule", mapOf(
+            "attempt" to reconnectAttempt,
+            "delay_ms" to delay,
+            "pending_count" to pendingMessages.size,
+        ))
 
         _connectionState.value = WebSocketState.Reconnecting(delay, reconnectAttempt)
 
@@ -612,10 +728,17 @@ class WebSocketRepositoryImpl @Inject constructor(
                 Constants.WEBSOCKET_MESSAGE_TYPE_ACK -> {
                     val ackMessage = WebSocketMessageFactory.parseAckMessage(message)
                     if (ackMessage != null) {
-                        logger.d(TAG, "Ack received: ${ackMessage.messageId} (status: ${ackMessage.status})")
+                        val pendingMessage = pendingMessages.remove(ackMessage.messageId)
+                        val latencyMs = pendingMessage?.let { System.currentTimeMillis() - it.timestamp }
+                        logger.d(TAG, "ws.ack", mapOf(
+                            "message_id" to ackMessage.messageId,
+                            "status" to ackMessage.status,
+                            "type" to pendingMessage?.dataType,
+                            "doc_guid" to pendingMessage?.documentGuid,
+                            "latency_ms" to latencyMs,
+                        ))
 
                         // Check if this ACK is for a document upload and emit DocumentAck
-                        val pendingMessage = pendingMessages.remove(ackMessage.messageId)
                         if (pendingMessage?.documentGuid != null) {
                             val documentType = mapMessageTypeToDocumentType(pendingMessage.dataType)
                             if (documentType != null) {
@@ -625,7 +748,6 @@ class WebSocketRepositoryImpl @Inject constructor(
                                         documentGuid = pendingMessage.documentGuid,
                                         messageId = ackMessage.messageId
                                     ))
-                                    logger.d(TAG, "Document ACK emitted: type=$documentType, guid=${pendingMessage.documentGuid}")
                                 }
                             }
                         }
@@ -757,23 +879,33 @@ class WebSocketRepositoryImpl @Inject constructor(
     }
 
     private suspend fun processUnifiedPayloadLocked(dataMessage: IncomingDataMessage) {
+        val batchStartMs = System.currentTimeMillis()
         try {
             // Extract data array from the message
             val dataArray = dataMessage.data.getAsJsonArray("data")
             if (dataArray == null || dataArray.size() == 0) {
-                logger.w(TAG, "Empty data array in unified payload")
+                logger.w(TAG, "ws.batch.empty", mapOf("message_id" to dataMessage.messageId))
                 sendAck(dataMessage.messageId, "unified", 0)
                 return
             }
 
             // Get current account guid for database operations
             val accountGuid = currentAccountGuid ?: currentAccount?.guid ?: run {
-                logger.e(TAG, "No current account for unified payload")
+                logger.e(TAG, "ws.batch.error", mapOf(
+                    "message_id" to dataMessage.messageId,
+                    "error" to "no_current_account"
+                ))
                 return
             }
 
+            logger.d(TAG, "ws.batch.start", mapOf(
+                "message_id" to dataMessage.messageId,
+                "items" to dataArray.size(),
+            ))
+
             val optionsItems = mutableListOf<com.google.gson.JsonObject>()
             val counters = mutableMapOf<String, Int>()
+            var parseFailures = 0
             val batchSize = 500
             val batch = ArrayList<XMap>(batchSize)
             val gson = Gson()
@@ -787,14 +919,13 @@ class WebSocketRepositoryImpl @Inject constructor(
                     val itemType = item.get("type")?.asString
                     if (itemType == Constants.VALUE_ID_BATCH_COMPLETE) {
                         batchCompleteTimestamp = item.get("timestamp")?.asLong
-                        logger.d(TAG, "Batch complete signal received, timestamp=$batchCompleteTimestamp")
                         continue
                     }
 
                     val valueId = item.get("value_id")?.asString
 
                     if (valueId.isNullOrEmpty()) {
-                        logger.w(TAG, "Item $i missing value_id, skipping")
+                        parseFailures++
                         continue
                     }
 
@@ -821,7 +952,12 @@ class WebSocketRepositoryImpl @Inject constructor(
                         batch.clear()
                     }
                 } catch (e: Exception) {
-                    logger.e(TAG, "Error processing item $i: ${e.message}")
+                    parseFailures++
+                    logger.e(TAG, "ws.batch.item_error", mapOf(
+                        "message_id" to dataMessage.messageId,
+                        "index" to i,
+                        "error" to (e.message ?: "")
+                    ))
                 }
             }
 
@@ -850,21 +986,34 @@ class WebSocketRepositoryImpl @Inject constructor(
                 sendAck(dataMessage.messageId, "batch_complete", 0)
             }
 
+            val durationMs = System.currentTimeMillis() - batchStartMs
+            logger.d(TAG, "ws.batch.persisted", mapOf(
+                "message_id" to dataMessage.messageId,
+                "counters" to counters.toString(),
+                "parse_failures" to parseFailures,
+                "duration_ms" to durationMs,
+                "batch_complete_ts" to batchCompleteTimestamp,
+            ))
+
             // After every item from this batch is persisted, run cleanup for
             // stale catalog rows. We write a crash-recovery checkpoint first so
             // that if the process dies between save and cleanup, the next
             // session replays the same cleanup exactly once.
             if (batchCompleteTimestamp != null) {
                 val batchTotal = batchCounters.values.sum()
-                if (batchTotal > 0) {
-                    logger.d(TAG, "Saved $batchTotal catalog items: $batchCounters")
-                }
+                logger.d(TAG, "ws.batch_complete", mapOf(
+                    "batch_complete_ts" to batchCompleteTimestamp,
+                    "items_total" to batchTotal,
+                    "counters" to batchCounters.toString(),
+                ))
                 batchCounters.clear()
                 runBatchCleanup(accountGuid, batchCompleteTimestamp)
                 _batchComplete.emit(batchCompleteTimestamp)
             }
         } catch (e: Exception) {
-            logger.e(TAG, "Error handling unified payload: ${e.message}")
+            logger.e(TAG, "ws.batch.error", mapOf(
+                "message_id" to dataMessage.messageId, "error" to (e.message ?: "")
+            ))
             sendError(dataMessage.messageId, "unified", e.message ?: "Processing failed")
         }
     }
@@ -1058,11 +1207,29 @@ class WebSocketRepositoryImpl @Inject constructor(
     private inner class WebSocketListener : okhttp3.WebSocketListener() {
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            val attempt = reconnectAttempt
             reconnectAttempt = 0
             val deviceUuid = currentAccount?.guid ?: "unknown"
             _connectionState.value = WebSocketState.Connected(deviceUuid)
             updateLicenseCheckTime()
             startPingScheduler()
+            logger.d(TAG, "ws.connect.open", mapOf(
+                "device_uuid" to deviceUuid,
+                "attempt" to attempt,
+                "pending_count" to pendingMessages.size,
+            ))
+            // Re-send any pending messages whose ACKs were lost during the
+            // previous socket lifetime. retryFailedMessages drops expired/
+            // exceeded entries and re-uses the same message_id so a late ACK
+            // arriving on the new connection still matches.
+            scope.launch {
+                try {
+                    val n = retryFailedMessages()
+                    if (n > 0) logger.d(TAG, "ws.reconnect.replay", mapOf("resent" to n))
+                } catch (e: Exception) {
+                    logger.e(TAG, "ws.reconnect.replay.error", mapOf("error" to (e.message ?: "")))
+                }
+            }
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
@@ -1074,7 +1241,12 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-            logger.d(TAG, "Closing: $code - $reason")
+            logger.d(TAG, "ws.connect.closing", mapOf(
+                "code" to code,
+                "reason" to reason,
+                "pending_count" to pendingMessages.size,
+                "attempt" to reconnectAttempt,
+            ))
             if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
                 logger.d(TAG, "Ignoring onClosing from stale connection")
                 return
@@ -1094,7 +1266,12 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            logger.d(TAG, "Closed: $code - $reason")
+            logger.d(TAG, "ws.connect.closed", mapOf(
+                "code" to code,
+                "reason" to reason,
+                "pending_count" to pendingMessages.size,
+                "attempt" to reconnectAttempt,
+            ))
             cancelPing()
 
             // Ignore events from stale (replaced) connections
@@ -1124,7 +1301,12 @@ class WebSocketRepositoryImpl @Inject constructor(
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            logger.e(TAG, "Connection failed: ${t.message}")
+            logger.e(TAG, "ws.connect.failure", mapOf(
+                "error" to (t.message ?: ""),
+                "pending_count" to pendingMessages.size,
+                "attempt" to reconnectAttempt,
+                "response_code" to response?.code,
+            ))
             cancelPing()
 
             // Ignore events from stale (replaced) connections

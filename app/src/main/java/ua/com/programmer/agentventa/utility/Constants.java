@@ -171,6 +171,20 @@ public final class Constants {
     public static final String PREF_PENDING_CLEANUP_ACCOUNT = "pending_cleanup_account";
 
     /**
+     * Remote debug logging — local force-on flag.
+     * When true, the device uploads debug logs regardless of the server-side
+     * UserOptions.debugLogsEnabled. Used for QA/dev without round-tripping the
+     * options through the backend.
+     */
+    public static final String PREF_DEBUG_LOGS_FORCE_ENABLED = "debug_logs_force_enabled";
+
+    /** Remote debug logging — uploader tuning. */
+    public static final int DEBUG_LOG_BATCH_LIMIT = 200;
+    public static final int DEBUG_LOG_BATCH_BYTES = 256 * 1024; // 256 KiB
+    public static final long DEBUG_LOG_DEBOUNCE_MS = 2_000L;
+    public static final long DEBUG_LOG_ACK_TIMEOUT_MS = 15_000L;
+
+    /**
      * Hard safety limit on the number of pages a single catalog fetch is
      * allowed to consume. At ~50 rows/page that's ~500k rows per type; larger
      * than any realistic catalog and prevents a buggy server from spinning the

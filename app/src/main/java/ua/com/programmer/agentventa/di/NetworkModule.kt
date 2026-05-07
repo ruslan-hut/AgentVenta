@@ -10,6 +10,7 @@ import retrofit2.Retrofit
 import java.util.concurrent.TimeUnit
 import retrofit2.converter.gson.GsonConverterFactory
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
+import ua.com.programmer.agentventa.data.remote.api.DebugLogApi
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
 import ua.com.programmer.agentventa.data.remote.TokenManager
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
@@ -123,6 +124,54 @@ class NetworkModule {
     @Singleton
     fun provideGson(): Gson {
         return Gson()
+    }
+
+    /**
+     * OkHttpClient for the device-log upload endpoint. No HttpAuthInterceptor
+     * (would overwrite the Bearer header), no TokenRefresh (not relevant). Short
+     * timeouts so a stuck server doesn't block the uploader behind a giant
+     * connect/read; we'd rather fail fast and retry on the next tickle.
+     */
+    @Provides
+    @Singleton
+    @DebugLogClient
+    fun provideDebugLogOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
+            .callTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @DebugLogClient
+    fun provideDebugLogRetrofit(
+        @DebugLogClient okHttpClient: OkHttpClient,
+        apiKeyProvider: ApiKeyProvider
+    ): Retrofit {
+        // Resolve base URL at provide-time. ApiKeyProvider exposes the host name
+        // (no scheme); we build a https:// URL from it. If the host is empty,
+        // fall back to a placeholder — the uploader will check apiKeyProvider
+        // again and skip uploads when no host is configured.
+        val host = apiKeyProvider.backendHost.ifBlank { "localhost" }
+        val baseUrl = if (host.startsWith("http://") || host.startsWith("https://")) {
+            if (host.endsWith("/")) host else "$host/"
+        } else {
+            "https://$host/"
+        }
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDebugLogApi(@DebugLogClient retrofit: Retrofit): DebugLogApi {
+        return retrofit.create(DebugLogApi::class.java)
     }
 
 }

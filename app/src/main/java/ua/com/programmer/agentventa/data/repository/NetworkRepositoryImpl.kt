@@ -72,6 +72,12 @@ class NetworkRepositoryImpl @Inject constructor(
 
     private val logTag = "AV-NetworkRepo"
 
+    // Outer timeout on awaitTerminalSendResult — longer than the per-message
+    // ACK watchdog inside WebSocketRepositoryImpl (which is
+    // Constants.DEBUG_LOG_ACK_TIMEOUT_MS = 15s) so we always see the synthetic
+    // Failed emission rather than tripping this fallback first.
+    private val WS_SEND_TERMINAL_TIMEOUT_MS = 20_000L
+
     private val gson = Gson()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -773,21 +779,26 @@ class NetworkRepositoryImpl @Inject constructor(
                 )
                 val payloadJson = gson.toJson(payloadMap)
 
-                val sendResult = webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
-                    payload = payloadJson
-                ).first()
+                val sendResult = awaitTerminalSendResult(
+                    webSocketRepository.sendMessage(
+                        type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
+                        payload = payloadJson
+                    )
+                )
 
                 when (sendResult) {
-                    is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                    is WebSocketSendResult.Acknowledged -> {
                         imageCount++
                         logger.d(logTag, "Image ${image.guid} uploaded successfully")
                     }
                     is WebSocketSendResult.Failed -> {
                         logger.e(logTag, "Image upload failed: ${sendResult.error}")
                     }
-                    is WebSocketSendResult.Pending -> {
-                        logger.d(logTag, "Image ${image.guid} queued for upload")
+                    null -> {
+                        logger.e(logTag, "Image upload timed out: ${image.guid}")
+                    }
+                    else -> {
+                        logger.d(logTag, "Image ${image.guid} unexpected result: $sendResult")
                     }
                 }
             }
@@ -805,13 +816,15 @@ class NetworkRepositoryImpl @Inject constructor(
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            val sendResult = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
-                payload = payloadJson
-            ).first()
+            val sendResult = awaitTerminalSendResult(
+                webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
+                    payload = payloadJson
+                )
+            )
 
             when (sendResult) {
-                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "${locations.size} locations uploaded successfully")
                     emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size}"))
                 }
@@ -819,12 +832,33 @@ class NetworkRepositoryImpl @Inject constructor(
                     logger.e(logTag, "Location upload failed: ${sendResult.error}")
                     emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: 0 (failed)"))
                 }
-                is WebSocketSendResult.Pending -> {
-                    logger.d(logTag, "${locations.size} locations queued for upload")
-                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size} (queued)"))
+                null -> {
+                    logger.e(logTag, "Location upload timed out (${locations.size} locations)")
+                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: 0 (timeout)"))
+                }
+                else -> {
+                    logger.d(logTag, "Locations unexpected result: $sendResult")
                 }
             }
         }
+    }
+
+    /**
+     * Awaits a terminal [WebSocketSendResult] (Acknowledged or Failed) for an
+     * outbound WS message, with a hard timeout that exceeds the per-message
+     * ACK watchdog inside WebSocketRepositoryImpl. Returns null on timeout —
+     * the caller treats that as failure (don't mark the document sent).
+     *
+     * Background: the previous code did `.first()`, which collected the very
+     * first emission — i.e. `Sent` (transport accepted) — and treated that as
+     * success. Documents got marked sent purely because OkHttp accepted the
+     * bytes, regardless of whether the relay persisted them. That's the root
+     * cause of "orders not arriving" reports.
+     */
+    private suspend fun awaitTerminalSendResult(
+        flow: Flow<WebSocketSendResult>
+    ): WebSocketSendResult? = withTimeoutOrNull(WS_SEND_TERMINAL_TIMEOUT_MS) {
+        flow.first { it is WebSocketSendResult.Acknowledged || it is WebSocketSendResult.Failed }
     }
 
     private suspend fun saveData(account: String, time: Long, data: List<*>) {
@@ -939,14 +973,18 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket and collect the result
-            val sendResult = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER,
-                payload = payloadJson
-            ).first()
+            // Send via WebSocket and wait for ACK (or timeout). Treat only
+            // Acknowledged as success; Sent is just transport-accept and tells
+            // us nothing about whether the relay persisted the order.
+            val sendResult = awaitTerminalSendResult(
+                webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER,
+                    payload = payloadJson
+                )
+            )
 
             when (sendResult) {
-                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "Order ${order.number} uploaded successfully via WebSocket")
                     emit(Result.Success("Order ${order.number} uploaded"))
                 }
@@ -954,9 +992,15 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
                     logger.e(logTag, "Failed to upload order via WebSocket: ${sendResult.error}")
                     emit(Result.Error(sendResult.error))
                 }
-                is WebSocketSendResult.Pending -> {
-                    logger.d(logTag, "Order ${order.number} queued for upload")
-                    emit(Result.Progress("Order ${order.number} queued"))
+                null -> {
+                    logger.e(logTag, "Order ${order.number} upload timed out (no ACK)")
+                    emit(Result.Error("ACK timeout"))
+                }
+                else -> {
+                    // Sent / Pending — non-terminal; treat as transient and let
+                    // the next sync sweep retry.
+                    logger.d(logTag, "Order ${order.number} non-terminal result: $sendResult")
+                    emit(Result.Error("No terminal ACK"))
                 }
             }
         } catch (e: Exception) {
@@ -991,14 +1035,17 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket and collect the result
-            val sendResult = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH,
-                payload = payloadJson
-            ).first()
+            // Send via WebSocket and wait for ACK (or timeout). Same rationale
+            // as uploadOrderViaWebSocket — only ACK proves persistence.
+            val sendResult = awaitTerminalSendResult(
+                webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH,
+                    payload = payloadJson
+                )
+            )
 
             when (sendResult) {
-                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "Cash ${cash.number} uploaded successfully via WebSocket")
                     emit(Result.Success("Cash ${cash.number} uploaded"))
                 }
@@ -1006,9 +1053,13 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
                     logger.e(logTag, "Failed to upload cash via WebSocket: ${sendResult.error}")
                     emit(Result.Error(sendResult.error))
                 }
-                is WebSocketSendResult.Pending -> {
-                    logger.d(logTag, "Cash ${cash.number} queued for upload")
-                    emit(Result.Progress("Cash ${cash.number} queued"))
+                null -> {
+                    logger.e(logTag, "Cash ${cash.number} upload timed out (no ACK)")
+                    emit(Result.Error("ACK timeout"))
+                }
+                else -> {
+                    logger.d(logTag, "Cash ${cash.number} non-terminal result: $sendResult")
+                    emit(Result.Error("No terminal ACK"))
                 }
             }
         } catch (e: Exception) {
@@ -1045,24 +1096,28 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
                 )
                 val payloadJson = gson.toJson(payloadMap)
 
-                // Send via WebSocket and collect the result
-                val sendResult = webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
-                    payload = payloadJson
-                ).first()
+                // Send via WebSocket and wait for ACK (or timeout)
+                val sendResult = awaitTerminalSendResult(
+                    webSocketRepository.sendMessage(
+                        type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
+                        payload = payloadJson
+                    )
+                )
 
                 when (sendResult) {
-                    is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                    is WebSocketSendResult.Acknowledged -> {
                         uploadedCount++
                         logger.d(logTag, "Image ${image.guid} uploaded successfully")
                         emit(Result.Progress("Uploaded $uploadedCount of ${images.size} images"))
                     }
                     is WebSocketSendResult.Failed -> {
                         logger.e(logTag, "Failed to upload image: ${sendResult.error}")
-                        // Continue with other images
                     }
-                    is WebSocketSendResult.Pending -> {
-                        logger.d(logTag, "Image ${image.guid} queued for upload")
+                    null -> {
+                        logger.e(logTag, "Image ${image.guid} upload timed out (no ACK)")
+                    }
+                    else -> {
+                        logger.d(logTag, "Image ${image.guid} non-terminal result: $sendResult")
                     }
                 }
             }
@@ -1100,14 +1155,16 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
             )
             val payloadJson = gson.toJson(payloadMap)
 
-            // Send via WebSocket (batch upload) and collect the result
-            val sendResult = webSocketRepository.sendMessage(
-                type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
-                payload = payloadJson
-            ).first()
+            // Send via WebSocket (batch upload) and wait for ACK or timeout
+            val sendResult = awaitTerminalSendResult(
+                webSocketRepository.sendMessage(
+                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
+                    payload = payloadJson
+                )
+            )
 
             when (sendResult) {
-                is WebSocketSendResult.Sent, is WebSocketSendResult.Acknowledged -> {
+                is WebSocketSendResult.Acknowledged -> {
                     logger.d(logTag, "${locations.size} locations uploaded successfully via WebSocket")
                     emit(Result.Success("${locations.size} locations uploaded"))
                 }
@@ -1115,9 +1172,13 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
                     logger.e(logTag, "Failed to upload locations via WebSocket: ${sendResult.error}")
                     emit(Result.Error(sendResult.error))
                 }
-                is WebSocketSendResult.Pending -> {
-                    logger.d(logTag, "${locations.size} locations queued for upload")
-                    emit(Result.Progress("${locations.size} locations queued"))
+                null -> {
+                    logger.e(logTag, "Locations upload timed out (no ACK)")
+                    emit(Result.Error("ACK timeout"))
+                }
+                else -> {
+                    logger.d(logTag, "Locations non-terminal result: $sendResult")
+                    emit(Result.Error("No terminal ACK"))
                 }
             }
         } catch (e: Exception) {

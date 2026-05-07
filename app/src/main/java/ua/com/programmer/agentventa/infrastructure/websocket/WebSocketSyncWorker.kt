@@ -25,6 +25,7 @@ class WebSocketSyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val connectionManager: WebSocketConnectionManager,
     private val pendingDataChecker: PendingDataChecker,
+    private val webSocketRepository: ua.com.programmer.agentventa.domain.repository.WebSocketRepository,
     private val logger: Logger
 ) : CoroutineWorker(context, workerParams) {
 
@@ -44,6 +45,16 @@ class WebSocketSyncWorker @AssistedInject constructor(
                 logger.d(TAG, "No pending data, checking if idle interval elapsed")
                 connectionManager.checkAndConnect()
             }
+
+            // If a previous send lost its ACK (socket dropped between send and
+            // ACK arrival), the pending entry is still in memory and this
+            // periodic tick is the last line of defense to re-send it before
+            // the 24h expiry kicks in. retryFailedMessages is a no-op when
+            // pendingMessages is empty or the socket isn't connected.
+            try {
+                val resent = webSocketRepository.retryFailedMessages()
+                if (resent > 0) logger.d(TAG, "Periodic retry: resent $resent message(s)")
+            } catch (_: Exception) { /* non-fatal */ }
 
             Result.success()
         } catch (e: CancellationException) {

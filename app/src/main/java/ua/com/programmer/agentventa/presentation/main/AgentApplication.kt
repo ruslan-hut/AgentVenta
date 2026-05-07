@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import ua.com.programmer.agentventa.infrastructure.logger.RemoteLogFlushWorker
+import ua.com.programmer.agentventa.infrastructure.logger.RemoteLogUploader
 import ua.com.programmer.agentventa.infrastructure.websocket.WebSocketConnectionManager
 import ua.com.programmer.agentventa.infrastructure.websocket.WebSocketSyncWorker
 import javax.inject.Inject
@@ -17,6 +19,9 @@ class AgentApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var remoteLogUploader: RemoteLogUploader
+
     override fun onCreate() {
         super.onCreate()
 
@@ -25,6 +30,11 @@ class AgentApplication : Application(), Configuration.Provider {
 
         // Schedule periodic background sync
         WebSocketSyncWorker.scheduleWithDefaultInterval(this)
+
+        // Remote debug log pipeline. Idempotent — start() is a no-op if the
+        // drain loop is already running. Worker safety-net for process kill.
+        remoteLogUploader.start()
+        RemoteLogFlushWorker.schedule(this)
     }
 
     override val workManagerConfiguration: Configuration

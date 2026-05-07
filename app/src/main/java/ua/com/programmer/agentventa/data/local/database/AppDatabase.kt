@@ -11,6 +11,7 @@ import ua.com.programmer.agentventa.data.local.entity.Client
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.ClientLocation
 import ua.com.programmer.agentventa.data.local.entity.Company
+import ua.com.programmer.agentventa.data.local.entity.DebugLogEntry
 import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.Discount
 import ua.com.programmer.agentventa.data.local.entity.LocationHistory
@@ -31,6 +32,7 @@ import ua.com.programmer.agentventa.data.local.dao.ClientDao
 import ua.com.programmer.agentventa.data.local.dao.CommonDao
 import ua.com.programmer.agentventa.data.local.dao.CompanyDao
 import ua.com.programmer.agentventa.data.local.dao.DataExchangeDao
+import ua.com.programmer.agentventa.data.local.dao.DebugLogDao
 import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
 import ua.com.programmer.agentventa.data.local.dao.LogDao
@@ -62,7 +64,8 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Company::class,
     Store::class,
     Discount::class,
-                     ], version = 26, exportSchema = true)
+    DebugLogEntry::class,
+                     ], version = 27, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -79,6 +82,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun storeDao(): StoreDao
     abstract fun restDao(): RestDao
     abstract fun discountDao(): DiscountDao
+    abstract fun debugLogDao(): DebugLogDao
 
     companion object {
 
@@ -278,6 +282,24 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        private val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE debug_log_entries (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "timestamp INTEGER NOT NULL, " +
+                        "level TEXT NOT NULL, " +
+                        "tag TEXT NOT NULL, " +
+                        "message TEXT NOT NULL, " +
+                        "fields TEXT NOT NULL DEFAULT '{}', " +
+                        "sent INTEGER NOT NULL DEFAULT 0, " +
+                        "attempts INTEGER NOT NULL DEFAULT 0)"
+                )
+                db.execSQL("CREATE INDEX index_debug_log_entries_sent ON debug_log_entries(sent)")
+                db.execSQL("CREATE INDEX index_debug_log_entries_timestamp ON debug_log_entries(timestamp)")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -298,6 +320,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_23_24,
                         MIGRATION_24_25,
                         MIGRATION_25_26,
+                        MIGRATION_26_27,
                     )
                     .build()
                 INSTANCE = instance

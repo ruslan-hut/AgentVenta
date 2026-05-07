@@ -13,6 +13,7 @@ import ua.com.programmer.agentventa.data.local.dao.ClientDao
 import ua.com.programmer.agentventa.data.local.dao.CommonDao
 import ua.com.programmer.agentventa.data.local.dao.CompanyDao
 import ua.com.programmer.agentventa.data.local.dao.DataExchangeDao
+import ua.com.programmer.agentventa.data.local.dao.DebugLogDao
 import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.dao.LocationDao
 import ua.com.programmer.agentventa.data.local.dao.LogDao
@@ -26,6 +27,7 @@ import ua.com.programmer.agentventa.data.repository.CashRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.ClientRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.CommonRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.DataExchangeRepositoryImpl
+import ua.com.programmer.agentventa.data.repository.DebugLogRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.FilesRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.LogRepositoryImpl
 import ua.com.programmer.agentventa.data.repository.OrderRepositoryImpl
@@ -38,6 +40,7 @@ import ua.com.programmer.agentventa.domain.repository.CashRepository
 import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.CommonRepository
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
+import ua.com.programmer.agentventa.domain.repository.DebugLogRepository
 import ua.com.programmer.agentventa.domain.repository.FilesRepository
 import ua.com.programmer.agentventa.domain.repository.LocationRepository
 import ua.com.programmer.agentventa.domain.repository.LogRepository
@@ -106,6 +109,10 @@ class DomainModule {
     fun provideDiscountDao(database: AppDatabase): DiscountDao {
         return database.discountDao()
     }
+    @Provides
+    fun provideDebugLogDao(database: AppDatabase): DebugLogDao {
+        return database.debugLogDao()
+    }
 }
 
 @Module
@@ -147,4 +154,7 @@ abstract class RepositoryBindModule {
 
     @Binds
     abstract fun bindFilesRepository(repositoryImpl: FilesRepositoryImpl): FilesRepository
+
+    @Binds
+    abstract fun bindDebugLogRepository(repositoryImpl: DebugLogRepositoryImpl): DebugLogRepository
 }

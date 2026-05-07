@@ -48,6 +48,7 @@ class UserOptionsBuilder {
             defaultPaymentType = optionsMap.getString("defaultPaymentType"),
             complexDiscounts = optionsMap.getBoolean("complexDiscounts"),
             allowPriceEdit = optionsMap.getBoolean("allowPriceEdit"),
+            debugLogsEnabled = optionsMap.getBoolean("debugLogsEnabled"),
         )
     }
 

@@ -40,6 +40,7 @@ data class UserOptions(
     val defaultPaymentType: String = "",
     val complexDiscounts: Boolean = false,
     val allowPriceEdit: Boolean = false,
+    val debugLogsEnabled: Boolean = false,
 )
 
 fun UserOptions.toJson(): String {
@@ -80,5 +81,6 @@ fun UserOptions.toJson(): String {
     json.put("defaultPaymentType", defaultPaymentType)
     json.put("complexDiscounts", complexDiscounts)
     json.put("allowPriceEdit", allowPriceEdit)
+    json.put("debugLogsEnabled", debugLogsEnabled)
     return json.toString()
 }
