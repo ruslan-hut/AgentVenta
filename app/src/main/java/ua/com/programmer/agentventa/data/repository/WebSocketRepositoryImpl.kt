@@ -13,6 +13,7 @@ import ua.com.programmer.agentventa.data.websocket.*
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
+import ua.com.programmer.agentventa.infrastructure.config.CachingDns
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.XMap
@@ -39,7 +40,8 @@ class WebSocketRepositoryImpl @Inject constructor(
     private val apiKeyProvider: ApiKeyProvider,
     private val dataExchangeRepository: DataExchangeRepository,
     private val userAccountRepository: ua.com.programmer.agentventa.domain.repository.UserAccountRepository,
-    private val sharedPreferences: SharedPreferences
+    private val sharedPreferences: SharedPreferences,
+    private val cachingDns: CachingDns,
 ) : WebSocketRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -1308,6 +1310,15 @@ class WebSocketRepositoryImpl @Inject constructor(
                 "response_code" to response?.code,
             ))
             cancelPing()
+
+            // If the most recent DNS lookup served the fallback IP and the
+            // transport then failed for a non-DNS reason (timeout, refused,
+            // TLS), the cached IP is probably stale — drop it so the next
+            // attempt does a real DNS resolution.
+            if (t !is java.net.UnknownHostException && cachingDns.lastLookupUsedFallback()) {
+                val host = apiKeyProvider.backendHost
+                if (host.isNotBlank()) cachingDns.evict(host)
+            }
 
             // Ignore events from stale (replaced) connections
             if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {

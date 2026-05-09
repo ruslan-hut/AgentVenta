@@ -712,19 +712,38 @@ class NetworkRepositoryImpl @Inject constructor(
      * Send documents via WebSocket
      */
     private fun sendDocumentsViaWebSocket(account: String): Flow<Result> = flow {
+        val initialState = webSocketRepository.connectionState.value
+        logger.d(logTag, "ws.upload.start", mapOf(
+            "account" to account.trimForLog(),
+            "ws_state" to initialState::class.simpleName.orEmpty(),
+            "is_connected" to webSocketRepository.isConnected(),
+            "ws_pending" to webSocketRepository.getPendingMessageCount(),
+        ))
+
         // Check WebSocket connection before starting sync
         if (!webSocketRepository.isConnected()) {
             emit(Result.Progress("Connecting to WebSocket..."))
             val currentAccount = this@NetworkRepositoryImpl.account
             if (currentAccount != null) {
                 val connected = webSocketRepository.connect(currentAccount)
+                val stateAfter = webSocketRepository.connectionState.value
+                logger.d(logTag, "ws.upload.connect.result", mapOf(
+                    "connected_returned" to connected,
+                    "is_connected_after" to webSocketRepository.isConnected(),
+                    "ws_state_after" to stateAfter::class.simpleName.orEmpty(),
+                    "ws_state_detail" to stateAfter.toString(),
+                ))
                 if (!connected && !webSocketRepository.isConnected()) {
+                    logger.e(logTag, "ws.upload.connect.failed", mapOf(
+                        "ws_state" to stateAfter.toString(),
+                    ))
                     emit(Result.Error("Failed to connect to WebSocket relay server"))
                     return@flow
                 }
                 // Wait a moment for connection to stabilize
                 kotlinx.coroutines.delay(500)
             } else {
+                logger.e(logTag, "ws.upload.no_account")
                 emit(Result.Error("No account configured for WebSocket"))
                 return@flow
             }
@@ -734,6 +753,10 @@ class NetworkRepositoryImpl @Inject constructor(
 
         // Upload orders
         val documents = dataRepository.getOrders(account)
+        logger.d(logTag, "ws.upload.orders.fetched", mapOf(
+            "account" to account.trimForLog(),
+            "count" to documents.size,
+        ))
         if (documents.isNotEmpty()) {
             emit(Result.Progress("Uploading ${documents.size} orders via WebSocket..."))
             val contentByOrder = dataRepository.getPendingOrdersContent(account)
@@ -841,6 +864,15 @@ class NetworkRepositoryImpl @Inject constructor(
                 }
             }
         }
+
+        logger.d(logTag, "ws.upload.finish", mapOf(
+            "account" to account.trimForLog(),
+            "orders_uploaded" to totalDocuments,
+            "orders_pending" to documents.size,
+            "cash_pending" to cashList.size,
+            "images_pending" to images.size,
+            "locations_pending" to locations.size,
+        ))
     }
 
     /**

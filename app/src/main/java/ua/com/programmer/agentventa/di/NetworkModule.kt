@@ -21,6 +21,7 @@ import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
+import ua.com.programmer.agentventa.infrastructure.config.CachingDns
 import com.google.gson.Gson
 import javax.inject.Singleton
 
@@ -51,10 +52,15 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: HttpAuthInterceptor, authenticator: TokenRefresh): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: HttpAuthInterceptor,
+        authenticator: TokenRefresh,
+        cachingDns: CachingDns,
+    ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .authenticator(authenticator)
+            .dns(cachingDns)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
@@ -71,8 +77,9 @@ class NetworkModule {
     @Provides
     @Singleton
     @WebSocketClient
-    fun provideWebSocketOkHttpClient(): OkHttpClient {
+    fun provideWebSocketOkHttpClient(cachingDns: CachingDns): OkHttpClient {
         return OkHttpClient.Builder()
+            .dns(cachingDns)
             .pingInterval(30, TimeUnit.SECONDS)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -108,7 +115,8 @@ class NetworkModule {
         apiKeyProvider: ApiKeyProvider,
         dataExchangeRepository: DataExchangeRepository,
         userAccountRepository: UserAccountRepository,
-        sharedPreferences: SharedPreferences
+        sharedPreferences: SharedPreferences,
+        cachingDns: CachingDns,
     ): WebSocketRepository {
         return WebSocketRepositoryImpl(
             okHttpClient = okHttpClient,
@@ -116,7 +124,8 @@ class NetworkModule {
             apiKeyProvider = apiKeyProvider,
             dataExchangeRepository = dataExchangeRepository,
             userAccountRepository = userAccountRepository,
-            sharedPreferences = sharedPreferences
+            sharedPreferences = sharedPreferences,
+            cachingDns = cachingDns,
         )
     }
 
@@ -135,8 +144,9 @@ class NetworkModule {
     @Provides
     @Singleton
     @DebugLogClient
-    fun provideDebugLogOkHttpClient(): OkHttpClient {
+    fun provideDebugLogOkHttpClient(cachingDns: CachingDns): OkHttpClient {
         return OkHttpClient.Builder()
+            .dns(cachingDns)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
