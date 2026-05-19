@@ -538,7 +538,8 @@ class WebSocketRepositoryImpl @Inject constructor(
                 .addHeader("Authorization", "Bearer $authToken")
                 .build()
 
-            webSocket = okHttpClient.newWebSocket(request, WebSocketListener())
+            val connectStartedAtMs = System.currentTimeMillis()
+            webSocket = okHttpClient.newWebSocket(request, WebSocketListener(connectStartedAtMs))
             logger.d(TAG, "ws.connect.start", mapOf(
                 "url_host" to backendHost,
                 "attempt" to reconnectAttempt,
@@ -1206,7 +1207,11 @@ class WebSocketRepositoryImpl @Inject constructor(
     }
 
     // OkHttp WebSocket listener
-    private inner class WebSocketListener : okhttp3.WebSocketListener() {
+    private inner class WebSocketListener(
+        private val connectStartedAtMs: Long,
+    ) : okhttp3.WebSocketListener() {
+
+        private fun elapsedMs(): Long = System.currentTimeMillis() - connectStartedAtMs
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
             val attempt = reconnectAttempt
@@ -1218,6 +1223,7 @@ class WebSocketRepositoryImpl @Inject constructor(
             logger.d(TAG, "ws.connect.open", mapOf(
                 "device_uuid" to deviceUuid,
                 "attempt" to attempt,
+                "elapsed_ms" to elapsedMs(),
                 "pending_count" to pendingMessages.size,
             ))
             // Re-send any pending messages whose ACKs were lost during the
@@ -1248,6 +1254,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 "reason" to reason,
                 "pending_count" to pendingMessages.size,
                 "attempt" to reconnectAttempt,
+                "elapsed_ms" to elapsedMs(),
             ))
             if (webSocket !== this@WebSocketRepositoryImpl.webSocket) {
                 logger.d(TAG, "Ignoring onClosing from stale connection")
@@ -1273,6 +1280,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 "reason" to reason,
                 "pending_count" to pendingMessages.size,
                 "attempt" to reconnectAttempt,
+                "elapsed_ms" to elapsedMs(),
             ))
             cancelPing()
 
@@ -1305,17 +1313,27 @@ class WebSocketRepositoryImpl @Inject constructor(
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             logger.e(TAG, "ws.connect.failure", mapOf(
                 "error" to (t.message ?: ""),
+                "error_class" to t.javaClass.simpleName,
                 "pending_count" to pendingMessages.size,
                 "attempt" to reconnectAttempt,
+                "elapsed_ms" to elapsedMs(),
                 "response_code" to response?.code,
             ))
             cancelPing()
 
             // If the most recent DNS lookup served the fallback IP and the
-            // transport then failed for a non-DNS reason (timeout, refused,
-            // TLS), the cached IP is probably stale — drop it so the next
-            // attempt does a real DNS resolution.
-            if (t !is java.net.UnknownHostException && cachingDns.lastLookupUsedFallback()) {
+            // transport failed in a way that suggests the IP itself is
+            // wrong (connection refused, TLS cert mismatch), evict so the
+            // next attempt does a real DNS resolution. A plain
+            // SocketTimeoutException is *not* evidence of a stale IP — it
+            // usually means the network path is transiently dead, and the
+            // cached IP is still our best bet for the next retry. Evicting
+            // on timeout strands subsequent attempts with `dns.fallback.miss`
+            // while system DNS is still broken (observed in device logs).
+            val looksLikeStaleIp = t is java.net.ConnectException ||
+                t is javax.net.ssl.SSLHandshakeException ||
+                t is javax.net.ssl.SSLPeerUnverifiedException
+            if (looksLikeStaleIp && cachingDns.lastLookupUsedFallback()) {
                 val host = apiKeyProvider.backendHost
                 if (host.isNotBlank()) cachingDns.evict(host)
             }

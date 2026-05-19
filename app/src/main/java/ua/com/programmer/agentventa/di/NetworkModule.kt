@@ -5,8 +5,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.dnsoverhttps.DnsOverHttps
 import retrofit2.Retrofit
+import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 import retrofit2.converter.gson.GsonConverterFactory
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
@@ -28,6 +31,34 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 class NetworkModule {
+
+    /**
+     * DNS-over-HTTPS resolver against Cloudflare's 1.1.1.1. The internal
+     * OkHttp client is deliberately *not* shared with the app's other
+     * clients (and does NOT use [CachingDns]) — that would create a
+     * dependency cycle. Bootstrap addresses are IP literals, so this
+     * resolver works when the system resolver is broken — which is the
+     * whole point. Used only as a tier-2 fallback by [CachingDns].
+     */
+    @Provides
+    @Singleton
+    fun provideDnsOverHttps(): DnsOverHttps {
+        val bootstrapClient = OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS)
+            .readTimeout(3, TimeUnit.SECONDS)
+            .callTimeout(5, TimeUnit.SECONDS)
+            .build()
+        return DnsOverHttps.Builder()
+            .client(bootstrapClient)
+            .url("https://1.1.1.1/dns-query".toHttpUrl())
+            .bootstrapDnsHosts(
+                InetAddress.getByName("1.1.1.1"),
+                InetAddress.getByName("1.0.0.1"),
+                InetAddress.getByName("2606:4700:4700::1111"),
+                InetAddress.getByName("2606:4700:4700::1001"),
+            )
+            .build()
+    }
 
     @Provides
     @Singleton
