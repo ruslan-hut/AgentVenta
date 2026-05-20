@@ -30,7 +30,7 @@ data class UserAccount(
                 dataFormat = Constants.SYNC_FORMAT_HTTP,
                 dbServer = "hoot.com.ua",
                 dbName = "simple",
-                dbUser = "Агент",
+                dbUser = "Agent",
                 dbPassword = "112233",
                 useWebSocket = false,
             )
@@ -108,7 +108,7 @@ fun UserAccount.getLicense(): String {
 }
 
 fun UserAccount.isDemo(): Boolean {
-    return dbServer == "hoot.com.ua" && dbName == "simple" && dbUser == "Агент" && dbPassword == "112233"
+    return dbServer == "hoot.com.ua" && dbName == "simple" && (dbUser == "Агент" || dbUser == "Agent") && dbPassword == "112233"
 }
 
 // WebSocket connection validation
