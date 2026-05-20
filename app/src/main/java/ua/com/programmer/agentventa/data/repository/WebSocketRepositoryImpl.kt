@@ -60,6 +60,10 @@ class WebSocketRepositoryImpl @Inject constructor(
     // Mutated only under [catalogProcessingMutex].
     private val batchCounters = mutableMapOf<String, Int>()
 
+    // Number of WebSocket data messages 1C used to push the current batch.
+    // Reported on batch_complete so over-fragmented pushes are visible.
+    private var batchMessageCount = 0
+
     // Serializes connect/disconnect so an account switch (or rapid foreground/
     // background flap) cannot leave two live WebSocket instances. Without this,
     // a checkAndConnect() racing with disconnect() could open a new socket while
@@ -901,10 +905,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 return
             }
 
-            logger.d(TAG, "ws.batch.start", mapOf(
-                "message_id" to dataMessage.messageId,
-                "items" to dataArray.size(),
-            ))
+            batchMessageCount++
 
             val optionsItems = mutableListOf<com.google.gson.JsonObject>()
             val counters = mutableMapOf<String, Int>()
@@ -989,14 +990,17 @@ class WebSocketRepositoryImpl @Inject constructor(
                 sendAck(dataMessage.messageId, "batch_complete", 0)
             }
 
-            val durationMs = System.currentTimeMillis() - batchStartMs
-            logger.d(TAG, "ws.batch.persisted", mapOf(
-                "message_id" to dataMessage.messageId,
-                "counters" to counters.toString(),
-                "parse_failures" to parseFailures,
-                "duration_ms" to durationMs,
-                "batch_complete_ts" to batchCompleteTimestamp,
-            ))
+            // Per-message persist is silent on success — the ws.batch_complete
+            // aggregate covers the normal path. Log only when items were lost,
+            // since that is the case actually worth investigating.
+            if (parseFailures > 0) {
+                logger.w(TAG, "ws.batch.parse_failures", mapOf(
+                    "message_id" to dataMessage.messageId,
+                    "counters" to counters.toString(),
+                    "parse_failures" to parseFailures,
+                    "duration_ms" to (System.currentTimeMillis() - batchStartMs),
+                ))
+            }
 
             // After every item from this batch is persisted, run cleanup for
             // stale catalog rows. We write a crash-recovery checkpoint first so
@@ -1004,12 +1008,18 @@ class WebSocketRepositoryImpl @Inject constructor(
             // session replays the same cleanup exactly once.
             if (batchCompleteTimestamp != null) {
                 val batchTotal = batchCounters.values.sum()
+                // Plain line for the user-visible log: one readable summary per
+                // catalog sync instead of a start/persisted pair per message.
+                logger.d(TAG, "Catalog sync complete: $batchTotal items")
+                // Structured line for server-side analysis (remote sink only).
                 logger.d(TAG, "ws.batch_complete", mapOf(
                     "batch_complete_ts" to batchCompleteTimestamp,
                     "items_total" to batchTotal,
+                    "messages" to batchMessageCount,
                     "counters" to batchCounters.toString(),
                 ))
                 batchCounters.clear()
+                batchMessageCount = 0
                 runBatchCleanup(accountGuid, batchCompleteTimestamp)
                 _batchComplete.emit(batchCompleteTimestamp)
             }

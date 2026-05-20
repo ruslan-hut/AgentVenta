@@ -47,9 +47,15 @@ class Logger @Inject constructor(
     }
 
     private fun write(level: String, tag: String, message: String, fields: Map<String, Any?>?) {
-        // User-visible log: existing behavior, unchanged.
-        CoroutineScope(dispatcher).launch {
-            repository.log(level, tag, message)
+        // User-visible log keeps only level/tag/message — the structured fields
+        // are dropped. A structured debug line therefore shows up as a bare,
+        // detail-less entry (e.g. "ws.batch.start"), which is just noise on the
+        // log screen. Route structured debug lines to the remote sink only;
+        // warnings, errors and plain (human-readable) messages stay visible.
+        if (level != "D" || fields == null) {
+            CoroutineScope(dispatcher).launch {
+                repository.log(level, tag, message)
+            }
         }
         // Remote sink: no-op when toggle is off, so the cost is one volatile
         // read for every log line outside debugging windows.
