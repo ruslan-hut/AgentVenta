@@ -103,6 +103,12 @@ class WebSocketRepositoryImpl @Inject constructor(
     private var isPendingDevice = false  // Flag to prevent reconnection for pending devices
     private var isLicenseError = false   // Flag to prevent reconnection for license errors
 
+    // Timestamp of the last inbound traffic (pong or any message). The ping
+    // scheduler uses it to detect a half-open socket where our sends succeed
+    // locally but nothing comes back. Reset on onOpen.
+    @Volatile
+    private var lastInboundAtMs = 0L
+
     // Message tracking
     private val pendingMessages = ConcurrentHashMap<String, PendingMessage>()
     private val messageResults = ConcurrentHashMap<String, MutableSharedFlow<SendResult>>()
@@ -158,17 +164,24 @@ class WebSocketRepositoryImpl @Inject constructor(
 
     /**
      * State check used by all connect paths to avoid opening a duplicate socket.
-     * Treats Connecting and Reconnecting as "already in progress" — without this
-     * a second connect() racing in between performConnection() and onOpen would
-     * pass an isConnected()==false check and create a parallel socket, leaving
+     * Treats only Connected and Connecting as "already in progress" — those have
+     * a live socket in flight, so a second connect() racing between
+     * performConnection() and onOpen would create a parallel socket and leave
      * the server with two connections for the same UUID.
+     *
+     * Reconnecting is deliberately NOT occupied: it is a delayed timer with no
+     * live socket, and an explicit connect() must be able to preempt it.
+     * Otherwise a checkAndConnect() that cancels the reconnect timer and then
+     * calls connect() would be refused here, leaving the FSM wedged in
+     * Reconnecting with no timer behind it (the "uploads fail while online" bug).
+     * Preemption is safe: connect()/reconnect() cancel the timer and
+     * openSocketLocked() cancels any leftover socket, all under connectionMutex.
      * Must be called while [connectionMutex] is held.
      */
     private fun isOccupied(): Boolean {
         return when (_connectionState.value) {
             is WebSocketState.Connected,
-            is WebSocketState.Connecting,
-            is WebSocketState.Reconnecting -> true
+            is WebSocketState.Connecting -> true
             else -> false
         }
     }
@@ -628,6 +641,21 @@ class WebSocketRepositoryImpl @Inject constructor(
 
             while (isActive && isConnected()) {
                 delay(Constants.WEBSOCKET_PING_INTERVAL.toLong())
+
+                // Dead-connection detection: the server replies pong to every
+                // ping (and pushes catalog traffic), so a long silence means the
+                // socket is half-open. cancel() drives onFailure ->
+                // scheduleReconnection so recovery reuses the normal path.
+                val silenceMs = System.currentTimeMillis() - lastInboundAtMs
+                if (silenceMs > Constants.WEBSOCKET_PONG_TIMEOUT) {
+                    logger.w(TAG, "ws.pong.timeout", mapOf(
+                        "silence_ms" to silenceMs,
+                        "pending_count" to pendingMessages.size,
+                    ))
+                    webSocket?.cancel()
+                    break
+                }
+
                 try {
                     val accountData = buildPingAccountData()
                     val pingMessage = WebSocketMessageFactory.createPingMessage(accountData)
@@ -1228,6 +1256,9 @@ class WebSocketRepositoryImpl @Inject constructor(
             reconnectAttempt = 0
             val deviceUuid = currentAccount?.guid ?: "unknown"
             _connectionState.value = WebSocketState.Connected(deviceUuid)
+            // Baseline for the pong-timeout watchdog so the first interval does
+            // not fire before any traffic has had a chance to arrive.
+            lastInboundAtMs = System.currentTimeMillis()
             updateLicenseCheckTime()
             startPingScheduler()
             logger.d(TAG, "ws.connect.open", mapOf(
@@ -1255,6 +1286,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 logger.d(TAG, "Ignoring message from stale connection (${text.length} bytes)")
                 return
             }
+            lastInboundAtMs = System.currentTimeMillis()
             handleIncomingMessage(text)
         }
 
@@ -1343,9 +1375,11 @@ class WebSocketRepositoryImpl @Inject constructor(
             val looksLikeStaleIp = t is java.net.ConnectException ||
                 t is javax.net.ssl.SSLHandshakeException ||
                 t is javax.net.ssl.SSLPeerUnverifiedException
-            if (looksLikeStaleIp && cachingDns.lastLookupUsedFallback()) {
+            if (looksLikeStaleIp) {
                 val host = apiKeyProvider.backendHost
-                if (host.isNotBlank()) cachingDns.evict(host)
+                if (host.isNotBlank() && cachingDns.lastLookupUsedFallback(host)) {
+                    cachingDns.evict(host)
+                }
             }
 
             // Ignore events from stale (replaced) connections

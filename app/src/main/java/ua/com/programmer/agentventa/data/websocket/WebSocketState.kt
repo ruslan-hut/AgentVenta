@@ -1,5 +1,10 @@
 package ua.com.programmer.agentventa.data.websocket
 
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
+
 /**
  * Represents the current state of the WebSocket connection.
  * Used for UI updates and connection management logic.
@@ -53,15 +58,28 @@ sealed class WebSocketState {
 }
 
 /**
- * Extension to check if WebSocket is in a connected state.
+ * True once an in-progress connection attempt has settled into a resting
+ * outcome: either Connected, or a failure that no further reconnection will
+ * change on its own (Pending, LicenseError, non-retryable Error). Connecting,
+ * Reconnecting, Disconnected and retryable Error are still in flight.
+ * Used by callers that need to wait for a connect() to resolve one way or
+ * the other rather than blocking until a fixed timeout.
  */
-fun WebSocketState.isConnected(): Boolean = this is WebSocketState.Connected
+fun WebSocketState.isSettled(): Boolean =
+    this is WebSocketState.Connected ||
+    this is WebSocketState.Pending ||
+    this is WebSocketState.LicenseError ||
+    (this is WebSocketState.Error && !this.canRetry)
 
 /**
- * Extension to check if WebSocket is actively trying to connect.
+ * Suspends until the connection state matches [predicate] or [timeoutMs]
+ * elapses. Returns the matching state, or null on timeout. Shared by every
+ * caller that needs to await a connection outcome.
  */
-fun WebSocketState.isConnecting(): Boolean =
-    this is WebSocketState.Connecting || this is WebSocketState.Reconnecting
+suspend fun StateFlow<WebSocketState>.awaitState(
+    timeoutMs: Long,
+    predicate: (WebSocketState) -> Boolean,
+): WebSocketState? = withTimeoutOrNull(timeoutMs.milliseconds) { first(predicate) }
 
 /**
  * Extension to get human-readable state description.

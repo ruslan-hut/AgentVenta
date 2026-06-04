@@ -31,6 +31,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
+import ua.com.programmer.agentventa.data.websocket.awaitState
+import ua.com.programmer.agentventa.data.websocket.getDescription
+import ua.com.programmer.agentventa.data.websocket.isSettled
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
@@ -77,6 +80,10 @@ class NetworkRepositoryImpl @Inject constructor(
     // Constants.DEBUG_LOG_ACK_TIMEOUT_MS = 15s) so we always see the synthetic
     // Failed emission rather than tripping this fallback first.
     private val WS_SEND_TERMINAL_TIMEOUT_MS = 20_000L
+
+    // How long the upload path waits for the socket to reach Connected after
+    // connect() returns. Covers the OkHttp connectTimeout (15s) plus handshake.
+    private val WS_CONNECT_AWAIT_MS = 20_000L
 
     private val gson = Gson()
 
@@ -229,14 +236,8 @@ class NetworkRepositoryImpl @Inject constructor(
             logger.w(logTag, "WebSocket reconnect attempt failed: ${e.message}")
         }
 
-        val resolvedState = withTimeoutOrNull(Constants.LICENSE_CHECK_TIMEOUT) {
-            webSocketRepository.connectionState.first { state ->
-                state is WebSocketState.Connected ||
-                state is WebSocketState.Pending ||
-                state is WebSocketState.LicenseError ||
-                (state is WebSocketState.Error && !state.canRetry)
-            }
-        }
+        val resolvedState = webSocketRepository.connectionState
+            .awaitState(Constants.LICENSE_CHECK_TIMEOUT) { it.isSettled() }
 
         if (resolvedState != null) {
             return when (resolvedState) {
@@ -740,8 +741,32 @@ class NetworkRepositoryImpl @Inject constructor(
                     emit(Result.Error("Failed to connect to WebSocket relay server"))
                     return@flow
                 }
-                // Wait a moment for connection to stabilize
-                kotlinx.coroutines.delay(500)
+                // connect() returns once the socket is opening (Connecting), not
+                // open. Await the settled outcome before sending — a fixed delay
+                // races onOpen (observed 400ms–several seconds) and every send
+                // would fail "Not connected". Awaiting "settled" (not just
+                // Connected) means a Pending/LicenseError/non-retryable device
+                // fails fast with its real reason instead of stalling the whole
+                // WS_CONNECT_AWAIT_MS and reporting a misleading timeout.
+                val settled = webSocketRepository.connectionState
+                    .awaitState(WS_CONNECT_AWAIT_MS) { it.isSettled() }
+                when {
+                    settled is WebSocketState.Connected -> { /* proceed to upload */ }
+                    settled == null -> {
+                        logger.e(logTag, "ws.upload.connect.timeout", mapOf(
+                            "ws_state" to webSocketRepository.connectionState.value.toString(),
+                        ))
+                        emit(Result.Error("Timed out waiting for WebSocket connection"))
+                        return@flow
+                    }
+                    else -> {
+                        logger.e(logTag, "ws.upload.connect.rejected", mapOf(
+                            "ws_state" to settled.toString(),
+                        ))
+                        emit(Result.Error(settled.getDescription()))
+                        return@flow
+                    }
+                }
             } else {
                 logger.e(logTag, "ws.upload.no_account")
                 emit(Result.Error("No account configured for WebSocket"))

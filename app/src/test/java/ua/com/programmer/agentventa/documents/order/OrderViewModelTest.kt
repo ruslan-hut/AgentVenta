@@ -16,8 +16,11 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import ua.com.programmer.agentventa.data.local.entity.Client
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.mockito.kotlin.doReturn
 import ua.com.programmer.agentventa.domain.usecase.order.EnableOrderEditUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.GenerateOrderPrintUseCase
+import ua.com.programmer.agentventa.domain.usecase.order.GetProductDiscountUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.SaveOrderUseCase
 import ua.com.programmer.agentventa.domain.usecase.order.ValidateOrderUseCase
 import ua.com.programmer.agentventa.fake.FakeOrderRepository
@@ -25,6 +28,8 @@ import ua.com.programmer.agentventa.fake.FakeProductRepository
 import ua.com.programmer.agentventa.fixtures.TestFixtures
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.infrastructure.printer.WebhookPrintService
+import ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateManager
+import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 import ua.com.programmer.agentventa.util.getOrAwaitValue
 import java.util.*
@@ -55,6 +60,8 @@ class OrderViewModelTest {
     private lateinit var saveOrderUseCase: SaveOrderUseCase
     private lateinit var enableOrderEditUseCase: EnableOrderEditUseCase
     private lateinit var generateOrderPrintUseCase: GenerateOrderPrintUseCase
+    private lateinit var getProductDiscountUseCase: GetProductDiscountUseCase
+    private lateinit var accountStateManager: AccountStateManager
     private lateinit var webhookPrintService: WebhookPrintService
     private lateinit var logger: Logger
     private lateinit var viewModel: OrderViewModel
@@ -65,6 +72,10 @@ class OrderViewModelTest {
         productRepository = FakeProductRepository(TestFixtures.TEST_ACCOUNT_GUID)
         logger = mock()
         generateOrderPrintUseCase = mock()
+        getProductDiscountUseCase = mock()
+        accountStateManager = mock {
+            on { options } doReturn MutableStateFlow(UserOptions(isEmpty = true))
+        }
         webhookPrintService = mock()
 
         // Real use cases with Unconfined dispatcher for testing
@@ -80,6 +91,8 @@ class OrderViewModelTest {
             saveOrderUseCase = saveOrderUseCase,
             enableOrderEditUseCase = enableOrderEditUseCase,
             generateOrderPrintUseCase = generateOrderPrintUseCase,
+            getProductDiscountUseCase = getProductDiscountUseCase,
+            accountStateManager = accountStateManager,
             webhookPrintService = webhookPrintService,
             logger = logger,
             ioDispatcher = kotlinx.coroutines.Dispatchers.Unconfined

@@ -10,6 +10,7 @@ import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.isValidForWebSocketConnection
 import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
+import ua.com.programmer.agentventa.data.websocket.awaitState
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
@@ -86,6 +87,18 @@ class WebSocketConnectionManager @Inject constructor(
     private var connectionJob: Job? = null
     private var periodicCheckJob: Job? = null
     private var backgroundDisconnectJob: Job? = null
+    private var watchdogJob: Job? = null
+
+    // Last state observed by the watchdog. A healthy reconnect ladder changes
+    // this between ticks (attempt number climbs, or it reaches Connected); an
+    // unchanged Reconnecting/Error across a full watchdog interval means the
+    // reconnect timer was cancelled and never rearmed — force a fresh connect.
+    private var lastWatchdogState: WebSocketState? = null
+
+    // Watchdog cadence — longer than WEBSOCKET_RECONNECT_MAX_DELAY (60s) so a
+    // legitimately pending reconnect timer always gets to fire and advance the
+    // state before we treat it as wedged.
+    private val watchdogInterval = Constants.WEBSOCKET_RECONNECT_MAX_DELAY + 30_000L
 
     // Grace period before disconnecting when app goes to background (5 minutes)
     private val backgroundGracePeriod = 5 * 60 * 1000L
@@ -139,6 +152,53 @@ class WebSocketConnectionManager @Inject constructor(
 
         // Start periodic check scheduler
         startPeriodicCheck()
+
+        // Start the connection watchdog
+        startWatchdog()
+    }
+
+    /**
+     * Self-scheduling loop: runs [block] every interval (re-read each iteration
+     * via [intervalMs] so pref changes apply without a restart) until the scope
+     * is cancelled. Shared scaffold for the periodic check and the watchdog.
+     */
+    private fun launchLoop(intervalMs: () -> Long, block: suspend () -> Unit): Job =
+        scope.launch {
+            while (isActive) {
+                delay(intervalMs())
+                block()
+            }
+        }
+
+    /**
+     * Self-healing watchdog. Recovers from a wedged FSM where the connection
+     * state is stuck in Reconnecting/Error with no live reconnect timer behind
+     * it (e.g. a checkAndConnect that cancelled the timer while connect() was
+     * refused). Detection: the state is an unchanged retryable failure across a
+     * full [watchdogInterval] while we should be connected — a working ladder
+     * would have advanced the state within WEBSOCKET_RECONNECT_MAX_DELAY.
+     */
+    private fun startWatchdog() {
+        watchdogJob?.cancel()
+        watchdogJob = launchLoop({ watchdogInterval }) { watchdogTick() }
+    }
+
+    private suspend fun watchdogTick() {
+        val state = webSocketRepository.connectionState.value
+        val isRetryableFailure = state is WebSocketState.Reconnecting ||
+            (state is WebSocketState.Error && state.canRetry)
+
+        val wantConnection = currentAccount?.isValidForWebSocketConnection() == true &&
+            networkMonitor.isNetworkAvailable() &&
+            (isAppInForeground || pendingDataChecker.hasPendingData())
+
+        if (isRetryableFailure && wantConnection && state == lastWatchdogState) {
+            logger.w(TAG, "Connection wedged in $state — forcing reconnect")
+            webSocketRepository.cancelReconnection()
+            webSocketRepository.reconnect()
+        }
+
+        lastWatchdogState = if (isRetryableFailure) state else null
     }
 
     /**
@@ -332,10 +392,8 @@ class WebSocketConnectionManager @Inject constructor(
                 // Wait for the socket to actually report Disconnected before
                 // starting a fresh connect. Cap the wait at 2s so a stuck
                 // teardown can't block reconnection forever.
-                withTimeoutOrNull(2_000L) {
-                    webSocketRepository.connectionState
-                        .first { it is WebSocketState.Disconnected }
-                }
+                webSocketRepository.connectionState
+                    .awaitState(2_000L) { it is WebSocketState.Disconnected }
                 checkAndConnect()
             }
         }
@@ -346,23 +404,17 @@ class WebSocketConnectionManager @Inject constructor(
     }
 
     private fun startPeriodicCheck() {
-        val interval = sharedPreferences.getLong(
-            PREF_WEBSOCKET_IDLE_INTERVAL,
-            Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT
-        )
-
         periodicCheckJob?.cancel()
-        periodicCheckJob = scope.launch {
-            while (isActive) {
-                delay(interval)
-
-                if (isAppInForeground || pendingDataChecker.hasPendingData()) {
-                    checkAndConnect()
-                }
+        periodicCheckJob = launchLoop({
+            sharedPreferences.getLong(
+                PREF_WEBSOCKET_IDLE_INTERVAL,
+                Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT
+            )
+        }) {
+            if (isAppInForeground || pendingDataChecker.hasPendingData()) {
+                checkAndConnect()
             }
         }
-
-        // Periodic check started with configured interval
     }
 
     private fun restartPeriodicCheck() {

@@ -105,6 +105,10 @@ public final class Constants {
     public static final int WEBSOCKET_RECONNECT_INITIAL_DELAY = 1000; // 1s
     public static final int WEBSOCKET_RECONNECT_MAX_DELAY = 60000; // 60s
     public static final int WEBSOCKET_PING_INTERVAL = 30000; // 30s
+    // If no pong (or any inbound traffic) arrives within this window the socket
+    // is treated as dead (half-open TCP) and a reconnect is forced. Allows ~2
+    // missed pongs at the 30s ping interval; server-side pongWait is 60s.
+    public static final long WEBSOCKET_PONG_TIMEOUT = 75000L; // 75s
 
     // Idle interval for periodic connection checks (when no pending data)
     public static final long WEBSOCKET_IDLE_INTERVAL_DEFAULT = 15 * 60 * 1000L; // 15 min

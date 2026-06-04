@@ -21,6 +21,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
@@ -718,8 +719,10 @@ class SharedViewModelTest {
         viewModel.saveClientImage(clientGuid, imageGuid)
         advanceUntilIdle()
 
-        // Assert: FilesRepository.saveClientImage should be called
-        verify(filesRepository).saveClientImage(any())
+        // Assert: FilesRepository.saveClientImage should be called. The save runs
+        // in withContext(Dispatchers.IO), which is a real thread pool not driven
+        // by advanceUntilIdle(), so await the invocation with a timeout.
+        verify(filesRepository, timeout(2000)).saveClientImage(any())
     }
 
     // ========================================

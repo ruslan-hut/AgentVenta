@@ -16,13 +16,16 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import ua.com.programmer.agentventa.data.local.dao.DiscountDao
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.LClient
+import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.fixtures.TestFixtures
 import ua.com.programmer.agentventa.domain.repository.ClientRepository
 import ua.com.programmer.agentventa.domain.repository.FilesRepository
 import ua.com.programmer.agentventa.utility.ResourceProvider
+import ua.com.programmer.agentventa.presentation.common.viewmodel.AccountStateManager
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedParameters
 import ua.com.programmer.agentventa.util.MainDispatcherRule
 
@@ -49,6 +52,8 @@ class ClientViewModelTest {
     private lateinit var clientRepository: ClientRepository
     private lateinit var filesRepository: FilesRepository
     private lateinit var resourceProvider: ResourceProvider
+    private lateinit var discountDao: DiscountDao
+    private lateinit var accountStateManager: AccountStateManager
     private lateinit var viewModel: ClientViewModel
 
     // Mock flows
@@ -87,10 +92,19 @@ class ClientViewModelTest {
             on { getString(any()) } doReturn "Failed to set default image"
         }
 
+        discountDao = mock()
+        // Empty account guid -> discount lookup short-circuits, so DiscountDao
+        // is never queried by these tests.
+        accountStateManager = mock {
+            on { currentAccount } doReturn MutableStateFlow(UserAccount(guid = ""))
+        }
+
         viewModel = ClientViewModel(
             resourceProvider = resourceProvider,
             clientRepository = clientRepository,
-            filesRepository = filesRepository
+            filesRepository = filesRepository,
+            discountDao = discountDao,
+            accountStateManager = accountStateManager
         )
     }
 
