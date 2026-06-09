@@ -20,3 +20,14 @@ annotation class WebSocketClient
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class DebugLogClient
+
+/**
+ * Qualifier for the OkHttpClient/Retrofit used by the relay device-REST sync
+ * (status/pull/ack/upload). Like [DebugLogClient] it carries no
+ * HttpAuthInterceptor or TokenRefresh (auth is the Bearer apiKey:deviceUuid
+ * header passed per call), but uses longer timeouts since catalog pulls and
+ * base64 image uploads can be large.
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class RelayClient

@@ -41,6 +41,7 @@ public final class Constants {
     public static final String SYNC_FORMAT_WEB = "Web_service";
     public static final String SYNC_FORMAT_HTTP = "HTTP_service";
     public static final String SYNC_FORMAT_WEBSOCKET = "WebSocket_relay";
+    public static final String SYNC_FORMAT_RELAY_REST = "REST_relay";
 
     /**
      * data update modes

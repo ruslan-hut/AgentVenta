@@ -15,6 +15,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
 import ua.com.programmer.agentventa.data.remote.api.DebugLogApi
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
+import ua.com.programmer.agentventa.data.remote.api.RelayApi
 import ua.com.programmer.agentventa.data.remote.TokenManager
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
@@ -213,6 +214,52 @@ class NetworkModule {
     @Singleton
     fun provideDebugLogApi(@DebugLogClient retrofit: Retrofit): DebugLogApi {
         return retrofit.create(DebugLogApi::class.java)
+    }
+
+    /**
+     * OkHttpClient for the relay device-REST sync. No HttpAuthInterceptor /
+     * TokenRefresh (auth is the per-call Bearer apiKey:deviceUuid header).
+     * Longer timeouts than the debug-log client because catalog pulls and
+     * base64 image uploads can be sizeable.
+     */
+    @Provides
+    @Singleton
+    @RelayClient
+    fun provideRelayOkHttpClient(cachingDns: CachingDns): OkHttpClient {
+        return OkHttpClient.Builder()
+            .dns(cachingDns)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .callTimeout(120, TimeUnit.SECONDS)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @RelayClient
+    fun provideRelayRetrofit(
+        @RelayClient okHttpClient: OkHttpClient,
+        apiKeyProvider: ApiKeyProvider
+    ): Retrofit {
+        // Base URL from the predefined backend host (same host as the WS relay).
+        val host = apiKeyProvider.backendHost.ifBlank { "localhost" }
+        val baseUrl = if (host.startsWith("http://") || host.startsWith("https://")) {
+            if (host.endsWith("/")) host else "$host/"
+        } else {
+            "https://$host/"
+        }
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRelayApi(@RelayClient retrofit: Retrofit): RelayApi {
+        return retrofit.create(RelayApi::class.java)
     }
 
 }

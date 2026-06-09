@@ -21,6 +21,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.getGuid
+import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.databinding.FragmentWebsocketTestBinding
 import ua.com.programmer.agentventa.databinding.SyncFragmentBinding
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
@@ -50,7 +51,11 @@ class SyncFragment: Fragment(), MenuProvider {
         // Note: We need to get this synchronously for layout inflation
         // The actual value will be confirmed in onViewCreated
         val currentAccount = sharedViewModel.currentAccount.value
-        useWebSocket = currentAccount?.useWebSocket ?: false
+        // Drives the WS-specific sync UI + syncNow path. REST-relay accounts
+        // have useWebSocket=true but must take the standard sync path
+        // (callFullSync -> updateAll -> REST branch), so gate on
+        // shouldUseWebSocket() which is false for REST_relay.
+        useWebSocket = currentAccount?.shouldUseWebSocket() ?: false
 
         val menuHost: MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
