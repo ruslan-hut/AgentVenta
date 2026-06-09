@@ -401,9 +401,14 @@ class WebSocketConnectionManager @Inject constructor(
         // REST-relay accounts never use the socket. Tear down any existing
         // connection and stand down — the guid-change branch below would miss
         // a WebSocket->REST flip on the same account (same guid), leaving the
-        // old socket (and the watchdog) reconnecting forever.
+        // old socket (and the watchdog) reconnecting forever. Only disconnect
+        // when something is actually up, so the per-sync account updates (the
+        // currentAccount flow re-emits on every options/license write) don't
+        // spam disconnect on an already-idle socket.
         if (account.isRelayRest()) {
-            scope.launch { webSocketRepository.disconnect() }
+            if (webSocketRepository.connectionState.value !is WebSocketState.Disconnected) {
+                scope.launch { webSocketRepository.disconnect() }
+            }
             return
         }
 

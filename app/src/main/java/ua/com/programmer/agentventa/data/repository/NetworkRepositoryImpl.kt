@@ -133,7 +133,8 @@ class NetworkRepositoryImpl @Inject constructor(
                         tokenManager.setApiService(apiService!!)
                     }
                 } else {
-                    logger.d(logTag, "WebSocket configured: ${it.guid.trimForLog()}")
+                    val mode = if (it.isRelayRest()) "REST relay" else "WebSocket"
+                    logger.d(logTag, "$mode configured: ${it.guid.trimForLog()}")
                     apiService = null
                 }
             }
