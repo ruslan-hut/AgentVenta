@@ -190,6 +190,7 @@ class WebSocketConnectionManager @Inject constructor(
             (state is WebSocketState.Error && state.canRetry)
 
         val wantConnection = currentAccount?.isValidForWebSocketConnection() == true &&
+            currentAccount?.isRelayRest() != true &&
             networkMonitor.isNetworkAvailable() &&
             (isAppInForeground || pendingDataChecker.hasPendingData())
 
@@ -279,6 +280,10 @@ class WebSocketConnectionManager @Inject constructor(
      */
     suspend fun connectNow() {
         val account = currentAccount ?: return
+
+        if (account.isRelayRest()) {
+            return
+        }
 
         if (!networkMonitor.isNetworkAvailable()) {
             logger.w(TAG, "Cannot connect: no network")
@@ -389,6 +394,15 @@ class WebSocketConnectionManager @Inject constructor(
         currentAccount = account
 
         if (account == null) {
+            scope.launch { webSocketRepository.disconnect() }
+            return
+        }
+
+        // REST-relay accounts never use the socket. Tear down any existing
+        // connection and stand down — the guid-change branch below would miss
+        // a WebSocket->REST flip on the same account (same guid), leaving the
+        // old socket (and the watchdog) reconnecting forever.
+        if (account.isRelayRest()) {
             scope.launch { webSocketRepository.disconnect() }
             return
         }
