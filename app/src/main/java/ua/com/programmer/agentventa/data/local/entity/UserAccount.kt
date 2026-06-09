@@ -190,6 +190,25 @@ fun UserAccount.getWebSocketUrl(backendHost: String): String {
     return "$url/ws/device"
 }
 
+// Sync transport for an account. The data_format column is the discriminator
+// (no separate column / migration needed):
+//   HTTP_service             -> LEGACY_HTTP (direct 1C, self-hosted)
+//   REST_relay               -> RELAY_REST  (REST against the sphynx relay)
+//   WebSocket_relay/default  -> WEBSOCKET   (further governed by use_websocket)
+enum class SyncTransport { WEBSOCKET, RELAY_REST, LEGACY_HTTP }
+
+fun UserAccount.syncTransport(): SyncTransport = when (dataFormat) {
+    Constants.SYNC_FORMAT_RELAY_REST -> SyncTransport.RELAY_REST
+    Constants.SYNC_FORMAT_HTTP -> SyncTransport.LEGACY_HTTP
+    else -> if (useWebSocket) SyncTransport.WEBSOCKET else SyncTransport.LEGACY_HTTP
+}
+
+// True when this account exchanges data over the relay REST API instead of the
+// WebSocket. REST-relay accounts do not open a WebSocket at all (see
+// WebSocketConnectionManager.shouldConnect) and gate approval/license via
+// GET /api/v1/device/status rather than WS connection state.
+fun UserAccount.isRelayRest(): Boolean = dataFormat == Constants.SYNC_FORMAT_RELAY_REST
+
 // Determines if this account should use WebSocket instead of HTTP
 // This is now the preferred way to check connection mode throughout the app
 // NOTE: HTTP_service data format is incompatible with WebSocket data exchange.
@@ -197,5 +216,6 @@ fun UserAccount.getWebSocketUrl(backendHost: String): String {
 // app update, so we guard against that invalid combination here.
 fun UserAccount.shouldUseWebSocket(): Boolean {
     if (dataFormat == Constants.SYNC_FORMAT_HTTP) return false
+    if (dataFormat == Constants.SYNC_FORMAT_RELAY_REST) return false
     return useWebSocket
 }

@@ -24,6 +24,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.isDemo
+import ua.com.programmer.agentventa.data.local.entity.isRelayRest
 import ua.com.programmer.agentventa.databinding.ActivityConnectionEditBinding
 import ua.com.programmer.agentventa.utility.Constants
 
@@ -58,6 +59,7 @@ class UserAccountFragment: Fragment(), MenuProvider {
 
         // Setup listeners first before observing account data
         setupAutoConnectionSwitch()
+        setupRestExchangeSwitch()
         setupFormatSpinner()
 
         viewModel.account.observe(this.viewLifecycleOwner) { account ->
@@ -75,12 +77,16 @@ class UserAccountFragment: Fragment(), MenuProvider {
                 val isAutoConnection = account.useWebSocket
                 binding.autoConnectionSwitch.isChecked = isAutoConnection
 
+                // REST exchange is an auto-mode sub-option (relay REST vs WebSocket)
+                binding.restExchangeSwitch.isChecked = account.isRelayRest()
+
                 // Update visibility based on auto connection mode
                 updateFieldsVisibility(isAutoConnection)
 
                 if (account.isDemo()) {
                     binding.description.isEnabled = false
                     binding.autoConnectionSwitch.isEnabled = false
+                    binding.restExchangeSwitch.isEnabled = false
                     binding.server.isEnabled = false
                     binding.dbName.isEnabled = false
                     binding.dbUser.isEnabled = false
@@ -115,19 +121,31 @@ class UserAccountFragment: Fragment(), MenuProvider {
     private fun setupAutoConnectionSwitch() {
         binding.autoConnectionSwitch.setOnCheckedChangeListener { _, isChecked ->
             updateFieldsVisibility(isChecked)
-
-            // Update selected format (auto = WebSocket, unchecked = HTTP/manual)
-            viewModel.selectedFormat.value = if (isChecked) {
-                Constants.SYNC_FORMAT_WEBSOCKET
-            } else {
-                Constants.SYNC_FORMAT_HTTP
-            }
+            viewModel.selectedFormat.value = selectedSyncFormat()
         }
+    }
+
+    private fun setupRestExchangeSwitch() {
+        binding.restExchangeSwitch.setOnCheckedChangeListener { _, _ ->
+            viewModel.selectedFormat.value = selectedSyncFormat()
+        }
+    }
+
+    // Resolves the data_format from the two switches:
+    //   manual            -> HTTP_service (legacy direct 1C)
+    //   auto + REST off    -> WebSocket_relay
+    //   auto + REST on     -> REST_relay
+    private fun selectedSyncFormat(): String = when {
+        !binding.autoConnectionSwitch.isChecked -> Constants.SYNC_FORMAT_HTTP
+        binding.restExchangeSwitch.isChecked -> Constants.SYNC_FORMAT_RELAY_REST
+        else -> Constants.SYNC_FORMAT_WEBSOCKET
     }
 
     private fun updateFieldsVisibility(isAutoConnection: Boolean) {
         // Show/hide manual configuration section (visible when NOT in auto mode)
         binding.manualConfigSection.visibility = if (!isAutoConnection) View.VISIBLE else View.GONE
+        // REST exchange toggle is only meaningful in auto (relay) mode
+        binding.restExchangeSwitch.visibility = if (isAutoConnection) View.VISIBLE else View.GONE
     }
 
     private fun finish() {
@@ -143,12 +161,13 @@ class UserAccountFragment: Fragment(), MenuProvider {
 
         val fakeGuid = binding.fakeGuid.text.toString().trim()
         val isAutoConnection = binding.autoConnectionSwitch.isChecked
+        val syncFormat = selectedSyncFormat()
 
         _account?.let {
             val updated = it.copy(
                 description = binding.description.text.toString().trim(),
                 useWebSocket = isAutoConnection, // Store the preference
-                dataFormat = if (isAutoConnection) Constants.SYNC_FORMAT_WEBSOCKET else Constants.SYNC_FORMAT_HTTP,
+                dataFormat = syncFormat,
                 dbServer = if (!isAutoConnection) binding.server.text.toString().trim() else "",
                 dbName = if (!isAutoConnection) binding.dbName.text.toString().trim() else "",
                 dbUser = if (!isAutoConnection) binding.dbUser.text.toString().trim() else "",

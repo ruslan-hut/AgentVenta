@@ -17,6 +17,7 @@ import ua.com.programmer.agentventa.data.local.entity.connectionSettingsChanged
 import ua.com.programmer.agentventa.data.local.entity.getBaseUrl
 import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.data.local.entity.isDemo
+import ua.com.programmer.agentventa.data.local.entity.isRelayRest
 import ua.com.programmer.agentventa.data.local.entity.isValidForHttpConnection
 import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.local.entity.toMap
@@ -54,7 +55,8 @@ class NetworkRepositoryImpl @Inject constructor(
     private val logger: Logger,
     private val tokenManager: TokenManager,
     tokenRefresh: TokenRefresh,
-    private val webSocketRepository: ua.com.programmer.agentventa.domain.repository.WebSocketRepository
+    private val webSocketRepository: ua.com.programmer.agentventa.domain.repository.WebSocketRepository,
+    private val relaySyncClient: RelaySyncClient
 ): NetworkRepository {
 
     private var _timestamp = 0L
@@ -337,6 +339,14 @@ class NetworkRepositoryImpl @Inject constructor(
     override suspend fun updateAll(): Flow<Result> = flow {
         val currentAccount = account
 
+        // REST-relay sync path: pull catalog + upload documents over /api/v1/device.
+        // No WebSocket is involved (see WebSocketConnectionManager.shouldConnect).
+        if (currentAccount != null && currentAccount.isRelayRest()) {
+            logger.d(logTag, "Using REST relay sync (full)")
+            relaySyncViaRest(currentAccount).collect { emit(it) }
+            return@flow
+        }
+
         // WebSocket sync path: only upload documents.
         // Catalog data is pushed by the server asynchronously;
         // batch_complete signal triggers cleanup via batchComplete observer.
@@ -428,8 +438,41 @@ class NetworkRepositoryImpl @Inject constructor(
         emit(Result.Success(""))
     }
 
+    // Shared REST-relay sync: verify approval via /status, upload unsent
+    // documents, then pull pending catalog. Used by both updateAll and
+    // updateDifferential — for the relay the full/differential distinction is
+    // moot since the catalog is delta-by-timestamp on the server.
+    private fun relaySyncViaRest(account: UserAccount): Flow<Result> = flow {
+        _timestamp = System.currentTimeMillis()
+        val (approved, message) = relaySyncClient.checkApproval(account)
+        if (!approved) {
+            emit(Result.Error(message))
+            return@flow
+        }
+        emit(Result.Progress("start: ${account.description}"))
+        try {
+            relaySyncClient.uploadDocuments(account).collect { emit(it) }
+            relaySyncClient.pullCatalog(account).collect { emit(it) }
+        } catch (e: Exception) {
+            logger.e(logTag, "REST relay sync error: $e")
+            emit(Result.Error(e.message ?: "REST sync failed"))
+            return@flow
+        }
+        val timeSpent = showTime(_timestamp, System.currentTimeMillis())
+        logger.d(logTag, "REST relay sync finish: $timeSpent")
+        emit(Result.Progress("finish: $timeSpent"))
+        emit(Result.Success(""))
+    }
+
     override suspend fun updateDifferential(): Flow<Result> = flow {
         val currentAccount = account
+
+        // REST-relay accounts: upload documents and pull any pending catalog.
+        if (currentAccount != null && currentAccount.isRelayRest()) {
+            logger.d(logTag, "Using REST relay sync (differential)")
+            relaySyncViaRest(currentAccount).collect { emit(it) }
+            return@flow
+        }
 
         // For WebSocket accounts, skip HTTP preparation and use WebSocket sync directly
         if (currentAccount != null && currentAccount.shouldUseWebSocket()) {

@@ -47,6 +47,18 @@
                 android:text="@string/auto_connection"
                 android:checked="false" />
 
+            <!-- REST exchange toggle (auto mode only): relay REST vs WebSocket -->
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/rest_exchange_switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="8dp"
+                android:padding="8dp"
+                android:text="@string/rest_exchange"
+                android:checked="false"
+                android:visibility="gone" />
+
             <!-- Manual Configuration Section (HTTP only) -->
             <LinearLayout
                 android:id="@+id/manual_config_section"

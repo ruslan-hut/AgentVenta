@@ -7,6 +7,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
+import ua.com.programmer.agentventa.data.local.entity.isRelayRest
 import ua.com.programmer.agentventa.data.local.entity.isValidForWebSocketConnection
 import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.websocket.WebSocketState
@@ -335,6 +336,13 @@ class WebSocketConnectionManager @Inject constructor(
     private fun shouldConnect(): Boolean {
         val account = currentAccount
         if (account == null) {
+            return false
+        }
+
+        // REST-relay accounts never open a socket: data exchange and
+        // approval/license both go over /api/v1/device. Connecting would also
+        // double-drain the relay's catalog queue against the REST pull.
+        if (account.isRelayRest()) {
             return false
         }
 
