@@ -21,8 +21,6 @@ import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
-import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
-import ua.com.programmer.agentventa.data.repository.WebSocketRepositoryImpl
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.config.CachingDns
@@ -100,25 +98,6 @@ class NetworkModule {
             .build()
     }
 
-    /**
-     * Provides OkHttpClient for WebSocket connections.
-     * This client does NOT include HttpAuthInterceptor to preserve
-     * the Bearer token format required by the relay server.
-     * WebSocket authentication uses: Bearer <API_KEY>:<DEVICE_UUID>
-     */
-    @Provides
-    @Singleton
-    @WebSocketClient
-    fun provideWebSocketOkHttpClient(cachingDns: CachingDns): OkHttpClient {
-        return OkHttpClient.Builder()
-            .dns(cachingDns)
-            .pingInterval(30, TimeUnit.SECONDS)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.MILLISECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
-
     @Provides
     @Singleton
     fun provideRetrofitBuilder(okHttpClient: OkHttpClient): Retrofit.Builder {
@@ -137,28 +116,6 @@ class NetworkModule {
     @Singleton
     fun provideApiKeyProvider(): ApiKeyProvider {
         return ApiKeyProvider()
-    }
-
-    @Provides
-    @Singleton
-    fun provideWebSocketRepository(
-        @WebSocketClient okHttpClient: OkHttpClient,
-        logger: Logger,
-        apiKeyProvider: ApiKeyProvider,
-        dataExchangeRepository: DataExchangeRepository,
-        userAccountRepository: UserAccountRepository,
-        sharedPreferences: SharedPreferences,
-        cachingDns: CachingDns,
-    ): WebSocketRepository {
-        return WebSocketRepositoryImpl(
-            okHttpClient = okHttpClient,
-            logger = logger,
-            apiKeyProvider = apiKeyProvider,
-            dataExchangeRepository = dataExchangeRepository,
-            userAccountRepository = userAccountRepository,
-            sharedPreferences = sharedPreferences,
-            cachingDns = cachingDns,
-        )
     }
 
     @Provides

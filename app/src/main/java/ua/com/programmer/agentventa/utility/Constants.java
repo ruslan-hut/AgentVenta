@@ -100,45 +100,8 @@ public final class Constants {
      */
     public static final String FISCAL_PROVIDER_CHECKBOX = "Checkbox";
 
-    /**
-     * WebSocket configuration
-     */
-    public static final int WEBSOCKET_RECONNECT_INITIAL_DELAY = 1000; // 1s
-    public static final int WEBSOCKET_RECONNECT_MAX_DELAY = 60000; // 60s
-    public static final int WEBSOCKET_PING_INTERVAL = 30000; // 30s
-    // If no pong (or any inbound traffic) arrives within this window the socket
-    // is treated as dead (half-open TCP) and a reconnect is forced. Allows ~2
-    // missed pongs at the 30s ping interval; server-side pongWait is 60s.
-    public static final long WEBSOCKET_PONG_TIMEOUT = 75000L; // 75s
-
-    // Idle interval for periodic connection checks (when no pending data)
+    // Default cadence for the periodic relay background sync (RelayRestSyncWorker).
     public static final long WEBSOCKET_IDLE_INTERVAL_DEFAULT = 15 * 60 * 1000L; // 15 min
-    public static final long WEBSOCKET_IDLE_INTERVAL_MIN = 5 * 60 * 1000L; // 5 min
-    public static final long WEBSOCKET_IDLE_INTERVAL_MAX = 60 * 60 * 1000L; // 60 min
-
-    /**
-     * WebSocket message types
-     */
-    public static final String WEBSOCKET_MESSAGE_TYPE_DATA = "data";
-    public static final String WEBSOCKET_MESSAGE_TYPE_ACK = "ack";
-    public static final String WEBSOCKET_MESSAGE_TYPE_PING = "ping";
-    public static final String WEBSOCKET_MESSAGE_TYPE_PONG = "pong";
-    public static final String WEBSOCKET_MESSAGE_TYPE_ERROR = "error";
-    // Document sync message types
-    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER = "upload_order";
-    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH = "upload_cash";
-    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE = "upload_image";
-    public static final String WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION = "upload_location";
-
-    /**
-     * WebSocket data types (for payload.data_type field)
-     */
-    public static final String WEBSOCKET_DATA_TYPE_OPTIONS = "options";
-    public static final String WEBSOCKET_DATA_TYPE_ORDER = "order";
-    public static final String WEBSOCKET_DATA_TYPE_CASH = "cash";
-    public static final String WEBSOCKET_DATA_TYPE_IMAGE = "image";
-    public static final String WEBSOCKET_DATA_TYPE_LOCATION = "location";
-    public static final String WEBSOCKET_DATA_TYPE_CATALOG = "catalog";
 
     /**
      * Value IDs for data objects (value_id field in payload items)
@@ -159,14 +122,7 @@ public final class Constants {
     public static final String VALUE_ID_BATCH_COMPLETE = "batch_complete";
 
     /**
-     * License check configuration
-     */
-    public static final long LICENSE_CHECK_VALIDITY_PERIOD = 24 * 60 * 60 * 1000L; // 24 hours
-    public static final long LICENSE_CHECK_TIMEOUT = 15_000L; // 15 seconds
-    public static final String PREF_LAST_LICENSE_CHECK = "last_license_check_time";
-
-    /**
-     * Pending catalog-cleanup checkpoint (WebSocket batch_complete recovery).
+     * Pending catalog-cleanup checkpoint (relay batch_complete recovery).
      * Written before running cleanup, cleared after it succeeds. If the app is
      * killed in between, the checkpoint is replayed on the next session so stale
      * rows are still removed. Bound to a specific account to avoid cross-account

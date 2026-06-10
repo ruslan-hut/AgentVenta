@@ -65,7 +65,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Store::class,
     Discount::class,
     DebugLogEntry::class,
-                     ], version = 28, exportSchema = true)
+                     ], version = 29, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -313,6 +313,20 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // WebSocket transport removed. Normalize every remaining non-direct-1C
+        // account to REST relay so it routes through /api/v1/device after update.
+        // Catches residual 'WebSocket_relay', empty, and legacy FTP/Web values
+        // that MIGRATION_27_28 missed. HTTP_service (direct 1C, incl. the demo
+        // account) is the only transport left untouched.
+        private val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "UPDATE user_accounts SET data_format = 'REST_relay' " +
+                        "WHERE data_format <> 'HTTP_service'"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -335,6 +349,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_25_26,
                         MIGRATION_26_27,
                         MIGRATION_27_28,
+                        MIGRATION_28_29,
                     )
                     .build()
                 INSTANCE = instance

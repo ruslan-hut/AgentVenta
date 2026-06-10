@@ -24,13 +24,9 @@ import ua.com.programmer.agentventa.utility.Constants
 import java.util.concurrent.TimeUnit
 
 /**
- * Periodic background sync for REST-relay accounts — the REST counterpart of
- * [ua.com.programmer.agentventa.infrastructure.websocket.WebSocketSyncWorker].
- *
- * REST accounts never open a WebSocket, so the WS worker's checkAndConnect is a
- * no-op for them; this worker is what keeps a backgrounded REST account synced
- * (upload pending documents, pull pushed catalog). It no-ops for non-REST
- * accounts, so both workers can be scheduled side by side without conflict.
+ * Periodic background sync for REST-relay accounts: uploads pending documents
+ * and pulls pushed catalog while the app is backgrounded. No-ops for direct-1C
+ * and demo accounts (those sync over manual HTTP).
  *
  * WorkManager's 15-minute floor applies; sub-15-minute freshness needs the
  * (deferred) FCM doorbell.
@@ -111,8 +107,7 @@ class RelayRestSyncWorker @AssistedInject constructor(
             )
         }
 
-        // Reuses the WebSocket idle interval default (15 min) so both transports
-        // share one cadence. KEEP so app-start re-scheduling doesn't reset it.
+        // Default cadence (15 min). KEEP so app-start re-scheduling doesn't reset it.
         fun scheduleWithDefaultInterval(context: Context) {
             val intervalMinutes = Constants.WEBSOCKET_IDLE_INTERVAL_DEFAULT / (60 * 1000)
             schedule(context, intervalMinutes, ExistingPeriodicWorkPolicy.KEEP)

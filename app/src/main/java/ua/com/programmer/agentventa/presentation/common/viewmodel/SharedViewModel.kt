@@ -88,7 +88,7 @@ class SharedViewModel @Inject constructor(
 
     val syncEvents = syncManager.syncEvents
 
-    // Snackbar events for WebSocket notifications
+    // Snackbar events for sync notifications
     val snackbarEvents = syncManager.snackbarEvents
 
     var cacheDir: File? = null

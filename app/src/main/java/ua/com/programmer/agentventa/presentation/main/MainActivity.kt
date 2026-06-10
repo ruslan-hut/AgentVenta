@@ -40,7 +40,7 @@ import ua.com.programmer.agentventa.presentation.features.settings.ScannerDiagno
 import ua.com.programmer.agentventa.presentation.features.settings.ScannerSettings
 import ua.com.programmer.agentventa.presentation.features.settings.UserOptions
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
-import ua.com.programmer.agentventa.presentation.common.viewmodel.WebSocketSnackbarEvent
+import ua.com.programmer.agentventa.presentation.common.viewmodel.SyncSnackbarEvent
 import androidx.core.view.size
 import androidx.core.view.get
 
@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity() {
             updateViewWithOptions(sharedViewModel.options)
         }
 
-        // Observe snackbar events for WebSocket notifications
+        // Observe sync snackbar events
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 sharedViewModel.snackbarEvents.collect { event ->
@@ -250,31 +250,9 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
     }
 
-    private fun showSnackbar(event: WebSocketSnackbarEvent) {
+    private fun showSnackbar(event: SyncSnackbarEvent) {
         val (message, duration) = when (event) {
-            is WebSocketSnackbarEvent.ConnectionError -> return // Connection errors are not shown
-
-            is WebSocketSnackbarEvent.LicenseError ->
-                getString(R.string.snackbar_license_error, event.reason) to Snackbar.LENGTH_LONG
-
-            is WebSocketSnackbarEvent.PendingApproval ->
-                getString(R.string.snackbar_pending_approval) to Snackbar.LENGTH_LONG
-
-            is WebSocketSnackbarEvent.DataSent -> {
-                val msg = when (event.type) {
-                    "order" -> getString(R.string.snackbar_orders_sent, event.count)
-                    "cash" -> getString(R.string.snackbar_cash_sent, event.count)
-                    "image" -> getString(R.string.snackbar_images_sent, event.count)
-                    "location" -> getString(R.string.snackbar_locations_sent, event.count)
-                    else -> "${event.type}: ${event.count}"
-                }
-                msg to Snackbar.LENGTH_SHORT
-            }
-
-            is WebSocketSnackbarEvent.CatalogReceived ->
-                getString(R.string.snackbar_catalog_received, event.count) to Snackbar.LENGTH_SHORT
-
-            is WebSocketSnackbarEvent.SyncError ->
+            is SyncSnackbarEvent.SyncError ->
                 getString(R.string.snackbar_sync_error, event.message) to Snackbar.LENGTH_LONG
         }
 

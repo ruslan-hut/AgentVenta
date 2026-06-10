@@ -19,7 +19,6 @@ import ua.com.programmer.agentventa.data.local.entity.getGuid
 import ua.com.programmer.agentventa.data.local.entity.isDemo
 import ua.com.programmer.agentventa.data.local.entity.isRelayRest
 import ua.com.programmer.agentventa.data.local.entity.isValidForHttpConnection
-import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
 import ua.com.programmer.agentventa.data.local.entity.toMap
 import ua.com.programmer.agentventa.data.remote.api.HttpClientApi
 import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
@@ -27,14 +26,7 @@ import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
 import ua.com.programmer.agentventa.data.remote.Result
 import ua.com.programmer.agentventa.data.remote.SendResult
 import ua.com.programmer.agentventa.data.remote.TokenManager
-import ua.com.programmer.agentventa.data.websocket.SendResult as WebSocketSendResult
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withTimeoutOrNull
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
-import ua.com.programmer.agentventa.data.websocket.WebSocketState
-import ua.com.programmer.agentventa.data.websocket.awaitState
-import ua.com.programmer.agentventa.data.websocket.getDescription
-import ua.com.programmer.agentventa.data.websocket.isSettled
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
@@ -55,7 +47,6 @@ class NetworkRepositoryImpl @Inject constructor(
     private val logger: Logger,
     private val tokenManager: TokenManager,
     tokenRefresh: TokenRefresh,
-    private val webSocketRepository: ua.com.programmer.agentventa.domain.repository.WebSocketRepository,
     private val relaySyncClient: RelaySyncClient
 ): NetworkRepository {
 
@@ -77,16 +68,6 @@ class NetworkRepositoryImpl @Inject constructor(
 
     private val logTag = "AV-NetworkRepo"
 
-    // Outer timeout on awaitTerminalSendResult — longer than the per-message
-    // ACK watchdog inside WebSocketRepositoryImpl (which is
-    // Constants.DEBUG_LOG_ACK_TIMEOUT_MS = 15s) so we always see the synthetic
-    // Failed emission rather than tripping this fallback first.
-    private val WS_SEND_TERMINAL_TIMEOUT_MS = 20_000L
-
-    // How long the upload path waits for the socket to reach Connected after
-    // connect() returns. Covers the OkHttp connectTimeout (15s) plus handshake.
-    private val WS_CONNECT_AWAIT_MS = 20_000L
-
     private val gson = Gson()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -100,8 +81,8 @@ class NetworkRepositoryImpl @Inject constructor(
             if (userAccount == null) return@onEach
             currentSystemAccount = userAccount
 
-            // Always set account for WebSocket sync to work
-            // Only configure HTTP service for HTTP-capable accounts
+            // Only configure the direct-1C HTTP service for HTTP-capable accounts;
+            // relay-REST accounts carry no dbServer and sync via RelaySyncClient.
             val isHttpAccount = !isNotValidAccount(currentSystemAccount)
 
             account?.let {
@@ -109,8 +90,8 @@ class NetworkRepositoryImpl @Inject constructor(
                     apiService = null
                 } else {
                     token = userAccount.token
-                    // Use userAccount (fresh from DB) as base to preserve all user-changed
-                    // fields like useWebSocket that connectionSettingsChanged() doesn't track
+                    // Use userAccount (fresh from DB) as base to preserve all
+                    // user-changed fields connectionSettingsChanged() doesn't track
                     account = userAccount
                     return@onEach
                 }
@@ -133,49 +114,12 @@ class NetworkRepositoryImpl @Inject constructor(
                         tokenManager.setApiService(apiService!!)
                     }
                 } else {
-                    val mode = if (it.isRelayRest()) "REST relay" else "WebSocket"
-                    logger.d(logTag, "$mode configured: ${it.guid.trimForLog()}")
+                    logger.d(logTag, "REST relay configured: ${it.guid.trimForLog()}")
                     apiService = null
                 }
             }
 
         }.launchIn(scope)
-
-        // Subscribe to WebSocket document acknowledgments to mark documents as sent
-        webSocketRepository.documentAcks.onEach { ack ->
-            val accountGuid = currentSystemAccount?.guid ?: return@onEach
-            try {
-                when (ack.documentType) {
-                    "order" -> {
-                        val updated = dataRepository.markOrderSentViaWebSocket(accountGuid, ack.documentGuid)
-                        logger.d(logTag, "Order marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
-                    }
-                    "cash" -> {
-                        val updated = dataRepository.markCashSentViaWebSocket(accountGuid, ack.documentGuid)
-                        logger.d(logTag, "Cash marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
-                    }
-                    "image" -> {
-                        val updated = dataRepository.markImageSentViaWebSocket(accountGuid, ack.documentGuid)
-                        logger.d(logTag, "Image marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
-                    }
-                    "location" -> {
-                        // For locations, the documentGuid is client_guid
-                        val updated = dataRepository.markLocationSentViaWebSocket(accountGuid, ack.documentGuid)
-                        logger.d(logTag, "Location marked as sent via WebSocket: ${ack.documentGuid} (updated=$updated)")
-                    }
-                    else -> {
-                        logger.w(logTag, "Unknown document type in ACK: ${ack.documentType}")
-                    }
-                }
-            } catch (e: Exception) {
-                logger.e(logTag, "Error marking document as sent: ${e.message}")
-            }
-        }.launchIn(scope)
-
-        // batch_complete is handled inside WebSocketRepositoryImpl under the
-        // catalog-processing mutex (persisted checkpoint + cleanup + emission).
-        // No subscription needed here; cleanup must not run here, or it would
-        // race with an in-flight save of a later WS data message.
     }
 
     private suspend fun onConnectionError() {
@@ -197,84 +141,21 @@ class NetworkRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Checks if device is approved for data operations via WebSocket connection state.
-     * Flow: try WebSocket first, if it fails fall back to cached license check.
-     *
-     * - If WebSocket is already Connected → approved
-     * - If WebSocket is Pending/LicenseError → definitive server rejection → block
-     * - If WebSocket is in transient state → wait up to LICENSE_CHECK_TIMEOUT for resolution
-     *   - If Connected within timeout → approved
-     *   - If Pending/LicenseError within timeout → block
-     *   - If timeout expires → check lastLicenseCheckTime cache (valid for 24h)
-     *
-     * @return Pair<Boolean, String> - (isApproved, errorMessage)
-     */
-    private suspend fun checkDeviceApproval(): Pair<Boolean, String> {
-        val wsState = webSocketRepository.connectionState.value
-
-        // Already connected — license is valid
-        if (wsState is WebSocketState.Connected) {
-            return Pair(true, "")
-        }
-
-        // Definitive server rejections — no fallback
-        if (wsState is WebSocketState.Pending) {
-            return Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
-        }
-        if (wsState is WebSocketState.LicenseError) {
-            return Pair(false, "License error: ${wsState.reason}")
-        }
-
-        // Non-retryable error — no fallback
-        if (wsState is WebSocketState.Error && !wsState.canRetry) {
-            return Pair(false, "Connection error: ${wsState.error}")
-        }
-
-        // Transient state — try reconnect and wait for resolution
-        logger.d(logTag, "WebSocket in transient state ($wsState), attempting connection for license check...")
-        try {
-            webSocketRepository.reconnect()
-        } catch (e: Exception) {
-            logger.w(logTag, "WebSocket reconnect attempt failed: ${e.message}")
-        }
-
-        val resolvedState = webSocketRepository.connectionState
-            .awaitState(Constants.LICENSE_CHECK_TIMEOUT) { it.isSettled() }
-
-        if (resolvedState != null) {
-            return when (resolvedState) {
-                is WebSocketState.Connected -> Pair(true, "")
-                is WebSocketState.Pending -> Pair(false, "Device pending approval. Please wait for administrator to approve this device.")
-                is WebSocketState.LicenseError -> Pair(false, "License error: ${resolvedState.reason}")
-                is WebSocketState.Error -> Pair(false, "Connection error: ${resolvedState.error}")
-                else -> Pair(false, "Unexpected state: $resolvedState")
-            }
-        }
-
-        // Timeout — fall back to cached license check
-        val lastCheck = webSocketRepository.lastLicenseCheckTime.value
-        val elapsed = System.currentTimeMillis() - lastCheck
-        if (lastCheck > 0 && elapsed < Constants.LICENSE_CHECK_VALIDITY_PERIOD) {
-            val hoursAgo = elapsed / (60 * 60 * 1000)
-            logger.d(logTag, "WebSocket unavailable, using cached license check (${hoursAgo}h ago)")
-            return Pair(true, "")
-        }
-
-        return Pair(false, "Cannot verify license. No server connection and last check was over 24 hours ago.")
-    }
-
     private val prepare: Flow<Result> = flow {
         if (isNotValidAccount(currentSystemAccount)) {
             emit(Result.Error("Wrong connection settings"))
             return@flow
         }
 
-        // Check device approval status before HTTP operations (skip for demo accounts)
-        if (account?.isDemo() == true) {
+        // Approval/license is gated by the relay /status endpoint for every
+        // non-demo account, including direct-1C HTTP (data still goes direct to
+        // the customer's 1C; only the license check uses the relay). The demo
+        // account is fully self-contained and needs neither approval nor license.
+        val currentAccount = account
+        if (currentAccount?.isDemo() == true) {
             logger.d(logTag, "Demo account - skipping device approval check")
-        } else {
-            val (isApproved, approvalError) = checkDeviceApproval()
+        } else if (currentAccount != null) {
+            val (isApproved, approvalError) = relaySyncClient.checkApproval(currentAccount)
             if (!isApproved) {
                 logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
                 emit(Result.Error(approvalError))
@@ -295,34 +176,25 @@ class NetworkRepositoryImpl @Inject constructor(
         _options = UserOptionsBuilder.build(account)
         token = account?.token ?: ""
 
-        // In direct HTTP mode, always call GET /check to get fresh options from server
-        // In WebSocket mode, options are pushed via WebSocket, so only refresh if missing
-        val needsRefresh = if (account?.shouldUseWebSocket() != true) {
-            true // HTTP mode: always refresh options on sync
-        } else {
-            token.isBlank() || _options.isEmpty // WS mode: only if token/options missing
-        }
-
-        if (needsRefresh) {
-            when (val result = tokenManager.refreshToken("prepare")) {
-                is TokenManager.TokenResult.Success -> {
-                    token = result.token
-                    // Reload account from DB to get fresh options saved by TokenManager
-                    userAccountRepository.getCurrent()?.let { freshAccount ->
-                        account = freshAccount
-                    }
-                    _options = UserOptionsBuilder.build(account)
-                    if (!result.canRead) {
-                        logger.w(logTag, "User has no read access")
-                        emit(Result.Error("User has no read access"))
-                        return@flow
-                    }
+        // Direct HTTP mode always calls GET /check to get fresh options from 1C.
+        when (val result = tokenManager.refreshToken("prepare")) {
+            is TokenManager.TokenResult.Success -> {
+                token = result.token
+                // Reload account from DB to get fresh options saved by TokenManager
+                userAccountRepository.getCurrent()?.let { freshAccount ->
+                    account = freshAccount
                 }
-                is TokenManager.TokenResult.Error -> {
-                    logger.e(logTag, "Token refresh failed: ${result.message}")
-                    emit(Result.Error(result.message))
+                _options = UserOptionsBuilder.build(account)
+                if (!result.canRead) {
+                    logger.w(logTag, "User has no read access")
+                    emit(Result.Error("User has no read access"))
                     return@flow
                 }
+            }
+            is TokenManager.TokenResult.Error -> {
+                logger.e(logTag, "Token refresh failed: ${result.message}")
+                emit(Result.Error(result.message))
+                return@flow
             }
         }
 
@@ -341,40 +213,13 @@ class NetworkRepositoryImpl @Inject constructor(
         val currentAccount = account
 
         // REST-relay sync path: pull catalog + upload documents over /api/v1/device.
-        // No WebSocket is involved (see WebSocketConnectionManager.shouldConnect).
         if (currentAccount != null && currentAccount.isRelayRest()) {
             logger.d(logTag, "Using REST relay sync (full)")
             relaySyncViaRest(currentAccount).collect { emit(it) }
             return@flow
         }
 
-        // WebSocket sync path: only upload documents.
-        // Catalog data is pushed by the server asynchronously;
-        // batch_complete signal triggers cleanup via batchComplete observer.
-        if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
-            logger.d(logTag, "Using WebSocket sync — uploading documents")
-            _timestamp = System.currentTimeMillis()
-            val accountGuid = currentAccount.guid
-            webSocketRepository.setCurrentAccountGuid(accountGuid)
-
-            try {
-                sendDocumentsViaWebSocket(accountGuid).collect {
-                    emit(it)
-                }
-            } catch (e: Exception) {
-                logger.e(logTag, "WebSocket sync error: $e")
-                emit(Result.Error(e.message ?: "WebSocket sync failed"))
-                return@flow
-            }
-
-            val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-            logger.d(logTag, "WebSocket sync finish: $timeSpent")
-            emit(Result.Progress("finish: $timeSpent"))
-            emit(Result.Success(""))
-            return@flow
-        }
-
-        // HTTP full sync path
+        // HTTP full sync path (direct 1C / demo)
 
         runCatching {
             prepare.collect {
@@ -475,30 +320,7 @@ class NetworkRepositoryImpl @Inject constructor(
             return@flow
         }
 
-        // For WebSocket accounts, skip HTTP preparation and use WebSocket sync directly
-        if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
-            logger.d(logTag, "Using WebSocket differential sync")
-            _timestamp = System.currentTimeMillis()
-            webSocketRepository.setCurrentAccountGuid(currentAccount.guid)
-
-            try {
-                sendDocumentsViaWebSocket(currentAccount.guid).collect {
-                    emit(it)
-                }
-            } catch (e: Exception) {
-                logger.e(logTag, "WebSocket sync error: $e")
-                emit(Result.Error(e.message ?: "WebSocket sync failed"))
-                return@flow
-            }
-
-            val timeSpent = showTime(_timestamp, System.currentTimeMillis())
-            logger.d(logTag, "WebSocket sync finish: $timeSpent")
-            emit(Result.Progress("finish: $timeSpent"))
-            emit(Result.Success(""))
-            return@flow
-        }
-
-        // HTTP sync path
+        // HTTP sync path (direct 1C / demo)
         runCatching {
             prepare.collect {
                 emit(it)
@@ -678,27 +500,10 @@ class NetworkRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Main document sync routing method
-     * Routes to either HTTP or WebSocket sync based on UserAccount.shouldUseWebSocket()
+     * Uploads unsent documents (orders, cash, images, locations) to the 1C
+     * server via HTTP POST. Used by the direct-1C / demo path.
      */
     private fun sendDocuments(account: String): Flow<Result> = flow {
-        // Check if we should use WebSocket or HTTP sync
-        val currentAccount = this@NetworkRepositoryImpl.account
-        if (currentAccount != null && currentAccount.shouldUseWebSocket()) {
-            // Use WebSocket sync
-            logger.d(logTag, "Using WebSocket sync for account: ${currentAccount.description}")
-            sendDocumentsViaWebSocket(account).collect { emit(it) }
-        } else {
-            // Use HTTP sync
-            logger.d(logTag, "Using HTTP sync for account: ${currentAccount?.description ?: account}")
-            sendDocumentsViaHttp(account).collect { emit(it) }
-        }
-    }
-
-    /**
-     * Send documents via HTTP (original implementation)
-     */
-    private fun sendDocumentsViaHttp(account: String): Flow<Result> = flow {
 
         val documents = dataRepository.getOrders(account)
         val type = Constants.DOCUMENT_ORDER
@@ -751,215 +556,6 @@ class NetworkRepositoryImpl @Inject constructor(
             emit(Result.Progress("$typeLocation: ${locations.size}"))
         }
 
-    }
-
-    /**
-     * Send documents via WebSocket
-     */
-    private fun sendDocumentsViaWebSocket(account: String): Flow<Result> = flow {
-        val initialState = webSocketRepository.connectionState.value
-        logger.d(logTag, "ws.upload.start", mapOf(
-            "account" to account.trimForLog(),
-            "ws_state" to initialState::class.simpleName.orEmpty(),
-            "is_connected" to webSocketRepository.isConnected(),
-            "ws_pending" to webSocketRepository.getPendingMessageCount(),
-        ))
-
-        // Check WebSocket connection before starting sync
-        if (!webSocketRepository.isConnected()) {
-            emit(Result.Progress("Connecting to WebSocket..."))
-            val currentAccount = this@NetworkRepositoryImpl.account
-            if (currentAccount != null) {
-                val connected = webSocketRepository.connect(currentAccount)
-                val stateAfter = webSocketRepository.connectionState.value
-                logger.d(logTag, "ws.upload.connect.result", mapOf(
-                    "connected_returned" to connected,
-                    "is_connected_after" to webSocketRepository.isConnected(),
-                    "ws_state_after" to stateAfter::class.simpleName.orEmpty(),
-                    "ws_state_detail" to stateAfter.toString(),
-                ))
-                if (!connected && !webSocketRepository.isConnected()) {
-                    logger.e(logTag, "ws.upload.connect.failed", mapOf(
-                        "ws_state" to stateAfter.toString(),
-                    ))
-                    emit(Result.Error("Failed to connect to WebSocket relay server"))
-                    return@flow
-                }
-                // connect() returns once the socket is opening (Connecting), not
-                // open. Await the settled outcome before sending — a fixed delay
-                // races onOpen (observed 400ms–several seconds) and every send
-                // would fail "Not connected". Awaiting "settled" (not just
-                // Connected) means a Pending/LicenseError/non-retryable device
-                // fails fast with its real reason instead of stalling the whole
-                // WS_CONNECT_AWAIT_MS and reporting a misleading timeout.
-                val settled = webSocketRepository.connectionState
-                    .awaitState(WS_CONNECT_AWAIT_MS) { it.isSettled() }
-                when {
-                    settled is WebSocketState.Connected -> { /* proceed to upload */ }
-                    settled == null -> {
-                        logger.e(logTag, "ws.upload.connect.timeout", mapOf(
-                            "ws_state" to webSocketRepository.connectionState.value.toString(),
-                        ))
-                        emit(Result.Error("Timed out waiting for WebSocket connection"))
-                        return@flow
-                    }
-                    else -> {
-                        logger.e(logTag, "ws.upload.connect.rejected", mapOf(
-                            "ws_state" to settled.toString(),
-                        ))
-                        emit(Result.Error(settled.getDescription()))
-                        return@flow
-                    }
-                }
-            } else {
-                logger.e(logTag, "ws.upload.no_account")
-                emit(Result.Error("No account configured for WebSocket"))
-                return@flow
-            }
-        }
-
-        var totalDocuments = 0
-
-        // Upload orders
-        val documents = dataRepository.getOrders(account)
-        logger.d(logTag, "ws.upload.orders.fetched", mapOf(
-            "account" to account.trimForLog(),
-            "count" to documents.size,
-        ))
-        if (documents.isNotEmpty()) {
-            emit(Result.Progress("Uploading ${documents.size} orders via WebSocket..."))
-            val contentByOrder = dataRepository.getPendingOrdersContent(account)
-            for (document in documents) {
-                val content = contentByOrder[document.guid] ?: emptyList()
-                uploadOrderViaWebSocket(document, content).collect { result ->
-                    when (result) {
-                        is Result.Success -> totalDocuments++
-                        is Result.Error -> logger.e(logTag, "Order upload failed: ${result.message}")
-                        else -> {}
-                    }
-                }
-            }
-            emit(Result.Progress("${Constants.DOCUMENT_ORDER}: $totalDocuments"))
-        }
-
-        // Upload cash receipts
-        val cashList = dataRepository.getCash(account)
-        if (cashList.isNotEmpty()) {
-            emit(Result.Progress("Uploading ${cashList.size} cash receipts via WebSocket..."))
-            var cashCount = 0
-            for (cash in cashList) {
-                uploadCashViaWebSocket(cash).collect { result ->
-                    when (result) {
-                        is Result.Success -> cashCount++
-                        is Result.Error -> logger.e(logTag, "Cash upload failed: ${result.message}")
-                        else -> {}
-                    }
-                }
-            }
-            emit(Result.Progress("${Constants.DOCUMENT_CASH}: $cashCount"))
-        }
-
-        // Upload client images
-        val images = dataRepository.getClientImages(account)
-        if (images.isNotEmpty()) {
-            emit(Result.Progress("Uploading ${images.size} images via WebSocket..."))
-            var imageCount = 0
-            for (image in images) {
-                val payloadMap = mapOf(
-                    "image" to image.toMap(),
-                    "document_guid" to image.guid
-                )
-                val payloadJson = gson.toJson(payloadMap)
-
-                val sendResult = awaitTerminalSendResult(
-                    webSocketRepository.sendMessage(
-                        type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
-                        payload = payloadJson
-                    )
-                )
-
-                when (sendResult) {
-                    is WebSocketSendResult.Acknowledged -> {
-                        imageCount++
-                        logger.d(logTag, "Image ${image.guid} uploaded successfully")
-                    }
-                    is WebSocketSendResult.Failed -> {
-                        logger.e(logTag, "Image upload failed: ${sendResult.error}")
-                    }
-                    null -> {
-                        logger.e(logTag, "Image upload timed out: ${image.guid}")
-                    }
-                    else -> {
-                        logger.d(logTag, "Image ${image.guid} unexpected result: $sendResult")
-                    }
-                }
-            }
-            emit(Result.Progress("${Constants.DATA_CLIENT_IMAGE}: $imageCount"))
-        }
-
-        // Upload client locations
-        val locations = dataRepository.getClientLocations(account)
-        if (locations.isNotEmpty()) {
-            emit(Result.Progress("Uploading ${locations.size} locations via WebSocket..."))
-            val locationMaps = locations.map { it.toMap() }
-            val payloadMap = mapOf(
-                "locations" to locationMaps,
-                "count" to locations.size
-            )
-            val payloadJson = gson.toJson(payloadMap)
-
-            val sendResult = awaitTerminalSendResult(
-                webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
-                    payload = payloadJson
-                )
-            )
-
-            when (sendResult) {
-                is WebSocketSendResult.Acknowledged -> {
-                    logger.d(logTag, "${locations.size} locations uploaded successfully")
-                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: ${locations.size}"))
-                }
-                is WebSocketSendResult.Failed -> {
-                    logger.e(logTag, "Location upload failed: ${sendResult.error}")
-                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: 0 (failed)"))
-                }
-                null -> {
-                    logger.e(logTag, "Location upload timed out (${locations.size} locations)")
-                    emit(Result.Progress("${Constants.DATA_CLIENT_LOCATION}: 0 (timeout)"))
-                }
-                else -> {
-                    logger.d(logTag, "Locations unexpected result: $sendResult")
-                }
-            }
-        }
-
-        logger.d(logTag, "ws.upload.finish", mapOf(
-            "account" to account.trimForLog(),
-            "orders_uploaded" to totalDocuments,
-            "orders_pending" to documents.size,
-            "cash_pending" to cashList.size,
-            "images_pending" to images.size,
-            "locations_pending" to locations.size,
-        ))
-    }
-
-    /**
-     * Awaits a terminal [WebSocketSendResult] (Acknowledged or Failed) for an
-     * outbound WS message, with a hard timeout that exceeds the per-message
-     * ACK watchdog inside WebSocketRepositoryImpl. Returns null on timeout —
-     * the caller treats that as failure (don't mark the document sent).
-     *
-     * Background: the previous code did `.first()`, which collected the very
-     * first emission — i.e. `Sent` (transport accepted) — and treated that as
-     * success. Documents got marked sent purely because OkHttp accepted the
-     * bytes, regardless of whether the relay persisted them. That's the root
-     * cause of "orders not arriving" reports.
-     */
-    private suspend fun awaitTerminalSendResult(
-        flow: Flow<WebSocketSendResult>
-    ): WebSocketSendResult? = withTimeoutOrNull(WS_SEND_TERMINAL_TIMEOUT_MS) {
-        flow.first { it is WebSocketSendResult.Acknowledged || it is WebSocketSendResult.Failed }
     }
 
     private suspend fun saveData(account: String, time: Long, data: List<*>) {
@@ -1034,258 +630,6 @@ private fun processPrintData(guid: String, data: String, storage: File): Boolean
             return false
         }
         return true
-    }
-
-    // ========================================================================
-    // WebSocket Document Synchronization Methods
-    // ========================================================================
-
-    /**
-     * Upload a single order with its content via WebSocket
-     */
-    override suspend fun uploadOrderViaWebSocket(
-        order: ua.com.programmer.agentventa.data.local.entity.Order,
-        orderContent: List<ua.com.programmer.agentventa.data.local.entity.LOrderContent>
-    ): Flow<Result> = flow {
-        try {
-            val currentAccount = account ?: run {
-                emit(Result.Error("No account configured"))
-                return@flow
-            }
-
-            emit(Result.Progress("Uploading order ${order.number} via WebSocket..."))
-
-            val gson = Gson()
-
-            // Serialize order to map using LOrderContent.toMap()
-            val orderMap = order.toMap(currentAccount.guid, orderContent.map { it.toMap() })
-            //val orderJson = gson.toJsonTree(orderMap).asJsonObject
-
-            // Serialize order content
-            //val contentJsonArray = orderContent.map {
-            //    gson.toJsonTree(it.toMap()).asJsonObject
-            //}
-
-            // Create payload
-            val payloadMap = mapOf(
-                "order" to orderMap,
-                "content" to orderContent.map { it.toMap() },
-                "document_guid" to order.guid
-            )
-            val payloadJson = gson.toJson(payloadMap)
-
-            // Send via WebSocket and wait for ACK (or timeout). Treat only
-            // Acknowledged as success; Sent is just transport-accept and tells
-            // us nothing about whether the relay persisted the order.
-            val sendResult = awaitTerminalSendResult(
-                webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_ORDER,
-                    payload = payloadJson
-                )
-            )
-
-            when (sendResult) {
-                is WebSocketSendResult.Acknowledged -> {
-                    logger.d(logTag, "Order ${order.number} uploaded successfully via WebSocket")
-                    emit(Result.Success("Order ${order.number} uploaded"))
-                }
-                is WebSocketSendResult.Failed -> {
-                    logger.e(logTag, "Failed to upload order via WebSocket: ${sendResult.error}")
-                    emit(Result.Error(sendResult.error))
-                }
-                null -> {
-                    logger.e(logTag, "Order ${order.number} upload timed out (no ACK)")
-                    emit(Result.Error("ACK timeout"))
-                }
-                else -> {
-                    // Sent / Pending — non-terminal; treat as transient and let
-                    // the next sync sweep retry.
-                    logger.d(logTag, "Order ${order.number} non-terminal result: $sendResult")
-                    emit(Result.Error("No terminal ACK"))
-                }
-            }
-        } catch (e: Exception) {
-            logger.e(logTag, "Error uploading order via WebSocket: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
-    }
-
-    /**
-     * Upload a single cash receipt via WebSocket
-     */
-    override suspend fun uploadCashViaWebSocket(
-        cash: ua.com.programmer.agentventa.data.local.entity.Cash
-    ): Flow<Result> = flow {
-        try {
-            val currentAccount = account ?: run {
-                emit(Result.Error("No account configured"))
-                return@flow
-            }
-
-            emit(Result.Progress("Uploading cash receipt ${cash.number} via WebSocket..."))
-
-            val gson = Gson()
-
-            // Serialize cash to map
-            val cashMap = cash.toMap(currentAccount.guid)
-
-            // Create payload
-            val payloadMap = mapOf(
-                "cash" to cashMap,
-                "document_guid" to cash.guid
-            )
-            val payloadJson = gson.toJson(payloadMap)
-
-            // Send via WebSocket and wait for ACK (or timeout). Same rationale
-            // as uploadOrderViaWebSocket — only ACK proves persistence.
-            val sendResult = awaitTerminalSendResult(
-                webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_CASH,
-                    payload = payloadJson
-                )
-            )
-
-            when (sendResult) {
-                is WebSocketSendResult.Acknowledged -> {
-                    logger.d(logTag, "Cash ${cash.number} uploaded successfully via WebSocket")
-                    emit(Result.Success("Cash ${cash.number} uploaded"))
-                }
-                is WebSocketSendResult.Failed -> {
-                    logger.e(logTag, "Failed to upload cash via WebSocket: ${sendResult.error}")
-                    emit(Result.Error(sendResult.error))
-                }
-                null -> {
-                    logger.e(logTag, "Cash ${cash.number} upload timed out (no ACK)")
-                    emit(Result.Error("ACK timeout"))
-                }
-                else -> {
-                    logger.d(logTag, "Cash ${cash.number} non-terminal result: $sendResult")
-                    emit(Result.Error("No terminal ACK"))
-                }
-            }
-        } catch (e: Exception) {
-            logger.e(logTag, "Error uploading cash via WebSocket: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
-    }
-
-    /**
-     * Upload product images via WebSocket
-     */
-    override suspend fun uploadImagesViaWebSocket(
-        images: List<ua.com.programmer.agentventa.data.local.entity.ProductImage>
-    ): Flow<Result> = flow {
-        try {
-            if (images.isEmpty()) {
-                emit(Result.Success("No images to upload"))
-                return@flow
-            }
-
-            emit(Result.Progress("Uploading ${images.size} images via WebSocket..."))
-
-            val gson = Gson()
-            var uploadedCount = 0
-
-            for (image in images) {
-                // Serialize image to map
-                val imageMap = image.toMap()
-
-                // Create payload
-                val payloadMap = mapOf(
-                    "image" to imageMap,
-                    "document_guid" to image.guid
-                )
-                val payloadJson = gson.toJson(payloadMap)
-
-                // Send via WebSocket and wait for ACK (or timeout)
-                val sendResult = awaitTerminalSendResult(
-                    webSocketRepository.sendMessage(
-                        type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_IMAGE,
-                        payload = payloadJson
-                    )
-                )
-
-                when (sendResult) {
-                    is WebSocketSendResult.Acknowledged -> {
-                        uploadedCount++
-                        logger.d(logTag, "Image ${image.guid} uploaded successfully")
-                        emit(Result.Progress("Uploaded $uploadedCount of ${images.size} images"))
-                    }
-                    is WebSocketSendResult.Failed -> {
-                        logger.e(logTag, "Failed to upload image: ${sendResult.error}")
-                    }
-                    null -> {
-                        logger.e(logTag, "Image ${image.guid} upload timed out (no ACK)")
-                    }
-                    else -> {
-                        logger.d(logTag, "Image ${image.guid} non-terminal result: $sendResult")
-                    }
-                }
-            }
-
-            emit(Result.Success("Uploaded $uploadedCount of ${images.size} images"))
-        } catch (e: Exception) {
-            logger.e(logTag, "Error uploading images via WebSocket: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
-    }
-
-    /**
-     * Upload location history via WebSocket
-     */
-    override suspend fun uploadLocationsViaWebSocket(
-        locations: List<ua.com.programmer.agentventa.data.local.entity.LocationHistory>
-    ): Flow<Result> = flow {
-        try {
-            if (locations.isEmpty()) {
-                emit(Result.Success("No locations to upload"))
-                return@flow
-            }
-
-            emit(Result.Progress("Uploading ${locations.size} location records via WebSocket..."))
-
-            val gson = Gson()
-
-            // Serialize all locations to maps
-            val locationMaps = locations.map { it.toMap() }
-
-            // Create payload
-            val payloadMap = mapOf(
-                "locations" to locationMaps,
-                "count" to locations.size
-            )
-            val payloadJson = gson.toJson(payloadMap)
-
-            // Send via WebSocket (batch upload) and wait for ACK or timeout
-            val sendResult = awaitTerminalSendResult(
-                webSocketRepository.sendMessage(
-                    type = Constants.WEBSOCKET_MESSAGE_TYPE_UPLOAD_LOCATION,
-                    payload = payloadJson
-                )
-            )
-
-            when (sendResult) {
-                is WebSocketSendResult.Acknowledged -> {
-                    logger.d(logTag, "${locations.size} locations uploaded successfully via WebSocket")
-                    emit(Result.Success("${locations.size} locations uploaded"))
-                }
-                is WebSocketSendResult.Failed -> {
-                    logger.e(logTag, "Failed to upload locations via WebSocket: ${sendResult.error}")
-                    emit(Result.Error(sendResult.error))
-                }
-                null -> {
-                    logger.e(logTag, "Locations upload timed out (no ACK)")
-                    emit(Result.Error("ACK timeout"))
-                }
-                else -> {
-                    logger.d(logTag, "Locations non-terminal result: $sendResult")
-                    emit(Result.Error("No terminal ACK"))
-                }
-            }
-        } catch (e: Exception) {
-            logger.e(logTag, "Error uploading locations via WebSocket: $e")
-            emit(Result.Error(e.message ?: "Unknown error"))
-        }
     }
 
 }
