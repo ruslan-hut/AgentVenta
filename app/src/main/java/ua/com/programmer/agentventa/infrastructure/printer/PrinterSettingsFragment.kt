@@ -75,7 +75,7 @@ class PrinterSettingsFragment: Fragment() {
 
         viewModel.currentDeviceIndex.observe(viewLifecycleOwner) { index ->
             val adapter = binding?.deviceDropdown?.adapter
-            if (adapter != null && index < adapter.count) {
+            if (adapter != null && index in 0 until adapter.count) {
                 binding?.deviceDropdown?.setText(adapter.getItem(index).toString(), false)
             }
         }
