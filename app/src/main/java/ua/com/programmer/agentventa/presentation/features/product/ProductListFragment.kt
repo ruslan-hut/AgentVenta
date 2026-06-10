@@ -85,7 +85,10 @@ class ProductListFragment: Fragment(), MenuProvider {
             val action = ProductListFragmentDirections.actionProductListFragmentToProductImageFragment(
                 productGuid = it.guid
             )
-            view.findNavController().navigate(action)
+            val controller = view.findNavController()
+            if (controller.currentDestination?.id == R.id.productListFragment) {
+                controller.navigate(action)
+            }
         }
 
         recyclerView.adapter = adapter
@@ -135,7 +138,10 @@ class ProductListFragment: Fragment(), MenuProvider {
                 productGuid = product.guid
             )
         }
-        view?.findNavController()?.navigate(action)
+        val controller = view?.findNavController() ?: return
+        if (controller.currentDestination?.id == R.id.productListFragment) {
+            controller.navigate(action)
+        }
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
