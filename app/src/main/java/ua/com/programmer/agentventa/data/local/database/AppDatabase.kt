@@ -65,7 +65,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Store::class,
     Discount::class,
     DebugLogEntry::class,
-                     ], version = 27, exportSchema = true)
+                     ], version = 28, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -300,6 +300,19 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Phase 5 rollout: migrate every WebSocket-relay account to REST relay.
+        // Data-only migration (no schema change). Legacy direct-1C HTTP accounts
+        // (data_format='HTTP_service') and the demo account are left untouched;
+        // an account can still be switched back to WebSocket from settings.
+        private val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "UPDATE user_accounts SET data_format = 'REST_relay' " +
+                        "WHERE data_format = 'WebSocket_relay'"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -321,6 +334,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_24_25,
                         MIGRATION_25_26,
                         MIGRATION_26_27,
+                        MIGRATION_27_28,
                     )
                     .build()
                 INSTANCE = instance
