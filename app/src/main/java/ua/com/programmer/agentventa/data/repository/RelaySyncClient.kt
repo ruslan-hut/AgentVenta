@@ -5,8 +5,10 @@ import android.util.Base64
 import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.toMap
 import ua.com.programmer.agentventa.data.remote.Result
@@ -62,6 +64,8 @@ class RelaySyncClient @Inject constructor(
             "description" to account.description,
             "license" to account.license,
             "data_format" to account.dataFormat,
+            "app_version" to BuildConfig.VERSION_NAME,
+            "app_version_code" to BuildConfig.VERSION_CODE,
         )
         val json = gson.toJson(params)
         return Base64.encodeToString(json.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
@@ -82,11 +86,14 @@ class RelaySyncClient @Inject constructor(
                 return Pair(false, resp.statusMessage ?: "Status check failed")
             }
             persistLicense(data.licenseNumber)
+            logger.d(logTag, "status: canTransfer=${data.canTransfer} status=${data.status} licErr=${data.licenseError}")
             if (data.canTransfer) {
                 Pair(true, "")
             } else {
                 Pair(false, approvalMessage(data))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.e(logTag, "status check failed: ${e.message}")
             Pair(false, e.message ?: "Status check failed")
@@ -128,21 +135,30 @@ class RelaySyncClient @Inject constructor(
         // Safety bound against a server that never drains; each round pulls up
         // to `limit` messages, so this caps a single sync at limit * rounds.
         val maxRounds = 1000
+        logger.d(logTag, "pullCatalog start: ${accountGuid.takeLast(6)}")
 
         for (round in 0 until maxRounds) {
             val resp = try {
                 relayApi.pull(auth, PULL_LIMIT)
+            } catch (e: CancellationException) {
+                logger.w(logTag, "pull cancelled (round=$round, totalSaved=$totalSaved)")
+                throw e
             } catch (e: Exception) {
                 logger.e(logTag, "pull failed: ${e.message}")
                 emit(Result.Error(e.message ?: "pull failed"))
                 return@flow
             }
             if (!resp.success) {
+                logger.w(logTag, "pull not success: ${resp.statusMessage}")
                 emit(Result.Error(resp.statusMessage ?: "pull failed"))
                 return@flow
             }
             val data = resp.data ?: break
-            if (data.count == 0 || data.messages.isEmpty()) break
+            logger.d(logTag, "pull round=$round count=${data.count} messages=${data.messages.size}")
+            if (data.count == 0 || data.messages.isEmpty()) {
+                logger.d(logTag, "pull: empty queue, stopping (round=$round totalSaved=$totalSaved)")
+                break
+            }
 
             val batch = ArrayList<XMap>(BATCH_SIZE)
             val optionsItems = mutableListOf<JsonObject>()
@@ -191,6 +207,10 @@ class RelaySyncClient @Inject constructor(
             if (ackIds.isNotEmpty()) {
                 try {
                     relayApi.ack(auth, RelayAckRequest(ackIds))
+                    logger.d(logTag, "ack ok: ${ackIds.size} messages (round=$round)")
+                } catch (e: CancellationException) {
+                    logger.w(logTag, "ack cancelled — ${ackIds.size} messages stay leased until expiry")
+                    throw e
                 } catch (e: Exception) {
                     logger.w(logTag, "ack failed: ${e.message}")
                 }
@@ -203,6 +223,7 @@ class RelaySyncClient @Inject constructor(
                 logger.d(logTag, "Catalog sync complete: $totalSaved items")
             }
         }
+        logger.d(logTag, "pullCatalog done: totalSaved=$totalSaved")
     }
 
     private suspend fun processOptions(optionsItems: List<JsonObject>) {
@@ -217,6 +238,9 @@ class RelaySyncClient @Inject constructor(
                     license = license.ifEmpty { current.license },
                 )
             }
+            logger.d(logTag, "options updated")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.e(logTag, "options save failed: ${e.message}")
         }
@@ -235,6 +259,9 @@ class RelaySyncClient @Inject constructor(
                 remove(Constants.PREF_PENDING_CLEANUP_TIMESTAMP)
                 remove(Constants.PREF_PENDING_CLEANUP_ACCOUNT)
             }
+            logger.d(logTag, "batch cleanup done (ts=$timestamp)")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.e(logTag, "Batch cleanup failed (will retry next session): ${e.message}")
         }
@@ -280,12 +307,17 @@ class RelaySyncClient @Inject constructor(
         }
 
         if (documents.isEmpty()) {
+            logger.d(logTag, "uploadDocuments: nothing pending")
             emit(Result.Progress("upload: 0"))
             return@flow
         }
+        logger.d(logTag, "uploadDocuments: posting ${documents.size}")
 
         val resp = try {
             relayApi.upload(auth, RelayUploadRequest(documents))
+        } catch (e: CancellationException) {
+            logger.w(logTag, "upload cancelled (${documents.size} pending)")
+            throw e
         } catch (e: Exception) {
             logger.e(logTag, "upload failed: ${e.message}")
             emit(Result.Error(e.message ?: "upload failed"))

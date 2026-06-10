@@ -1,8 +1,10 @@
 package ua.com.programmer.agentventa.infrastructure.logger
 
+import android.util.Log
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.di.CoroutineModule
 import ua.com.programmer.agentventa.domain.repository.LogRepository
 import javax.inject.Inject
@@ -47,6 +49,16 @@ class Logger @Inject constructor(
     }
 
     private fun write(level: String, tag: String, message: String, fields: Map<String, Any?>?) {
+        // Mirror to logcat in debug builds so the device on Android Studio shows
+        // every log line live. Stripped from release (no-op behind BuildConfig).
+        if (BuildConfig.DEBUG) {
+            val line = if (fields != null) "$message $fields" else message
+            when (level) {
+                "E" -> Log.e(tag, line)
+                "W" -> Log.w(tag, line)
+                else -> Log.d(tag, line)
+            }
+        }
         // User-visible log keeps only level/tag/message — the structured fields
         // are dropped. A structured debug line therefore shows up as a bare,
         // detail-less entry (e.g. "ws.batch.start"), which is just noise on the

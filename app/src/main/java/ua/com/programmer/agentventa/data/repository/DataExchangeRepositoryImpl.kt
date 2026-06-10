@@ -23,6 +23,7 @@ import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.XMap
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 class DataExchangeRepositoryImpl @Inject constructor(
@@ -41,8 +42,11 @@ class DataExchangeRepositoryImpl @Inject constructor(
         val listToSave = data.filter { it.getValueId() == type }
         try {
             saveFilteredData(listToSave)
+            logger.d(logTag, "saved $type: ${listToSave.size}")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            logger.e(logTag, "separator: ${e.message}")
+            logger.e(logTag, "separator [$type]: ${e.message}")
         }
         if (listToSave.size < data.size) separator(data.filter { it.getValueId() != type })
     }

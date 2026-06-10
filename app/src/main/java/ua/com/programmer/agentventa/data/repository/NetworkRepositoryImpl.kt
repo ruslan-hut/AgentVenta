@@ -3,12 +3,14 @@ package ua.com.programmer.agentventa.data.repository
 import android.util.Base64
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import retrofit2.HttpException
 import retrofit2.Retrofit
@@ -290,7 +292,9 @@ class NetworkRepositoryImpl @Inject constructor(
     // moot since the catalog is delta-by-timestamp on the server.
     private fun relaySyncViaRest(account: UserAccount): Flow<Result> = flow {
         _timestamp = System.currentTimeMillis()
+        logger.d(logTag, "relaySyncViaRest begin: ${account.guid.trimForLog()}")
         val (approved, message) = relaySyncClient.checkApproval(account)
+        logger.d(logTag, "relay approval: approved=$approved msg=$message")
         if (!approved) {
             emit(Result.Error(message))
             return@flow
@@ -299,8 +303,11 @@ class NetworkRepositoryImpl @Inject constructor(
         try {
             relaySyncClient.uploadDocuments(account).collect { emit(it) }
             relaySyncClient.pullCatalog(account).collect { emit(it) }
+        } catch (e: CancellationException) {
+            logger.w(logTag, "REST relay sync CANCELLED: ${e.message}")
+            throw e
         } catch (e: Exception) {
-            logger.e(logTag, "REST relay sync error: $e")
+            logger.e(logTag, "REST relay sync error (${e.javaClass.simpleName}): $e")
             emit(Result.Error(e.message ?: "REST sync failed"))
             return@flow
         }
@@ -308,6 +315,8 @@ class NetworkRepositoryImpl @Inject constructor(
         logger.d(logTag, "REST relay sync finish: $timeSpent")
         emit(Result.Progress("finish: $timeSpent"))
         emit(Result.Success(""))
+    }.onCompletion { cause ->
+        if (cause != null) logger.w(logTag, "relaySyncViaRest flow ended: ${cause.javaClass.simpleName}: ${cause.message}")
     }
 
     override suspend fun updateDifferential(): Flow<Result> = flow {

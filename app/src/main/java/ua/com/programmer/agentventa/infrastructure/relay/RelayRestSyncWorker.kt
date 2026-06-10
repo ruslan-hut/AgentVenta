@@ -45,9 +45,10 @@ class RelayRestSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val account = userAccountRepository.getCurrent()
         if (account == null || !account.isRelayRest()) {
-            // Not a REST account — WS worker / manual HTTP handle those.
+            // Not a REST account — manual HTTP handles those.
             return Result.success()
         }
+        logger.d(tag, "worker run start (attempt=$runAttemptCount)")
 
         val (approved, message) = relaySyncClient.checkApproval(account)
         if (!approved) {
