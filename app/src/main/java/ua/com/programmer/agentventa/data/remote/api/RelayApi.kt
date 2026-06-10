@@ -25,7 +25,12 @@ import ua.com.programmer.agentventa.data.remote.dto.RelayUploadRequest
 interface RelayApi {
 
     @GET("api/v1/device/status")
-    suspend fun status(@Header("Authorization") auth: String): RelayEnvelope<RelayStatusData>
+    suspend fun status(
+        @Header("Authorization") auth: String,
+        // base64url JSON: lets the relay capture description/license so the
+        // admin can identify an auto-registered device. Optional.
+        @Query("app_parameters") appParameters: String? = null,
+    ): RelayEnvelope<RelayStatusData>
 
     @GET("api/v1/device/pull")
     suspend fun pull(

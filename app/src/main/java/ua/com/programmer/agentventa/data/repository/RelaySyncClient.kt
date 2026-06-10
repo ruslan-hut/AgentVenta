@@ -1,6 +1,7 @@
 package ua.com.programmer.agentventa.data.repository
 
 import android.content.SharedPreferences
+import android.util.Base64
 import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -51,6 +52,21 @@ class RelaySyncClient @Inject constructor(
     private fun authHeader(account: UserAccount) =
         "Bearer ${apiKeyProvider.webSocketApiKey}:${account.guid}"
 
+    // base64url JSON of device metadata, sent on /status so the relay can
+    // identify an auto-registered device in the admin pending list. Matches the
+    // encoding the WS connect handler uses (URL-safe, no wrap; the relay trims
+    // padding before decoding).
+    private fun appParametersParam(account: UserAccount): String {
+        val params = mapOf(
+            "device_uuid" to account.guid,
+            "description" to account.description,
+            "license" to account.license,
+            "data_format" to account.dataFormat,
+        )
+        val json = gson.toJson(params)
+        return Base64.encodeToString(json.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
+    }
+
     /**
      * Verifies the device may transfer data, via GET /status. Returns
      * (true, "") when allowed, otherwise (false, reason). Mirrors the
@@ -60,7 +76,7 @@ class RelaySyncClient @Inject constructor(
      */
     suspend fun checkApproval(account: UserAccount): Pair<Boolean, String> {
         return try {
-            val resp = relayApi.status(authHeader(account))
+            val resp = relayApi.status(authHeader(account), appParametersParam(account))
             val data = resp.data
             if (!resp.success || data == null) {
                 return Pair(false, resp.statusMessage ?: "Status check failed")

@@ -52,7 +52,11 @@ class UserAccountRepositoryImpl @Inject constructor(
 
     override fun getByGuid(guid: String): Flow<UserAccount> {
         return userAccountDao.getByGuid(guid).map { account ->
-            account ?: UserAccount(guid = guid, dataFormat = Constants.SYNC_FORMAT_HTTP) }
+            // New accounts (guid not yet in DB) default to REST relay — Phase 5
+            // rollout. With useWebSocket=true (data class default) the edit
+            // screen shows Auto Connection + REST exchange both on. Users can
+            // still switch to WebSocket or manual HTTP.
+            account ?: UserAccount(guid = guid, dataFormat = Constants.SYNC_FORMAT_RELAY_REST) }
     }
 
     override suspend fun setIsCurrent(guid: String) {
