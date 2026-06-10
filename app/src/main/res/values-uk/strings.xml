@@ -431,66 +431,17 @@
     <string name="store">Склад</string>
 
     <!-- WebSocket Configuration -->
-    <string name="relay_server">Relay сервер (WebSocket)</string>
     <string name="account_guid">GUID акаунта (UUID пристрою)</string>
     <string name="device_uuid">UUID пристрою</string>
     <string name="connection_status">Статус підключення</string>
-    <string name="ws_connected">WebSocket підключено</string>
-    <string name="ws_disconnected">WebSocket відключено</string>
-    <string name="ws_connecting">Підключення…</string>
-    <string name="ws_error">Помилка підключення</string>
-    <string name="test_connection">Тест підключення</string>
-    <string name="websocket_connection">WebSocket підключення</string>
     <string name="connect">Підключити</string>
     <string name="disconnect">Відключити</string>
     <string name="manual_server_configuration">Ручне налаштування сервера</string>
     <string name="auto_connection">Авто підключення</string>
 
     <!-- WebSocket Status Screen -->
-    <string name="websocket_status_title">Стан синхронізації</string>
-    <string name="websocket_connection_status">Підключення</string>
-    <string name="websocket_pending_data">Очікує відправлення</string>
-    <string name="websocket_last_sync">Остання синхронізація</string>
-    <string name="websocket_sync_now">Синхронізувати зараз</string>
-    <string name="websocket_activity_log">Журнал активності</string>
-    <string name="websocket_clear_log">Очистити журнал</string>
-    <string name="websocket_no_messages">Немає повідомлень</string>
-    <string name="websocket_disconnected">Відключено</string>
-    <string name="websocket_no_pending_data">Немає даних для відправлення</string>
-    <string name="websocket_never">Ніколи</string>
-    <string name="websocket_connected">Підключено (%1$s)</string>
-    <string name="websocket_connecting">Підключення… (спроба %1$d)</string>
-    <string name="websocket_pending_approval">Очікує підтвердження</string>
-    <string name="websocket_license_error">Ліцензія: %1$s</string>
-    <string name="websocket_error">Помилка: %1$s</string>
-    <string name="websocket_reconnecting">Перепідключення через %1$d сек</string>
-    <string name="websocket_sync_triggered">Запущено ручну синхронізацію…</string>
-    <string name="websocket_sync_completed">Перевірку синхронізації завершено</string>
-    <string name="websocket_sync_error">Помилка синхронізації: %1$s</string>
-    <string name="websocket_received">Отримано: %1$s</string>
-    <string name="websocket_pending_format">Очікує: %1$s</string>
-    <string name="websocket_orders_count">%1$d замовлень</string>
-    <string name="websocket_cash_count">%1$d касових</string>
-    <string name="websocket_images_count">%1$d зображень</string>
-    <string name="websocket_locations_count">%1$d локацій</string>
     <!-- UserAccount WebSocket status (with icons) -->
-    <string name="account_ws_connected">✓ Підключено (UUID: %1$s)</string>
-    <string name="account_ws_connecting">⟳ Підключення… (спроба %1$d)</string>
-    <string name="account_ws_disconnected">✗ Відключено</string>
-    <string name="account_ws_pending">⏸ Очікує підтвердження (UUID: %1$s)</string>
-    <string name="account_ws_license_error">⚠ Ліцензія: %1$s</string>
-    <string name="account_ws_error">✗ Помилка: %1$s</string>
-    <string name="account_ws_reconnecting">⟳ Перепідключення через %1$d мс (спроба %2$d)</string>
-    <string name="account_ws_no_account">✗ Помилка: Акаунт не завантажено</string>
     <!-- Snackbar notifications -->
-    <string name="snackbar_connection_error">Помилка з\'єднання: %1$s</string>
-    <string name="snackbar_license_error">Ліцензія: %1$s</string>
-    <string name="snackbar_pending_approval">Пристрій очікує підтвердження</string>
-    <string name="snackbar_orders_sent">Відправлено замовлень: %1$d</string>
-    <string name="snackbar_cash_sent">Відправлено касових документів: %1$d</string>
-    <string name="snackbar_images_sent">Відправлено зображень: %1$d</string>
-    <string name="snackbar_locations_sent">Відправлено локацій: %1$d</string>
-    <string name="snackbar_catalog_received">Отримано даних: %1$d записів</string>
     <string name="snackbar_sync_error">Помилка синхронізації: %1$s</string>
     <!-- Printer status messages -->
     <string name="printer_permission_not_granted">Дозвіл не надано</string>

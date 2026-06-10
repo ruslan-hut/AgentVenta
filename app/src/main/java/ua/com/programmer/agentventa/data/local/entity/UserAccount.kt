@@ -45,13 +45,14 @@ data class UserAccount(
     }
 }
 
-// Fixes invalid setting combinations that may occur after app update.
-// HTTP_service data format is incompatible with WebSocket data exchange.
+// Keeps the legacy use_websocket flag consistent with data_format, which is the
+// single source of truth for transport since the WebSocket layer was removed:
+//   HTTP_service -> direct 1C (manual), use_websocket=false
+//   anything else -> relay REST (auto),  use_websocket=true
+// The column is retained only as the edit screen's auto/manual switch state.
 fun UserAccount.sanitizeConnectionSettings(): UserAccount {
-    if (dataFormat == Constants.SYNC_FORMAT_HTTP && useWebSocket) {
-        return copy(useWebSocket = false)
-    }
-    return this
+    val auto = dataFormat != Constants.SYNC_FORMAT_HTTP
+    return if (useWebSocket != auto) copy(useWebSocket = auto) else this
 }
 
 fun UserAccount.equalTo(account: UserAccount): Boolean {
@@ -111,111 +112,19 @@ fun UserAccount.isDemo(): Boolean {
     return dbServer == "hoot.com.ua" && dbName == "simple" && (dbUser == "Агент" || dbUser == "Agent") && dbPassword == "112233"
 }
 
-// WebSocket connection validation
-// NOTE: License is NOT required for connection - it's stored for display only.
-// Backend identifies the 1C base by device UUID (guid), not by license number.
-// The backend maintains the mapping: device_uuid -> license_number -> 1C_base
-//
-// Backend host is predefined in BuildConfig (from local.properties KEY_HOST)
-// The relayServer field is kept for backward compatibility but is not required
-//
-// IMPORTANT: WebSocket ALWAYS connects for license management and device status.
-// The useWebSocket flag only controls DATA EXCHANGE method (HTTP vs WebSocket).
-// Device must be approved via WebSocket before any data sync (HTTP or WebSocket).
-fun UserAccount.isValidForWebSocketConnection(): Boolean {
-    return guid.isNotEmpty()
-}
+// Sync transport for an account. The data_format column is the discriminator:
+//   HTTP_service -> LEGACY_HTTP (direct 1C, self-hosted, and the demo account)
+//   anything else -> RELAY_REST (REST against the sphynx relay)
+// The WebSocket transport was removed; legacy WebSocket_relay / empty values are
+// normalized to REST_relay by MIGRATION_28_29, and the catch-all here routes any
+// non-HTTP account to REST regardless so an un-migrated row still syncs.
+enum class SyncTransport { RELAY_REST, LEGACY_HTTP }
 
-// Constructs WebSocket URL for connection using predefined backend host
-// Uses UserAccount.guid as device UUID for server identification
-//
-// Backend Host:
-// - Predefined in local.properties (KEY_HOST)
-// - Exposed via BuildConfig.BACKEND_HOST
-// - Same backend for all devices (app is dedicated to specific backend)
-//
-// Authentication Flow:
-// - API key from local.properties (shared across all app instances)
-// - Token format: Authorization: Bearer <API_KEY>:<DEVICE_UUID>
-// - API key validates request is from legitimate Android app
-// - Device UUID (guid) identifies individual device/account
-//
-// NOTE: License number is NOT sent in the URL or as authentication data.
-// The backend links device UUIDs to license numbers (and therefore to 1C bases) server-side.
-// License is only received from backend and stored locally for display/reference purposes.
-//
-// IMPORTANT: This function now requires ApiKeyProvider to get the backend host.
-// Use getWebSocketUrl(apiKeyProvider) instead.
-// For backward compatibility, falls back to relayServer field if available.
-fun UserAccount.getWebSocketUrl(): String {
-    // Use relayServer for backward compatibility if set
-    // In production, backend host comes from BuildConfig
-    val host = relayServer.ifEmpty { return "" }
+fun UserAccount.syncTransport(): SyncTransport =
+    if (dataFormat == Constants.SYNC_FORMAT_HTTP) SyncTransport.LEGACY_HTTP
+    else SyncTransport.RELAY_REST
 
-    var url = host
-    // Ensure proper protocol
-    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-        url = "wss://$url"
-    }
-    // Remove trailing slash if present
-    if (url.endsWith("/")) {
-        url = url.dropLast(1)
-    }
-
-    // Construct WebSocket endpoint
-    // Authentication is handled via Authorization header (see WebSocketRepositoryImpl)
-    // Backend will identify the 1C base by looking up the license linked to this UUID
-    return "$url/ws/device"
-}
-
-// Constructs WebSocket URL using predefined backend host from ApiKeyProvider
-// This is the preferred method for building WebSocket URLs.
-//
-// @param backendHost The backend host from ApiKeyProvider (e.g., "lic.nomadus.net")
-// @return Full WebSocket URL (e.g., "wss://lic.nomadus.net/ws/device")
-fun UserAccount.getWebSocketUrl(backendHost: String): String {
-    if (backendHost.isEmpty()) return ""
-
-    var url = backendHost
-    // Ensure proper protocol
-    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-        url = "wss://$url"
-    }
-    // Remove trailing slash if present
-    if (url.endsWith("/")) {
-        url = url.dropLast(1)
-    }
-
-    // Construct WebSocket endpoint
-    return "$url/ws/device"
-}
-
-// Sync transport for an account. The data_format column is the discriminator
-// (no separate column / migration needed):
-//   HTTP_service             -> LEGACY_HTTP (direct 1C, self-hosted)
-//   REST_relay               -> RELAY_REST  (REST against the sphynx relay)
-//   WebSocket_relay/default  -> WEBSOCKET   (further governed by use_websocket)
-enum class SyncTransport { WEBSOCKET, RELAY_REST, LEGACY_HTTP }
-
-fun UserAccount.syncTransport(): SyncTransport = when (dataFormat) {
-    Constants.SYNC_FORMAT_RELAY_REST -> SyncTransport.RELAY_REST
-    Constants.SYNC_FORMAT_HTTP -> SyncTransport.LEGACY_HTTP
-    else -> if (useWebSocket) SyncTransport.WEBSOCKET else SyncTransport.LEGACY_HTTP
-}
-
-// True when this account exchanges data over the relay REST API instead of the
-// WebSocket. REST-relay accounts do not open a WebSocket at all (see
-// WebSocketConnectionManager.shouldConnect) and gate approval/license via
-// GET /api/v1/device/status rather than WS connection state.
-fun UserAccount.isRelayRest(): Boolean = dataFormat == Constants.SYNC_FORMAT_RELAY_REST
-
-// Determines if this account should use WebSocket instead of HTTP
-// This is now the preferred way to check connection mode throughout the app
-// NOTE: HTTP_service data format is incompatible with WebSocket data exchange.
-// Some users ended up with data_format=HTTP_service + use_websocket=true after
-// app update, so we guard against that invalid combination here.
-fun UserAccount.shouldUseWebSocket(): Boolean {
-    if (dataFormat == Constants.SYNC_FORMAT_HTTP) return false
-    if (dataFormat == Constants.SYNC_FORMAT_RELAY_REST) return false
-    return useWebSocket
-}
+// True when this account exchanges data over the relay REST API (/api/v1/device).
+// Everything that is not direct-1C HTTP is relay REST. Approval/license is gated
+// via GET /api/v1/device/status.
+fun UserAccount.isRelayRest(): Boolean = dataFormat != Constants.SYNC_FORMAT_HTTP

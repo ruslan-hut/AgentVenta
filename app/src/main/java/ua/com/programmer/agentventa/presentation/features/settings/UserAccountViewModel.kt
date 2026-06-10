@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
-import ua.com.programmer.agentventa.domain.repository.WebSocketRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.utility.Constants
 import ua.com.programmer.agentventa.utility.ResourceProvider
@@ -22,7 +21,6 @@ import javax.inject.Inject
 class UserAccountViewModel @Inject constructor(
     private val resourceProvider: ResourceProvider,
     private val userAccountRepository: UserAccountRepository,
-    private val webSocketRepository: WebSocketRepository,
     private val logger: Logger
 ) : ViewModel() {
 
@@ -39,10 +37,9 @@ class UserAccountViewModel @Inject constructor(
     init {
         formatSpinner.value = listOf(
             Constants.SYNC_FORMAT_HTTP,
-            Constants.SYNC_FORMAT_FTP,
-            Constants.SYNC_FORMAT_WEBSOCKET
+            Constants.SYNC_FORMAT_RELAY_REST
         )
-        selectedFormat.value = Constants.SYNC_FORMAT_WEBSOCKET // Default to relay/WebSocket
+        selectedFormat.value = Constants.SYNC_FORMAT_RELAY_REST // Default to relay REST
     }
 
     fun setCurrentAccount(guid: String?) {
@@ -64,26 +61,6 @@ class UserAccountViewModel @Inject constructor(
         viewModelScope.launch {
             val deleted = withContext(Dispatchers.IO) { userAccountRepository.deleteByGuid(guid) }
             if (deleted > 0) onComplete()
-        }
-    }
-
-    // WebSocket connection methods
-    fun connectWebSocket(userAccount: UserAccount? = null) {
-        viewModelScope.launch {
-            val currentAccount = userAccount ?: account.value
-            if (currentAccount != null) {
-                logger.d(TAG, "Connecting WebSocket for account: ${currentAccount.description}")
-                webSocketRepository.connect(currentAccount)
-            } else {
-                logger.w(TAG, "Cannot connect: No account loaded")
-            }
-        }
-    }
-
-    fun disconnectWebSocket() {
-        viewModelScope.launch {
-            logger.d(TAG, "Disconnecting WebSocket")
-            webSocketRepository.disconnect()
         }
     }
 

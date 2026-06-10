@@ -74,23 +74,10 @@ sealed class UiEvent {
 }
 
 /**
- * WebSocket-specific snackbar events.
- * Used for showing notifications about connection state, data sync, and errors.
+ * Sync-related snackbar events shown to the user.
  */
-sealed class WebSocketSnackbarEvent {
-    // Connection errors
-    data class ConnectionError(val error: String) : WebSocketSnackbarEvent()
-    data class LicenseError(val reason: String) : WebSocketSnackbarEvent()
-    data object PendingApproval : WebSocketSnackbarEvent()
-
-    // Data sent (aggregated counts)
-    data class DataSent(val type: String, val count: Int) : WebSocketSnackbarEvent()
-
-    // Catalog data received
-    data class CatalogReceived(val dataType: String, val count: Int) : WebSocketSnackbarEvent()
-
-    // Sync errors (for HTTP mode compatibility)
-    data class SyncError(val message: String) : WebSocketSnackbarEvent()
+sealed class SyncSnackbarEvent {
+    data class SyncError(val message: String) : SyncSnackbarEvent()
 }
 
 /**

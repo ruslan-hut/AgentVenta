@@ -21,77 +21,40 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
 import ua.com.programmer.agentventa.data.local.entity.getGuid
-import ua.com.programmer.agentventa.data.local.entity.shouldUseWebSocket
-import ua.com.programmer.agentventa.databinding.FragmentWebsocketTestBinding
 import ua.com.programmer.agentventa.databinding.SyncFragmentBinding
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SharedViewModel
 import ua.com.programmer.agentventa.presentation.common.viewmodel.SyncEvent
-import ua.com.programmer.agentventa.presentation.features.websocket.WebSocketTestViewModel
 
 @AndroidEntryPoint
 class SyncFragment: Fragment(), MenuProvider {
 
     private val viewModel: SyncViewModel by viewModels()
-    private val webSocketViewModel: WebSocketTestViewModel by viewModels()
     private val sharedViewModel: SharedViewModel by activityViewModels()
 
-    // Legacy HTTP binding
-    private var httpBinding: SyncFragmentBinding? = null
-    // WebSocket binding
-    private var wsBinding: FragmentWebsocketTestBinding? = null
-
-    private var useWebSocket = false
+    private var binding: SyncFragmentBinding? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Check current account's connection mode
-        // Note: We need to get this synchronously for layout inflation
-        // The actual value will be confirmed in onViewCreated
-        val currentAccount = sharedViewModel.currentAccount.value
-        // Drives the WS-specific sync UI + syncNow path. REST-relay accounts
-        // have useWebSocket=true but must take the standard sync path
-        // (callFullSync -> updateAll -> REST branch), so gate on
-        // shouldUseWebSocket() which is false for REST_relay.
-        useWebSocket = currentAccount?.shouldUseWebSocket() ?: false
-
         val menuHost: MenuHost = requireActivity()
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        return if (useWebSocket) {
-            wsBinding = FragmentWebsocketTestBinding.inflate(inflater, container, false)
-            wsBinding?.root
-        } else {
-            httpBinding = SyncFragmentBinding.inflate(inflater, container, false)
-            httpBinding?.lifecycleOwner = viewLifecycleOwner
-            httpBinding?.root
-        }
+        binding = SyncFragmentBinding.inflate(inflater, container, false)
+        binding?.lifecycleOwner = viewLifecycleOwner
+        return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        if (useWebSocket) {
-            setupWebSocketObservers()
-            setupWebSocketListeners()
-        } else {
-            setupHttpObservers()
-        }
+        setupObservers()
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (useWebSocket) {
-            webSocketViewModel.refreshPendingData()
-        }
-    }
-
-    private fun setupHttpObservers() {
+    private fun setupObservers() {
         sharedViewModel.currentAccount.observe(viewLifecycleOwner) { account ->
             viewModel.account = account
-            httpBinding?.apply {
+            binding?.apply {
                 description.text = account.description
                 server.text = account.dbServer
                 user.text = account.dbUser
@@ -100,13 +63,13 @@ class SyncFragment: Fragment(), MenuProvider {
             }
             if (!viewModel.isUpdated) {
                 sharedViewModel.callFullSync {
-                    httpBinding?.status?.text = getString(R.string.data_updated)
+                    binding?.status?.text = getString(R.string.data_updated)
                     viewModel.isUpdated = true
                 }
             }
         }
         sharedViewModel.isRefreshing.observe(viewLifecycleOwner) {
-            httpBinding?.progressBar?.visibility = if (it) View.VISIBLE else View.INVISIBLE
+            binding?.progressBar?.visibility = if (it) View.VISIBLE else View.INVISIBLE
         }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -122,66 +85,21 @@ class SyncFragment: Fragment(), MenuProvider {
         }
     }
 
-    private fun setupWebSocketObservers() {
-        // Store account reference for menu actions
-        sharedViewModel.currentAccount.observe(viewLifecycleOwner) { account ->
-            viewModel.account = account
-        }
-
-        webSocketViewModel.connectionState.observe(viewLifecycleOwner) { state ->
-            wsBinding?.connectionStatusText?.text = state
-        }
-
-        webSocketViewModel.pendingDataInfo.observe(viewLifecycleOwner) { info ->
-            wsBinding?.pendingDataText?.text = info
-        }
-
-        webSocketViewModel.lastSyncTime.observe(viewLifecycleOwner) { time ->
-            wsBinding?.lastSyncText?.text = time
-        }
-
-        webSocketViewModel.isSyncing.observe(viewLifecycleOwner) { isSyncing ->
-            wsBinding?.syncNowButton?.apply {
-                isEnabled = !isSyncing
-                text = if (isSyncing) {
-                    getString(R.string.status_downloading)
-                } else {
-                    getString(R.string.websocket_sync_now)
-                }
-            }
-        }
-    }
-
-    private fun setupWebSocketListeners() {
-        wsBinding?.syncNowButton?.setOnClickListener {
-            webSocketViewModel.syncNow()
-        }
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        httpBinding = null
-        wsBinding = null
+        binding = null
     }
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        if (useWebSocket) {
-            menuInflater.inflate(R.menu.menu_sync_fragment_websocket, menu)
-        } else {
-            menuInflater.inflate(R.menu.menu_sync_fragment, menu)
-        }
+        menuInflater.inflate(R.menu.menu_sync_fragment, menu)
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
         when (menuItem.itemId) {
             R.id.action_sync -> {
-                if (useWebSocket) {
-                    webSocketViewModel.syncNow()
-                } else {
-                    sharedViewModel.callFullSync {
-                        httpBinding?.status?.text = getString(R.string.data_updated)
-                        viewModel.isUpdated = true
-                    }
+                sharedViewModel.callFullSync {
+                    binding?.status?.text = getString(R.string.data_updated)
+                    viewModel.isUpdated = true
                 }
             }
             R.id.account_settings -> {
