@@ -1,12 +1,15 @@
-# 1C Integration Guide
+# Data Management API
 
-This document describes how to integrate the 1C system with the Sphynx relay server for data exchange with Android mobile devices.
+This document describes the **data exchange** part of the Sphynx relay API: how the 1C
+accounting system pushes catalog data to devices and pulls documents created on
+devices. For device/license lifecycle (registration, approval, settings) see
+[API_DEVICE_MANAGEMENT.md](API_DEVICE_MANAGEMENT.md).
 
 ## Architecture Overview
 
 ```
 ┌─────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│             │  REST   │                 │WebSocket│                 │
+│             │  REST   │                 │  REST   │                 │
 │  1C System  │◄───────►│  Sphynx Relay   │◄───────►│  Android Device │
 │             │  API    │     Server      │         │                 │
 └─────────────┘         └─────────────────┘         └─────────────────┘
@@ -17,11 +20,16 @@ This document describes how to integrate the 1C system with the Sphynx relay ser
 ```
 
 **Key Points:**
-- 1C does NOT expose an HTTP service
-- 1C acts as a REST API client, connecting to the Sphynx relay server
-- Data is pushed to devices via `POST /api/v1/push`
-- Data from devices is retrieved via `GET /api/v1/pull`
-- All data formats remain consistent with the original HTTP service specification
+- Both 1C and the device act as REST clients of the relay server — neither exposes an HTTP service.
+- The relay stores messages in per-device queues; delivery is store-and-forward, not real-time.
+- Data is pushed to devices via `POST /api/v1/push`.
+- Data from devices is retrieved via `GET /api/v1/pull`.
+
+> **Transport note.** WebSocket transport is **deprecated** and removed from the app.
+> All device ↔ relay traffic now uses the REST device API (the device polls
+> `GET /api/v1/device/pull` and posts to `/api/v1/device/upload`). From the 1C side
+> nothing changes — the `push`/`pull` contract below is unchanged. Legacy WebSocket
+> specs are kept under [archive/](archive/).
 
 ---
 
@@ -39,7 +47,10 @@ https://lic.nomadus.net
 Authorization: Bearer {api_key}
 ```
 
-The API key is provided when the license is created. See [API_1C_CONNECTION.md](API_1C_CONNECTION.md) for full API reference.
+The API key is issued together with the license. It identifies the license (and
+therefore the target 1C base) on the relay server. See
+[API_DEVICE_MANAGEMENT.md](API_DEVICE_MANAGEMENT.md) for the device/license endpoints
+that share the same authentication.
 
 ---
 
@@ -49,15 +60,15 @@ The API key is provided when the license is created. See [API_1C_CONNECTION.md](
 
 1. 1C composes data in the required format
 2. 1C calls `POST /api/v1/push` with device UUID and data array
-3. Relay server queues the message
-4. When device connects via WebSocket, message is delivered
-5. Device sends acknowledgment
+3. Relay server queues the message in the device's incoming queue
+4. Device polls `GET /api/v1/device/pull` and receives the message
+5. Device acknowledges delivery via `POST /api/v1/device/ack`
 
 ### Receiving Data from Device (Device → 1C)
 
 1. Device creates document (order, cash, etc.)
-2. Device sends via WebSocket to relay server
-3. Relay server stores in outgoing queue
+2. Device uploads it via `POST /api/v1/device/upload` to the relay server
+3. Relay server stores it in the outgoing queue
 4. 1C polls `GET /api/v1/pull` periodically
 5. 1C processes received documents
 
@@ -611,9 +622,9 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 ## Related Documentation
 
-- [API_1C_CONNECTION.md](API_1C_CONNECTION.md) - Full REST API reference
-- [API_DEVICE_CONNECTION.md](API_DEVICE_CONNECTION.md) - WebSocket API for devices
-- [ADMIN_API.md](ADMIN_API.md) - Administration interface
+- [README.md](README.md) - Documentation index and integration overview
+- [API_DEVICE_MANAGEMENT.md](API_DEVICE_MANAGEMENT.md) - Device & license lifecycle (register, list, settings, status)
+- [archive/](archive/) - Deprecated WebSocket transport specs
 
 ---
 
@@ -621,6 +632,7 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.3 | 2026-07-07 | Renamed to Data Management API; device ↔ relay transport switched from WebSocket to REST device API; fixed cross-links. |
 | 3.2 | 2026-03-24 | Added Discount data type (`value_id: "discount"`) with priority-based lookup, `complexDiscounts` option. |
 | 3.1 | 2026-03-16 | Added Sync Modes section: full sync flow, required data types, key options parameters. |
 | 3.0 | 2026-03-16 | Fixed data format: flat array with value_id, removed nested catalog_type+items wrappers. Added payment_type. |

@@ -29,6 +29,14 @@
 
 Опис основних елементів інтерфейсу та функцій доступний за посиланням: https://programmer.com.ua/android/agent-user-manual/
 
+## Integration / API documentation
+
+Developers and admins integrating the app with an accounting system (1C or other) should
+start with [docs/README.md](docs/README.md) — the relay server API reference, split into
+[device management](docs/API_DEVICE_MANAGEMENT.md) and [data management](docs/API_DATA_MANAGEMENT.md).
+
+## Demo
+
 Для ознайомлення можливо налаштування тестового з'єднання - в адресу сервера впішіть demo, ім'я бази також вкажіть demo.
 В демонстраційному режимі додаток обмінюється з базою 1С, яку можна побачити через веб-інтерфейс за адресою: http://hoot.com.ua/simple 
 Для входу в веб-інтерфейс оберіть ім'я Пользователь, без паролю.
