@@ -186,7 +186,9 @@ Send data to a specific device.
 
 ### `GET /api/v1/pull?limit=50`
 
-Retrieve data sent by devices.
+Retrieve documents uploaded by devices (orders, cash receipts, …). `limit` is
+1–100 (default 50). Pull the queue in a loop until `count` is 0 (or `< limit`)
+to drain everything in one run.
 
 **Response Fields:**
 
@@ -194,11 +196,37 @@ Retrieve data sent by devices.
 |-------|------|-------------|
 | success | boolean | Operation result |
 | data.count | number | Number of items returned |
+| data.fetch_token | string | Batch/reservation token; pass it to `pull/ack`. Absent when `count` is 0. |
 | data.items | array | Array of document objects |
+| data.items[].id | string | Stable queue-row id (used to ack rows that have no `document_guid`) |
+| data.items[].document_guid | string | Primary ack key — the document's app guid (present for order/cash) |
 | data.items[].device_uuid | string | Source device UUID |
 | data.items[].data_type | string | Document type (order, cash, location, etc.) |
 | data.items[].data | object | Document payload |
 | data.items[].created_at | string | ISO 8601 timestamp |
+
+### `POST /api/v1/pull/ack`
+
+Delivery is **at-least-once**. `GET /pull` does not consume items — it *leases*
+them for a while and returns a `fetch_token`. After 1C durably writes/posts a
+document, it must confirm it, otherwise the relay re-delivers it on a later pull
+(and, after a fixed number of unacknowledged attempts, drops it as a dead-letter).
+
+Because re-delivery is possible, 1C must be **idempotent**: key documents by their
+app `guid` and skip ones already posted.
+
+**Request body:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| fetch_token | string | Required. The token from the matching `pull` response. |
+| document_guids | string[] | Guids of processed documents (primary key, for order/cash). |
+| message_ids | string[] | Row `id`s, for items without a `document_guid`. |
+
+At least one of `document_guids` / `message_ids` must be non-empty. Items left
+unacknowledged are re-delivered after the lease expires. Confirm only what was
+durably processed (a genuinely unprocessable item may also be acked to stop it
+from looping). Response: `{ "success": true, "data": { "acked": N } }`.
 
 ---
 
@@ -417,9 +445,34 @@ Push user settings to device.
 | image_guid | string | Image identifier |
 | default | string | Default image flag ("1"/"0") |
 | time | number | File timestamp |
-| url | string | Image file URL |
+| url | string | Image file URL (absolute; used verbatim by the device, already versioned via `?v=`) |
 | description | string | File description |
 | type | string | File type |
+
+The `url` is produced by first uploading the image bytes to the relay (below);
+the relay returns the ready-to-use absolute URL that goes into this record.
+
+##### Image upload — `PUT /api/v1/images/{image_guid}`
+
+1C stores image bytes in its own database, so it uploads them to the relay, which
+serves them to devices.
+
+- **Auth:** `Authorization: Bearer {license_api_key}` (same as other 1C endpoints).
+- **Body:** raw image bytes. `Content-Type` must be `image/jpeg`, `image/png` or
+  `image/webp` (otherwise 415). Max size 2 MB (otherwise 413).
+- **`X-Image-Time`** header (optional): image version in ms; changes the `?v=` in
+  the returned URL so devices re-fetch when the image changes.
+- Uploading the same `image_guid` again overwrites it (new version). A separate,
+  higher rate limit applies to image endpoints.
+- **Response:** standard envelope; the payload is in `data`:
+  ```json
+  { "success": true, "data": { "stored": true, "url": "https://.../api/v1/images/{guid}?v={time}" } }
+  ```
+  1C takes `data.url` **as is** for the `url` field of the `image` record above.
+
+Devices download the image by that URL with their own device auth
+(`Authorization: Bearer {app_key}:{device_uuid}`); the relay keeps images with a
+TTL and refreshes it on upload/access.
 
 ---
 
@@ -487,65 +540,89 @@ Retrieved via `GET /api/v1/pull`. The `data_type` field indicates the document t
 
 #### Order - `data_type: "order"`
 
+The field list below matches what the app actually serializes (`Order.toMap`).
+Booleans are sent as integers `1`/`0`. Timestamps are numbers in the app's own
+epoch base — the reference 1C module treats `time`/`time_saved` as seconds.
+
 | Field | Type | Description |
 |-------|------|-------------|
-| guid | string | Document identifier |
-| userID | string | Device identifier |
-| server | string | Server address from settings |
-| base | string | Database name from settings |
-| number | string | Document number |
-| date | string | Human-readable date-time |
-| time | number | Timestamp (seconds) |
-| status | string | Display status |
-| company_guid | string | Company identifier |
-| store_guid | string | Store identifier |
-| delivery_date | string | Delivery date |
-| client_id | string | Client code (code2) |
-| client_description | string | Client name |
+| type | string | Value: `"order"` |
+| guid | string | Document identifier (idempotency / ack key) |
+| userID | string | Device/account identifier |
+| number | number | Document number |
+| date | string | Human-readable date-time (locale-formatted; not machine-parsable) |
+| time | number | Created timestamp |
+| time_saved | number | Last-saved timestamp (used as the document date by the reference impl) |
+| delivery_date | string | Requested delivery date (locale-formatted string) |
+| company_guid | string | Company identifier (empty unless companies are exchanged) |
+| company | string | Company name |
+| store_guid | string | Store/warehouse identifier (empty unless stores are exchanged) |
+| store | string | Store name |
 | client_guid | string | Client identifier |
-| is_return | boolean | Return flag |
-| is_processed | boolean | Posted flag (always true when sent) |
-| is_sent | boolean | Sent flag |
-| payment_type | string | "CASH" or "CREDIT" |
-| notes | string | Notes |
-| discount | number | Client discount |
-| price_type | number | Price type number |
-| price | number | Document sum |
+| client_id | string | Client code (source: client `code2`) |
+| client_description | string | Client name |
+| discount | number | Document/client discount, percent |
+| discount_value | number | Discount amount (money) |
+| next_payment | number | Promised next-payment sum |
+| price_type | string | Price-type identifier |
+| payment_type | string | `"CASH"` or `"CREDIT"` |
+| is_fiscal | number | Fiscal flag (1/0) |
+| is_return | number | Return flag (1/0) |
+| is_processed | number | Locally finalized/locked flag (1/0) — device-local meaning, not "accepted by 1C" |
+| is_sent | number | Sent flag (1/0) |
+| status | string | Display status |
+| price | number | Document total sum |
 | quantity | number | Total quantity |
-| discount_value | number | Discount sum |
-| next_payment | number | Promised payment sum |
+| weight | number | Total weight |
+| latitude | number | Capture latitude |
+| longitude | number | Capture longitude |
+| distance | number | Distance to client (m) |
+| location_time | number | Location capture timestamp |
+| rest_type | string | Balance/stock selector |
 | items | array | Array of line items |
 
-**Order Line Item Fields:**
+**Order Line Item Fields** (`items[]`):
 
 | Field | Type | Description |
 |-------|------|-------------|
-| lineNumber | number | Line number |
-| code1 | string | Product code |
-| code2 | string | Product code |
+| order_guid | string | Parent order guid |
 | item_guid | string | Product identifier |
+| code1 | string | Product code — currently carries the same value as `code2` |
+| code2 | string | Product code2 |
 | description | string | Product name |
+| unit_code | string | Unit — currently the unit **display name**, not a numeric code |
 | quantity | number | Quantity |
-| price | number | Price |
+| weight | number | Line weight |
+| price | number | Unit price |
 | sum | number | Line sum |
-| unit_code | string | Unit code |
-| sum_discount | number | Line discount sum |
-| is_packed | boolean | Packed flag |
+| sum_discount | number | Line discount amount |
+| is_demand | number | Demand/backorder flag (1/0) |
+| is_packed | number | Packed flag (1/0) |
 
 ---
 
 #### Cash - `data_type: "cash"`
 
+A cash receipt (payment from a client). Header-only, no line items. Field list
+matches `Cash.toMap`.
+
 | Field | Type | Description |
 |-------|------|-------------|
-| guid | string | Document identifier |
+| type | string | Value: `"cash"` |
+| guid | string | Document identifier (idempotency / ack key) |
+| userID | string | Device/account identifier |
+| number | number | Document number |
 | date | string | Human-readable date-time |
-| time | number | Timestamp (seconds) |
-| sum | number | Document sum |
-| client_guid | string | Client identifier |
-| client_description | string | Client name |
-| parent_document | string | Parent document representation |
+| time | number | Timestamp |
+| company_guid | string | Company identifier |
+| company | string | Company name |
+| client_guid | string | Client (payer) identifier |
+| client | string | Client name |
+| reference_guid | string | Linked/paid document guid (e.g. the order being paid); empty for an advance |
+| sum | number | Payment amount |
 | notes | string | Notes |
+| fiscal_number | number | Fiscal receipt number |
+| is_fiscal | number | Fiscal flag (1/0) |
 
 ---
 

@@ -19,7 +19,12 @@ contract.
 
 - 1C is a **REST client** of the relay — it never exposes an HTTP service.
 - The relay is a **store-and-forward queue**: 1C pushes catalog data, devices pull it;
-  devices upload documents, 1C pulls them.
+  devices upload documents (orders, cash receipts), 1C pulls them.
+- Document delivery to 1C is **at-least-once**: pulled items are leased, and 1C
+  confirms the ones it durably posted with `POST /api/v1/pull/ack` (see
+  API_DATA_MANAGEMENT). Unconfirmed items are re-delivered.
+- Product images are uploaded by 1C to the relay (`PUT /api/v1/images/{guid}`) and
+  referenced from catalog `image` records; devices download them by URL.
 - Everything is authenticated by a per-license **API key** (`Authorization: Bearer …`).
 
 ## The API, in two parts
@@ -31,6 +36,16 @@ contract.
 
 Start with **API_DEVICE_MANAGEMENT** to get a device registered and approved, then use
 **API_DATA_MANAGEMENT** to move catalog and document data.
+
+## Reference implementation (1C side)
+
+- [../example-1C/AV_Common.bsl](../example-1C/AV_Common.bsl) — a complete BSL common
+  module from a working 1C:Enterprise 8.3 configuration ("Small Business Management").
+  It implements the whole relay client: JSON/HTTP helpers, catalog push (products,
+  prices, images, clients, debts, discounts, device options), reliable document pull
+  with `pull/ack`, order and cash-receipt posting, image upload, and device
+  management. Adapt the object-specific parts to your own configuration; the
+  transport layer is generic. Header of the file summarizes every endpoint used.
 
 ## App internals
 
@@ -58,4 +73,6 @@ reference and should not be used for new integrations.
 | GET/POST | `/api/v1/devices/{uuid}/settings` | Device management |
 | POST | `/api/v1/push` | Data management |
 | POST | `/api/v1/push/complete` | Data management |
+| PUT | `/api/v1/images/{guid}` | Data management |
 | GET | `/api/v1/pull` | Data management |
+| POST | `/api/v1/pull/ack` | Data management |

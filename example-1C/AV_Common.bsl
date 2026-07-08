@@ -1,3 +1,52 @@
+﻿///////////////////////////////////////////////////////////////////////////////
+//
+//  AV_Common — reference integration module: 1C  <->  AgentVenta mobile app
+//               through the Sphynx relay server.
+//
+//  AgentVenta (Android app):  https://github.com/ruslan-hut/AgentVenta
+//  Integration docs:          see the app repository, folder /docs
+//                             (API_DEVICE_MANAGEMENT.md, API_DATA_MANAGEMENT.md)
+//
+//  WHAT THIS IS
+//  A self-contained BSL common module that connects a 1C:Enterprise 8.3
+//  configuration (here: "Управление небольшой фирмой" / Small Business
+//  Management for Ukraine) to the AgentVenta app. 1C is a pure REST client of
+//  the relay — it never exposes an HTTP service of its own. Connection settings
+//  (relay URL, license token, registered devices) live in the catalog
+//  AV_Settings; the scheduled job AV_ExchangeJob drives the exchange; changes
+//  for differential upload are collected via the exchange plan AV_Exchange.
+//
+//  RELAY
+//  Base URL is taken from AV_Settings.Server (default https://lic.nomadus.net).
+//  Every request carries:  Authorization: Bearer {license_api_key}
+//
+//  1C -> device  (catalog push; each record tagged by its "value_id"):
+//     options, item, price, image, client, debt, discount, ...
+//     POST /api/v1/push            — one page of catalog records
+//     POST /api/v1/push/complete   — end-of-batch marker (device prunes stale data)
+//     PUT  /api/v1/images/{guid}   — upload image bytes (see UploadImage)
+//
+//  device -> 1C  (documents uploaded by agents, pulled and posted into 1C):
+//     GET  /api/v1/pull            — a batch of documents (data_type: order, cash)
+//     POST /api/v1/pull/ack        — confirm processed documents (at-least-once)
+//
+//  device management:
+//     GET /api/v1/license, GET /api/v1/devices, POST /api/v1/devices/register,
+//     DELETE /api/v1/devices/{uuid}
+//
+//  FOR INTEGRATORS
+//  - The transport layer (JSON_*, HTTP_*, DoRequest / GET / DELETE, 429 retries,
+//    paging) is generic; adapt the object-specific parts (Get*Data, Download*)
+//    to your own Documents / Catalogs / Registers.
+//  - Idempotency: uploaded documents are keyed by their app "guid"; re-delivery
+//    (e.g. after a pull/ack that never reached the server) is safe — an already
+//    posted document is skipped.
+//  - Only objects prefixed AV_ belong to the integration; the base vendor
+//    configuration is left untouched.
+//
+//  This module is a reference implementation, not drop-in code.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #Region JSON
 
@@ -335,13 +384,19 @@ Function GetProductPage(Params, Next)
 
 	Data 		= New Array;
 	PageSize 	= 100;
-	From		= PageSize * Next;
-	Count 		= Format(PageSize * (Next + 1), "NG=0");
-	N 			= 0;
+
+	// keyset-пагинация: страница = следующие PageSize записей после курсора
+	// (Ref предыдущей страницы). Next=0 — первая страница (без курсора).
+	// Устраняет O(N^2): каждая страница читает не более PageSize строк.
+	If Next = 0 Then
+		Cursor = Catalogs.Номенклатура.EmptyRef();
+	Else
+		Cursor = Params.ProductCursor;
+	EndIf;
 
 	Query = New Query;
 	Query.Text =
-	"SELECT TOP "+Count+"
+	"SELECT TOP "+Format(PageSize, "NG=0")+"
 	|	Номенклатура.Ref AS Ref
 	|FROM
 	|	Catalog.Номенклатура AS Номенклатура
@@ -361,24 +416,26 @@ Function GetProductPage(Params, Next)
 	|				THEN Номенклатура.Ref IN (&Filter)
 	|			ELSE TRUE
 	|		END
+	|	AND CASE
+	|			WHEN &UseCursor
+	|				THEN Номенклатура.Ref > &Cursor
+	|			ELSE TRUE
+	|		END
 	|
 	|ORDER BY
 	|	Ref";
 
 	Query.SetParameter("WithFilter", 	Params.FProducts<>Undefined);
 	Query.SetParameter("Filter", 		Params.FProducts);
+	Query.SetParameter("UseCursor", 	Next > 0);
+	Query.SetParameter("Cursor", 		Cursor);
 
 	Sel = Query.Execute().Select();
 
 	While Sel.Next() Do
 
-		If N >= From Then
-
-			Data.Add(Sel.Ref);
-
-		EndIf;
-
-		N = N + 1;
+		Data.Add(Sel.Ref);
+		LastRef = Sel.Ref;
 
 	EndDo;
 
@@ -386,6 +443,7 @@ Function GetProductPage(Params, Next)
 		Next = 0;
 	Else
 		Next = Next + 1;
+		Params.Insert("ProductCursor", LastRef);
 	EndIf;
 
 	Return Data;
@@ -554,17 +612,189 @@ Function GetProductData(Params, Next)
 
 EndFunction // GetProductData()
 
+// Готовит данные о картинках товаров (value_id = "image") для страницы товаров.
+// Источник URL:
+//  - urlSitniksCRM, если заполнен (готовая публичная ссылка из CRM);
+//  - иначе двоичные данные загружаются на relay-сервер (PUT images/{guid}),
+//    используется URL из ответа; неизмененные файлы повторно не заливаются —
+//    версия отслеживается в регистре сведений AV_UploadedImages.
+// Контракт с бекендом — см. tasks/images-via-relay-plan.md.
+// Ровно одна картинка товара помечается default=1 — только ее показывает
+// приложение; приоритет: ФайлКартинкиСайт (ее показывает форма номенклатуры),
+// затем ФайлКартинки, затем первая по дате создания.
+Function GetImageData(Params, Next)
+
+	Data = New Array;
+
+	Filter = GetProductPage(Params, Next);
+
+	If Filter.Count() = 0 Then
+		Return Data;
+	EndIf;
+
+	Query = New Query;
+	Query.Text =
+	"SELECT ALLOWED
+	|	Files.Ref AS Ref,
+	|	Files.ВладелецФайла AS Owner,
+	|	Files.urlSitniksCRM AS URL,
+	|	Files.Расширение AS Extension,
+	|	Files.ДатаМодификацииУниверсальная AS Modified,
+	|	Files.ДатаСоздания AS Created,
+	|	CASE
+	|		WHEN Files.ВладелецФайла.ФайлКартинкиСайт = Files.Ref
+	|			THEN 0
+	|		WHEN Files.ВладелецФайла.ФайлКартинки = Files.Ref
+	|			THEN 1
+	|		ELSE 2
+	|	END AS DefaultOrder
+	|FROM
+	|	Catalog.НоменклатураПрисоединенныеФайлы AS Files
+	|WHERE
+	|	Files.ВладелецФайла IN(&Filter)
+	|	AND NOT Files.DeletionMark
+	|	AND (Files.urlSitniksCRM <> """"
+	|			OR Files.Расширение IN (&Extensions))
+	|
+	|ORDER BY
+	|	Owner,
+	|	DefaultOrder,
+	|	Created";
+
+	// сравнение строк в запросе регистрозависимое — перечисляем оба варианта
+	Extensions = New Array;
+	Extensions.Add("jpg");
+	Extensions.Add("JPG");
+	Extensions.Add("jpeg");
+	Extensions.Add("JPEG");
+	Extensions.Add("png");
+	Extensions.Add("PNG");
+	Extensions.Add("webp");
+	Extensions.Add("WEBP");
+
+	Query.SetParameter("Filter", 		Filter);
+	Query.SetParameter("Extensions", 	Extensions);
+
+	Sel = Query.Execute().Select();
+
+	CurrentOwner = Undefined;
+
+	While Sel.Next() Do
+
+		Modified 	= ?(ValueIsFilled(Sel.Modified), Sel.Modified, Sel.Created);
+		VersionMs 	= ?(ValueIsFilled(Modified), (Modified - Date(1970, 1, 1)) * 1000, 0);
+
+		If NOT IsBlankString(Sel.URL) Then
+
+			// готовая публичная ссылка из Sitniks CRM
+			Url = Sel.URL;
+
+		Else
+
+			Url = UploadedImageURL(Sel.Ref, Modified);
+
+			If Url = Undefined Then
+
+				Url = UploadImage(Params, Sel.Ref, Sel.Extension, VersionMs);
+
+				If Params.Err <> Undefined Then
+					Return Data;
+				EndIf;
+
+				If Url = Undefined Then
+					// файл не удалось передать на сервер — картинку пропускаем
+					Continue;
+				EndIf;
+
+				SaveUploadedImage(Sel.Ref, Modified, Url);
+
+			EndIf;
+
+			// ?v={time} уже включен сервером в URL — новая версия меняет URL,
+			// приложение кэширует картинку по полному URL
+
+		EndIf;
+
+		// первая отправляемая строка товара — картинка по умолчанию
+		Default = ?(Sel.Owner <> CurrentOwner, 1, 0);
+		CurrentOwner = Sel.Owner;
+
+		Item = New Structure;
+		Item.Insert("value_id", 	"image");
+		Item.Insert("item_guid", 	String(Sel.Owner.UUID()));
+		Item.Insert("image_guid", 	String(Sel.Ref.UUID()));
+		Item.Insert("default", 		Default);
+		Item.Insert("time", 		VersionMs);
+		Item.Insert("url", 			Url);
+		Item.Insert("description", 	"");
+		Item.Insert("type", 		"product");
+
+		Data.Add(Item);
+
+	EndDo;
+
+	Return Data;
+
+EndFunction // GetImageData()
+
+// Возвращает URL картинки, ранее загруженной на relay-сервер,
+// если сохраненная версия не старее текущей; иначе Неопределено.
+Function UploadedImageURL(FileRef, Modified)
+
+	Query = New Query;
+	Query.Text =
+	"SELECT
+	|	Uploaded.VersionDate AS VersionDate,
+	|	Uploaded.URL AS URL
+	|FROM
+	|	InformationRegister.AV_UploadedImages AS Uploaded
+	|WHERE
+	|	Uploaded.File = &File";
+
+	Query.SetParameter("File", FileRef);
+
+	Sel = Query.Execute().Select();
+
+	While Sel.Next() Do
+
+		If Sel.VersionDate >= Modified AND NOT IsBlankString(Sel.URL) Then
+			Return Sel.URL;
+		EndIf;
+
+	EndDo;
+
+	Return Undefined;
+
+EndFunction // UploadedImageURL()
+
+// Фиксирует факт загрузки картинки на relay-сервер.
+Procedure SaveUploadedImage(FileRef, Modified, Url)
+
+	Rec = InformationRegisters.AV_UploadedImages.CreateRecordManager();
+	Rec.File 		= FileRef;
+	Rec.VersionDate = Modified;
+	Rec.UploadDate 	= CurrentDate();
+	Rec.URL 		= Url;
+	Rec.Write(True);
+
+EndProcedure // SaveUploadedImage()
+
 Function GetClientPage(Params, Next)
 
 	Data 		= New Array;
 	PageSize 	= 100;
-	From		= PageSize * Next;
-	Count 		= Format(PageSize * (Next + 1), "NG=0");
-	N 			= 0;
+
+	// keyset-пагинация (см. GetProductPage): страница = следующие PageSize
+	// после курсора; устраняет O(N^2).
+	If Next = 0 Then
+		Cursor = Catalogs.Контрагенты.EmptyRef();
+	Else
+		Cursor = Params.ClientCursor;
+	EndIf;
 
 	Query = New Query;
 	Query.Text =
-	"SELECT TOP "+Count+"
+	"SELECT TOP "+Format(PageSize, "NG=0")+"
 	|	Контрагенты.Ref AS Ref
 	|FROM
 	|	Catalog.Контрагенты AS Контрагенты
@@ -576,6 +806,11 @@ Function GetClientPage(Params, Next)
 	|				THEN Контрагенты.Ref IN (&Filter)
 	|			ELSE TRUE
 	|		END
+	|	AND CASE
+	|			WHEN &UseCursor
+	|				THEN Контрагенты.Ref > &Cursor
+	|			ELSE TRUE
+	|		END
 	|
 	|ORDER BY
 	|	Ref";
@@ -583,18 +818,15 @@ Function GetClientPage(Params, Next)
 	Query.SetParameter("Manager", 		Params.Manager);
 	Query.SetParameter("WithFilter", 	Params.FClients<>Undefined);
 	Query.SetParameter("Filter", 		Params.FClients);
+	Query.SetParameter("UseCursor", 	Next > 0);
+	Query.SetParameter("Cursor", 		Cursor);
 
 	Sel = Query.Execute().Select();
 
 	While Sel.Next() Do
 
-		If N >= From Then
-
-			Data.Add(Sel.Ref);
-
-		EndIf;
-
-		N = N + 1;
+		Data.Add(Sel.Ref);
+		LastRef = Sel.Ref;
 
 	EndDo;
 
@@ -602,6 +834,7 @@ Function GetClientPage(Params, Next)
 		Next = 0;
 	Else
 		Next = Next + 1;
+		Params.Insert("ClientCursor", LastRef);
 	EndIf;
 
 	Return Data;
@@ -623,7 +856,7 @@ Function GetClientData(Params, Next)
 	|	Контрагенты.Code AS Code,
 	|	Контрагенты.Parent AS Parent,
 	|	Контрагенты.Description AS Description,
-	|	Контрагенты.ДоговорПоУмолчанию.ВидЦен AS PriceType,
+	|	ISNULL(Контрагенты.ДоговорПоУмолчанию.ВидЦен, VALUE(Catalog.ВидыЦен.EmptyRef)) AS PriceType,
 	|	Контрагенты.КонтактнаяИнформация.(
 	|		Вид,
 	|		Представление,
@@ -652,7 +885,8 @@ Function GetClientData(Params, Next)
 		Item.Insert("phone",			"");
 		Item.Insert("address", 			"");
 		Item.Insert("discount", 		0);
-		Item.Insert("price_type", 		String(Sel.PriceType.UUID()));
+		// у контрагента может не быть договора по умолчанию или вида цен в нем
+		Item.Insert("price_type", 		?(ValueIsFilled(Sel.PriceType), String(Sel.PriceType.UUID()), ""));
 		Item.Insert("sum", 				0);
 
 		//If ValueIsFilled(Sel.Parent) Then
@@ -722,6 +956,132 @@ Function GetDiscountData(Params, Next)
 
 EndFunction // GetDiscountData()
 
+// Готовит данные о взаиморасчетах (value_id = "debt") для страницы клиентов:
+//  - итоговая строка по каждому клиенту (пустой doc_id) — приложение показывает
+//    ее сумму как баланс клиента; шлем всем клиентам страницы, даже нулевую,
+//    иначе прежний долг останется на устройстве;
+//  - детальные строки по документам-регистраторам за последние N дней.
+// Знак: плюс — долг клиента, минус — оплата/аванс.
+Function GetDebtData(Params, Next)
+
+	Data = New Array;
+
+	Clients = GetClientPage(Params, Next);
+
+	If Clients.Count() = 0 Then
+		Return Data;
+	EndIf;
+
+	// период выгрузки движений взаиморасчетов, дней
+	PeriodDays 	= 30;
+	DateTo 		= EndOfDay(CurrentDate());
+	DateFrom 	= BegOfDay(DateTo - PeriodDays * 86400);
+
+	// -------------------------------------------------- текущий баланс клиентов
+	Query = New Query;
+	Query.Text =
+	"SELECT ALLOWED
+	|	Balances.Контрагент AS Client,
+	|	SUM(CASE
+	|			WHEN Balances.ТипРасчетов = VALUE(Enum.ТипыРасчетов.Долг)
+	|				THEN Balances.СуммаОстаток
+	|			ELSE -Balances.СуммаОстаток
+	|		END) AS Sum
+	|FROM
+	|	AccumulationRegister.РасчетыСПокупателями.Balance(, Контрагент IN (&Clients)) AS Balances
+	|
+	|GROUP BY
+	|	Balances.Контрагент";
+
+	Query.SetParameter("Clients", Clients);
+
+	Balance = New Map;
+
+	Sel = Query.Execute().Select();
+
+	While Sel.Next() Do
+		Balance.Insert(Sel.Client, Sel.Sum);
+	EndDo;
+
+	For Each Client In Clients Do
+
+		Sum = Balance.Get(Client);
+
+		Item = New Structure;
+		Item.Insert("value_id", 	"debt");
+		Item.Insert("client_guid", 	String(Client.UUID()));
+		Item.Insert("company_guid", "");
+		Item.Insert("doc_id", 		"");
+		Item.Insert("doc_guid", 	"");
+		Item.Insert("doc_type", 	"");
+		Item.Insert("sum", 			?(Sum = Undefined, 0, Sum));
+		Item.Insert("sorting", 		0);
+		Item.Insert("has_content", 	0);
+
+		Data.Add(Item);
+
+	EndDo;
+
+	// -------------------------------------------------- движения по документам
+	Query = New Query;
+	Query.Text =
+	"SELECT ALLOWED
+	|	Turnovers.Контрагент AS Client,
+	|	Turnovers.Recorder AS Doc,
+	|	Turnovers.Recorder.Date AS DocDate,
+	|	SUM(CASE
+	|			WHEN Turnovers.ТипРасчетов = VALUE(Enum.ТипыРасчетов.Долг)
+	|				THEN Turnovers.СуммаПриход - Turnovers.СуммаРасход
+	|			ELSE Turnovers.СуммаРасход - Turnovers.СуммаПриход
+	|		END) AS Sum
+	|FROM
+	|	AccumulationRegister.РасчетыСПокупателями.Turnovers(&DateFrom, &DateTo, Recorder, Контрагент IN (&Clients)) AS Turnovers
+	|
+	|GROUP BY
+	|	Turnovers.Контрагент,
+	|	Turnovers.Recorder,
+	|	Turnovers.Recorder.Date
+	|
+	|ORDER BY
+	|	Client,
+	|	DocDate";
+
+	Query.SetParameter("Clients", 	Clients);
+	Query.SetParameter("DateFrom", 	DateFrom);
+	Query.SetParameter("DateTo", 	DateTo);
+
+	Sel = Query.Execute().Select();
+
+	While Sel.Next() Do
+
+		If Sel.Sum = 0 Then
+			Continue;
+		EndIf;
+
+		Item = New Structure;
+		Item.Insert("value_id", 	"debt");
+		Item.Insert("client_guid", 	String(Sel.Client.UUID()));
+		Item.Insert("company_guid", "");
+		// doc_id отображается в приложении как есть и входит в ключ записи;
+		// дата видна только внутри представления документа
+		Item.Insert("doc_id", 		TrimAll(String(Sel.Doc)));
+		Item.Insert("doc_guid", 	String(Sel.Doc.UUID()));
+		Item.Insert("doc_type", 	Sel.Doc.Metadata().Name);
+		Item.Insert("sum", 			Sel.Sum);
+		// сортировка по дате документа (секунды от 2001 года),
+		// приложение упорядочивает по возрастанию
+		Item.Insert("sorting", 		Sel.DocDate - Date(2001, 1, 1));
+		// расшифровка документов через relay-сервер не поддерживается
+		Item.Insert("has_content", 	0);
+
+		Data.Add(Item);
+
+	EndDo;
+
+	Return Data;
+
+EndFunction // GetDebtData()
+
 #EndRegion
 
 #Region DataUpload
@@ -747,6 +1107,12 @@ Procedure DeviceDataUpload(Params) Export
 		Return;
 	EndIf;
 
+	SendImages(Params);
+
+	If Params.Err<>Undefined Then
+		Return;
+	EndIf;
+
 	SendClients(Params);
 
 	If Params.Err<>Undefined Then
@@ -754,6 +1120,12 @@ Procedure DeviceDataUpload(Params) Export
 	EndIf;
 
 	SendDiscounts(Params);
+
+	If Params.Err<>Undefined Then
+		Return;
+	EndIf;
+
+	SendDebts(Params);
 
 	If Params.Err<>Undefined Then
 		Return;
@@ -796,7 +1168,7 @@ Procedure UserOptions(Params)
 	// печать
 	Opt.Insert("printingEnabled",		False);
 	// картинки
-	Opt.Insert("loadImages",			False);
+	Opt.Insert("loadImages",			True);
 	// лицензия
 	Opt.Insert("license","");
 	// FCM токен
@@ -820,6 +1192,18 @@ Procedure UserOptions(Params)
 	// работа с несколькими складами
 	Opt.Insert("useStores", 			False);
 
+	// --- дополнительные распознаваемые приложением опции (п.20) ---
+	// требовать дату доставки в заказе
+	Opt.Insert("requireDeliveryDate",	False);
+	// матрицы клиентов: маршруты и товары (данные пока не выгружаются)
+	Opt.Insert("clientsDirections",		False);
+	Opt.Insert("clientsProducts",		False);
+	// флаги подборщика: потребность и маркировка упаковки
+	Opt.Insert("useDemands",			False);
+	Opt.Insert("usePackageMark",		False);
+	// журнал отладки на устройстве
+	Opt.Insert("debugLogsEnabled",		False);
+
 
 	Name = Params.Name;
 	If IsBlankString(Name) Then
@@ -833,8 +1217,9 @@ Procedure UserOptions(Params)
 	// если задать ид сообщения, оно перезапишет предыдущее сообщение с этим ид
 	Data.Insert("message_uuid", Params.DeviceID);
 
-	Data.Insert("Data", New Array);
-	Data.Data.Add(Opt);
+	// ключ "data" по контракту (единообразно с остальными push-запросами)
+	Data.Insert("data", New Array);
+	Data.data.Add(Opt);
 
 	DoRequest(Params, "push", Data);
 
@@ -857,6 +1242,37 @@ Procedure SendProducts(Params)
 			Count = Count + Items.Count();
 
 			//Message("... products portion: " + Count);
+
+			Data.Insert("data", Items);
+
+			DoRequest(Params, "push", Data);
+
+		EndIf;
+
+		If Params.Err<>Undefined Then
+			Return;
+		EndIf;
+
+		If Num=0 Then
+			Return;
+		EndIf;
+
+	EndDo;
+
+EndProcedure
+
+Procedure SendImages(Params)
+
+	Data = New Structure;
+	Data.Insert("device_uuid", Params.DeviceID);
+
+	Num = 0;
+
+	While 1=1 Do
+
+		Items = GetImageData(Params, Num);
+
+		If Items.Count()>0 Then
 
 			Data.Insert("data", Items);
 
@@ -940,6 +1356,37 @@ Procedure SendDiscounts(Params)
 
 EndProcedure
 
+Procedure SendDebts(Params)
+
+	Data = New Structure;
+	Data.Insert("device_uuid", Params.DeviceID);
+
+	Num = 0;
+
+	While 1=1 Do
+
+		Items = GetDebtData(Params, Num);
+
+		If Items.Count()>0 Then
+
+			Data.Insert("data", Items);
+
+			DoRequest(Params, "push", Data);
+
+		EndIf;
+
+		If Params.Err<>Undefined Then
+			Return;
+		EndIf;
+
+		If Num=0 Then
+			Return;
+		EndIf;
+
+	EndDo;
+
+EndProcedure
+
 //Если выгрузка прошла успешно, отсылаем метку когда выгрузка началась
 //на телефоне будут удалены все данные до этой метки
 Procedure FinishFullUpload(Params)
@@ -957,16 +1404,18 @@ EndProcedure
 // один план обмена (devices одной AV_Settings).
 //
 // Возвращает структуру:
-//   Objects  — Array(СправочникОбъект/НаборЗаписей) — для последующей очистки регистраций
-//   Products — Array(СправочникСсылка.Номенклатура) — фильтр для SendProducts
-//   Clients  — Array(СправочникСсылка.Контрагенты)  — фильтр для SendClients / SendDiscounts
+//   Objects     — Array(СправочникОбъект/НаборЗаписей) — для последующей очистки регистраций
+//   Products    — Array(СправочникСсылка.Номенклатура) — фильтр для SendProducts
+//   Clients     — Array(СправочникСсылка.Контрагенты)  — фильтр для SendClients / SendDiscounts / SendDebts
+//   AllProducts — Булево — изменился состав видов цен менеджера, нужен полный переслап товаров
 //
 Function FetchDiffChanges(Node) Export
 
 	Changes = New Structure;
-	Changes.Insert("Objects",  New Array);
-	Changes.Insert("Products", New Array);
-	Changes.Insert("Clients",  New Array);
+	Changes.Insert("Objects",     New Array);
+	Changes.Insert("Products",    New Array);
+	Changes.Insert("Clients",     New Array);
+	Changes.Insert("AllProducts", False);
 
 	If NOT ValueIsFilled(Node) Then
 		Return Changes;
@@ -1011,6 +1460,25 @@ Function FetchDiffChanges(Node) Export
 			EndDo;
 			Changes.Objects.Add(Obj);
 
+		ElsIf Type = Type("СправочникОбъект.НоменклатураПрисоединенныеФайлы") Then
+
+			// изменение картинки — переотправка товара вместе с картинками
+			If ProductsMap.Get(Obj.ВладелецФайла) = Undefined Then
+				ProductsMap.Insert(Obj.ВладелецФайла, True);
+				Changes.Products.Add(Obj.ВладелецФайла);
+			EndIf;
+			Changes.Objects.Add(Obj);
+
+		ElsIf Type = Type("РегистрНакопленияНаборЗаписей.РасчетыСПокупателями") Then
+
+			Для каждого Запись Из Obj Do
+				If ClientsMap.Get(Запись.Контрагент) = Undefined Then
+					ClientsMap.Insert(Запись.Контрагент, True);
+					Changes.Clients.Add(Запись.Контрагент);
+				EndIf;
+			EndDo;
+			Changes.Objects.Add(Obj);
+
 		ElsIf Type = Type("СправочникОбъект.СкидкиНаценкиНоменклатуры") Then
 
 			If ClientsMap.Get(Obj.Owner) = Undefined Then
@@ -1035,10 +1503,16 @@ Function FetchDiffChanges(Node) Export
 			EndIf;
 			Changes.Objects.Add(Obj);
 
+		ElsIf Type = Type("СправочникОбъект.ВидыЦенМенеджеров") Then
+
+			// изменение состава видов цен менеджера затрагивает цены всех товаров —
+			// помечаем на полный переслап товаров с ценами
+			Changes.AllProducts = True;
+			Changes.Objects.Add(Obj);
+
 		Else
 
-			// прочее (включая ВидыЦенМенеджеров) — не отправляется,
-			// но регистрации очищаются вместе с группой
+			// прочее — не отправляется, но регистрации очищаются вместе с группой
 			Changes.Objects.Add(Obj);
 
 		EndIf;
@@ -1067,11 +1541,35 @@ Procedure DiffUpload(Params, Changes)
 	// метка времени в миллисекундах для отметки всех элементов данных
 	Params.Insert("Timestamp", CurrentUniversalDateInMilliseconds());
 
-	If Changes.Products.Count() > 0 Then
+	If Changes.AllProducts Then
+
+		// изменился состав видов цен менеджера — пересылаем все товары с ценами;
+		// без push/complete это upsert на устройстве, удалений не будет
+		Params.Insert("FProducts", Undefined);
+
+		SendProducts(Params);
+
+		If Params.Err <> Undefined Then
+			Return;
+		EndIf;
+
+		SendImages(Params);
+
+		If Params.Err <> Undefined Then
+			Return;
+		EndIf;
+
+	ElsIf Changes.Products.Count() > 0 Then
 
 		Params.Insert("FProducts", Changes.Products);
 
 		SendProducts(Params);
+
+		If Params.Err <> Undefined Then
+			Return;
+		EndIf;
+
+		SendImages(Params);
 
 		If Params.Err <> Undefined Then
 			Return;
@@ -1095,6 +1593,12 @@ Procedure DiffUpload(Params, Changes)
 			Return;
 		EndIf;
 
+		SendDebts(Params);
+
+		If Params.Err <> Undefined Then
+			Return;
+		EndIf;
+
 	EndIf;
 
 	// Список изменений, накопленных для текущего плана обмена.
@@ -1110,49 +1614,178 @@ EndProcedure
 
 Procedure DeviceDataDownload(Params) Export
 
-	GET(Params, "pull");
+	// Вычитываем очередь циклом до опустошения в пределах одного прогона.
+	// После reserve+lease на бекенде уже выданные (но не подтверждённые) строки
+	// исключены из выборки на время аренды, поэтому цикл дренирует новые
+	// документы и не зацикливается на упавших. MaxBatches — предохранитель.
+	PullLimit  = 100;   // максимум, разрешённый бекендом (1..100)
+	MaxBatches = 100;   // до 100 пачек за прогон (предохранитель от зацикливания)
+	Path       = StrTemplate("pull?limit=%1", PullLimit);
 
-	If Params.Err<>Undefined Then
-		Return;
-	EndIf;
+	For BatchNo = 1 To MaxBatches Do
 
-	If Params.Response = Undefined Then
-		Params.Err = "Empty response";
-		Return;
-	EndIf;
+		GET(Params, Path);
 
-	Data = Params.Response["data"];
+		If Params.Err<>Undefined Then
+			Return;
+		EndIf;
 
-	Count = Data["count"];
+		If Params.Response = Undefined Then
+			Params.Err = "Empty response";
+			Return;
+		EndIf;
 
-	If Count<>Undefined AND Count = 0 Then
-		Message("Device data queue is EMPTY");
-		Return;
-	Else
+		Data  = Params.Response["data"];
+		Count = Data["count"];
+
+		If Count = Undefined OR Count = 0 Then
+			If BatchNo = 1 Then
+				Message("Device data queue is EMPTY");
+			EndIf;
+			Return;
+		EndIf;
+
 		Message("Received data elements: "+Count);
-	EndIf;
 
-	Items = Data["items"];
+		ProcessPullBatch(Data, Params);
+
+		// пачка неполная -> доступная очередь исчерпана в этом прогоне
+		If Count < PullLimit Then
+			Return;
+		EndIf;
+
+	EndDo;
+
+	// достигнут предел пачек: остаток заберём на следующем прогоне задания
+	WriteLogEvent("AgentVenta", EventLogLevel.Warning,,,
+		StrTemplate("pull: достигнут предел %1 пачек за прогон; остаток очереди — на следующий запуск", MaxBatches));
+
+EndProcedure
+
+// Обрабатывает одну пачку очереди pull: загружает документы и подтверждает
+// (pull/ack) успешно обработанные.
+Procedure ProcessPullBatch(Data, Params)
+
+	// токен пачки для подтверждения обработанных документов (pull/ack).
+	// Пусто, если бекенд ещё в режиме claim-on-read (тогда ack не нужен).
+	FetchToken = Data["fetch_token"];
+
+	Items    = Data["items"];
+	AckGuids = New Array;
+	AckIds   = New Array;
 
 	For Each Item In Items Do
 
-		DataType = Item["data_type"];
+		DataType  = Item["data_type"];
+		Payload   = Item["data"];
+		Processed = False;
 
 		If DataType = "order" Then
 
-			DownloadOrder(Item["data"], Params);
+			Processed = DownloadOrder(Payload, Params);
+
+		ElsIf DataType = "cash" Then
+
+			Processed = DownloadCash(Payload, Params);
 
 		Else
 
+			// неподдерживаемый тип не подтверждаем: пусть остаётся в очереди
+			// (бекенд ограничит число выдач и переведёт в dead-letter)
 			Message("Unsupported data type: "+DataType);
+
+		EndIf;
+
+		// подтверждаем только обработанные документы; остальные придут повторно.
+		// Возвращаем эхом ключи бекенда: приоритет document_guid, иначе id
+		// строки очереди (для payload без document_guid).
+		If Processed Then
+
+			DocGuid = Item["document_guid"];
+
+			If NOT IsBlankString(DocGuid) Then
+				AckGuids.Add(DocGuid);
+			Else
+				MsgId = Item["id"];
+				If NOT IsBlankString(MsgId) Then
+					AckIds.Add(MsgId);
+				EndIf;
+			EndIf;
 
 		EndIf;
 
 	EndDo;
 
+	AckPulled(Params, FetchToken, AckGuids, AckIds);
+
 EndProcedure
 
-Procedure DownloadOrder(Order, Params)
+// Подтверждает бекенду успешно обработанные документы очереди pull:
+// POST /api/v1/pull/ack {fetch_token, document_guids:[...], message_ids:[...]}.
+// Мягкая: любая ошибка (в т.ч. 404, если бекенд ещё без ack-эндпоинта) только
+// пишется в лог и НЕ прерывает обмен (Params.Err не выставляется).
+// Неподтверждённые документы будут выданы бекендом повторно.
+Procedure AckPulled(Params, FetchToken, Guids, Ids)
+	Var Err, StatusCode;
+
+	If Guids.Count() = 0 AND Ids.Count() = 0 Then
+		Return;
+	EndIf;
+
+	// нет токена пачки -> бекенд в режиме claim-on-read, подтверждать нечего
+	If IsBlankString(FetchToken) Then
+		Return;
+	EndIf;
+
+	Data = New Structure;
+	Data.Insert("fetch_token", FetchToken);
+
+	If Guids.Count() > 0 Then
+		Data.Insert("document_guids", Guids);
+	EndIf;
+
+	If Ids.Count() > 0 Then
+		Data.Insert("message_ids", Ids);
+	EndIf;
+
+	Req = HTTP_RequestWithJSON(Data, Err);
+
+	If Err <> Undefined Then
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,,,
+			StrTemplate("pull/ack prepare failed: %1", Err));
+		Return;
+	EndIf;
+
+	If Params.Conn = Undefined Then
+		Params.Conn = ServerConnection(Params);
+	EndIf;
+
+	Req.Headers.Insert("Authorization", StrTemplate("Bearer %1", Params.Token));
+	Req.ResourceAddress = "/api/v1/pull/ack";
+
+	HTTP_POST(Params.Conn, , Req, StatusCode, Err);
+
+	If Err <> Undefined Then
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,,,
+			StrTemplate("pull/ack request failed: %1; status=%2", Err, StatusCode));
+		Return;
+	EndIf;
+
+	If StatusCode <> 200 Then
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,,,
+			StrTemplate("pull/ack not confirmed: status=%1", StatusCode));
+		Return;
+	EndIf;
+
+EndProcedure
+
+// Загружает заказ из очереди pull в документ ЗаказПокупателя.
+// Возвращает Истина, если документ можно подтвердить бекенду (pull/ack):
+// успешно записан/проведён, уже проведён ранее (идемпотентный повтор) или
+// осознанно отброшен как неисправимый (некорректный guid). Возвращает Ложь для
+// исправимых сбоев (неизвестное устройство, ошибка записи/проведения) — такой
+// документ будет выдан повторно.
+Function DownloadOrder(Order, Params)
 
 	// дата документа указана в данных в виде timestamp в секундах
 	// нужно посчитать от начала эпохи Unix
@@ -1166,7 +1799,7 @@ Procedure DownloadOrder(Order, Params)
 
 		WriteLogEvent("AgentVenta", EventLogLevel.Error,,, Txt);
 		Message(Txt);
-		Return;
+		Return False;
 
 	EndIf;
 
@@ -1179,7 +1812,7 @@ Procedure DownloadOrder(Order, Params)
 
 	Except
 	    Message(StrTemplate("id=%1; %2", UID, BriefErrorDescription(ErrorInfo())));
-		Return;
+		Return True;
 	EndTry;
 
 	Doc = Ref.GetObject();
@@ -1198,6 +1831,13 @@ Procedure DownloadOrder(Order, Params)
 			Doc.ВидОперации,
 			,,,,,
 		);
+
+		// организация из приложения (company_guid), если элемент существует;
+		// иначе остаётся значение по умолчанию из ЗаполнитьШапкуДокумента
+		ОрганизацияЗаказа = ResolveCatalogRef(Справочники.Организации, Order["company_guid"]);
+		Если ОрганизацияЗаказа <> Неопределено Тогда
+			Doc.Организация = ОрганизацияЗаказа;
+		КонецЕсли;
 
 		// в данных документа есть время создания и время редактирования
 		// time - когда создан
@@ -1226,7 +1866,7 @@ Procedure DownloadOrder(Order, Params)
 	If Doc.Posted Then
 
 		Message("Document skipped (posted): "+Doc.Ref);
-		Return;
+		Return True;
 
 	EndIf;
 
@@ -1272,6 +1912,41 @@ Procedure DownloadOrder(Order, Params)
 		Doc.ВидЦен = Doc.Договор.ВидЦен;
 	КонецЕсли;
 
+	///////////////////////////////////////////// доп. поля заказа из приложения (п.15)
+
+	// тип цен из приложения имеет приоритет над договорным
+	ВидЦенЗаказа = ResolveCatalogRef(Справочники.ВидыЦен, Order["price_type"]);
+	Если ВидЦенЗаказа <> Неопределено Тогда
+		Doc.ВидЦен = ВидЦенЗаказа;
+	КонецЕсли;
+
+	// склад / структурная единица продажи
+	СкладЗаказа = ResolveCatalogRef(Справочники.СтруктурныеЕдиницы, Order["store_guid"]);
+	Если СкладЗаказа <> Неопределено Тогда
+		Doc.СтруктурнаяЕдиницаПродажи = СкладЗаказа;
+	КонецЕсли;
+
+	// скидка по документу (процент)
+	Скидка = Order["discount"];
+	Если ТипЗнч(Скидка) = Тип("Число") Тогда
+		Doc.ПроцентСкидки = Скидка;
+	КонецЕсли;
+
+	// тип денежных средств: CASH -> Наличные; CREDIT/прочее -> значение по умолчанию
+	Если Order["payment_type"] = "CASH" Тогда
+		Doc.ТипДенежныхСредств = Перечисления.ТипыДенежныхСредств.Наличные;
+	КонецЕсли;
+
+	// возврат: у ЗаказПокупателя нет вида операции "возврат" — помечаем комментарием
+	Если Order["is_return"] = 1 Тогда
+		Метка = "[ВОЗВРАТ]";
+		Если Найти(Doc.Комментарий, Метка) = 0 Тогда
+			Doc.Комментарий = СокрЛП(Метка + " " + Doc.Комментарий);
+		КонецЕсли;
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,, Doc.Ref,
+			StrTemplate("Замовлення %1 позначене як повернення (is_return=1) — у ЗаказПокупателя немає виду операції ""повернення""", Order["number"]));
+	КонецЕсли;
+
 	///////////////////////////////////////////// товары
 	Doc.Запасы.Clear();
 
@@ -1314,7 +1989,7 @@ Procedure DownloadOrder(Order, Params)
 		Txt = StrTemplate("%1: write error: %2", Doc.Ref, BriefErrorDescription(ErrorInfo()));
 		Message(Txt);
 		WriteLogEvent("AgentVenta", EventLogLevel.Error,, Doc.Ref, Txt);
-		Return;
+		Return False;
 	EndTry;
 
 	Try
@@ -1326,10 +2001,254 @@ Procedure DownloadOrder(Order, Params)
 		Txt = StrTemplate("%1: post error: %2", Doc.Ref, BriefErrorDescription(ErrorInfo()));
 		Message(Txt);
 		WriteLogEvent("AgentVenta", EventLogLevel.Error,, Doc.Ref, Txt);
-		Return;
+		Return False;
 	EndTry;
 
+	Return True;
+
+EndFunction
+
+// Загружает оплату из очереди pull в документ ПоступлениеВКассу.
+// Возвращает Истина, если документ можно подтвердить бекенду (pull/ack):
+// успешно записан/проведён, уже проведён ранее либо осознанно отброшен
+// (некорректный guid, нулевая сумма). Возвращает Ложь для исправимых сбоев
+// (неизвестное устройство, ошибка записи/проведения) — документ будет выдан повторно.
+Function DownloadCash(Cash, Params)
+
+	// дата документа указана в данных в виде timestamp в секундах
+	// (та же база времени, что и в заказе)
+	BaseDate = Date(1970, 1, 1, 0, 0, 0);
+
+	Manager = GetManager(Cash["userID"]);
+
+	If Manager = Undefined Then
+
+		Txt = "Невідомий пристрій, оплата пропущена; ID=" + Cash["userID"];
+
+		WriteLogEvent("AgentVenta", EventLogLevel.Error,,, Txt);
+		Message(Txt);
+		Return False;
+
+	EndIf;
+
+	///////////////////////////////////////////// ссылка на документ
+	UID = Cash["guid"];
+
+	Try
+
+		Ref = Documents.ПоступлениеВКассу.GetRef(New UUID(UID));
+
+	Except
+		Message(StrTemplate("id=%1; %2", UID, BriefErrorDescription(ErrorInfo())));
+		Return True;
+	EndTry;
+
+	Doc = Ref.GetObject();
+
+	IsNew = (Doc = Undefined);
+
+	///////////////////////////////////////////// создание нового документа
+	If IsNew Then
+
+		Doc = Documents.ПоступлениеВКассу.CreateDocument();
+		Doc.SetNewObjectRef(Ref);
+
+	EndIf;
+
+	///////////////////////////////////////////// отказ загрузки
+	If Doc.Posted Then
+
+		Message("Cash skipped (posted): "+Doc.Ref);
+		Return True;
+
+	EndIf;
+
+	Sum = Number(Cash["sum"]);
+
+	If Sum = 0 Then
+
+		Message("Cash skipped (zero sum): "+Doc.Ref);
+		Return True;
+
+	EndIf;
+
+	///////////////////////////////////////////// заполнение по заказу или как аванс
+	// reference_guid - ссылка на оплачиваемый заказ (создан ранее из "order").
+	// Если заказ найден - используем штатное заполнение по основанию
+	// (сам заполнит договор, ставку НДС, курс и "Расшифровку платежа"),
+	// иначе оформляем оплату как аванс от покупателя.
+	Doc.РасшифровкаПлатежа.Clear();
+
+	FilledFromOrder = False;
+	RefGuid = Cash["reference_guid"];
+
+	If NOT IsBlankString(RefGuid) Then
+
+		Try
+			OrderRef = Documents.ЗаказПокупателя.GetRef(New UUID(RefGuid));
+		Except
+			OrderRef = Undefined;
+		EndTry;
+
+		If OrderRef <> Undefined Then
+
+			Doc.Заполнить(New Structure("Документ, Сумма", OrderRef, Sum));
+			FilledFromOrder = (Doc.РасшифровкаПлатежа.Count() > 0);
+
+		EndIf;
+
+	EndIf;
+
+	If NOT FilledFromOrder Then
+
+		FillCashAdvance(Doc, Cash["client_guid"], Cash["company_guid"], Sum, Manager);
+
+	EndIf;
+
+	///////////////////////////////////////////// шапка
+	DocDate = BaseDate + ?(Cash["time"] = Undefined, 0, Number(Cash["time"]));
+	Doc.Date = ?(ЗначениеЗаполнено(DocDate), DocDate, ТекущаяДата());
+
+	Doc.Ответственный = Manager;
+
+	If IsNew Then
+		Doc.Автор = Manager;
+	EndIf;
+
+	If NOT IsBlankString(Cash["notes"]) Then
+		Doc.Комментарий = Cash["notes"];
+	EndIf;
+
+	If NOT ЗначениеЗаполнено(Doc.Статья) Then
+		Doc.Статья = Справочники.СтатьиДвиженияДенежныхСредств.ОплатаОтПокупателей;
+	EndIf;
+
+	If NOT ЗначениеЗаполнено(Doc.ПринятоОт) AND ЗначениеЗаполнено(Doc.Контрагент) Then
+		Doc.ПринятоОт = ?(Doc.Контрагент.НаименованиеПолное = "", Doc.Контрагент.Наименование, Doc.Контрагент.НаименованиеПолное);
+	EndIf;
+
+	Doc.СуммаДокумента = Doc.РасшифровкаПлатежа.Итог("СуммаПлатежа");
+
+	If IsNew Then
+
+		Txt = StrTemplate("Нова оплата: %1 %2; менеджер=%3; клієнт=%4; сума=%5",
+				Cash["number"], Cash["date"], Manager, Cash["client"], Sum);
+
+		WriteLogEvent("AgentVenta", EventLogLevel.Note,, Doc.Ref, Txt);
+
+	EndIf;
+
+	///////////////////////////////////////////// запись
+	Try
+
+		Doc.Write(DocumentWriteMode.Write);
+
+	Except
+		Txt = StrTemplate("%1: write error: %2", Doc.Ref, BriefErrorDescription(ErrorInfo()));
+		Message(Txt);
+		WriteLogEvent("AgentVenta", EventLogLevel.Error,, Doc.Ref, Txt);
+		Return False;
+	EndTry;
+
+	Try
+
+		Doc.Write(DocumentWriteMode.Posting);
+		Message("Cash posted: "+Doc.Ref);
+
+	Except
+		Txt = StrTemplate("%1: post error: %2", Doc.Ref, BriefErrorDescription(ErrorInfo()));
+		Message(Txt);
+		WriteLogEvent("AgentVenta", EventLogLevel.Error,, Doc.Ref, Txt);
+		Return False;
+	EndTry;
+
+	Return True;
+
+EndFunction
+
+// Заполняет "Поступление в кассу" как аванс от покупателя, когда оплата
+// не привязана к заказу (reference_guid пуст или заказ ещё не загружен).
+Procedure FillCashAdvance(Doc, ClientGuid, CompanyGuid, Sum, Manager)
+
+	Doc.ВидОперации = Перечисления.ВидыОперацийПоступлениеВКассу.ОтПокупателя;
+
+	// организация: по company_guid, иначе значение по умолчанию из ЗаполнитьШапкуДокумента
+	Организация = Undefined;
+	If NOT IsBlankString(CompanyGuid) Then
+		Try
+			Организация = Справочники.Организации.GetRef(New UUID(CompanyGuid));
+		Except
+			Организация = Undefined;
+		EndTry;
+	EndIf;
+
+	УправлениеНебольшойФирмойСервер.ЗаполнитьШапкуДокумента(Doc, Doc.ВидОперации, ,,,,,);
+
+	If Организация <> Undefined Then
+		Doc.Организация = Организация;
+	EndIf;
+
+	Doc.Контрагент = Справочники.Контрагенты.GetRef(New UUID(ClientGuid));
+
+	///////////////////////////////////////////// касса
+	НайденнаяКасса = Справочники.Кассы.НайтиПоРеквизиту("Ответственный", Manager);
+	If НайденнаяКасса.Пустая() Then
+		Doc.Касса = Doc.Организация.КассаПоУмолчанию;
+	Else
+		Doc.Касса = НайденнаяКасса;
+	EndIf;
+
+	Doc.ВалютаДенежныхСредств = ?(ЗначениеЗаполнено(Doc.Касса.ВалютаПоУмолчанию), Doc.Касса.ВалютаПоУмолчанию, Константы.НациональнаяВалюта.Получить());
+	Doc.НалогообложениеНДС = УправлениеНебольшойФирмойСервер.НалогообложениеНДС(Doc.Организация,, ?(ЗначениеЗаполнено(Doc.Дата), Doc.Дата, ТекущаяДата()));
+
+	///////////////////////////////////////////// договор
+	If Doc.Контрагент.ВестиРасчетыПоДоговорам Then
+		Doc.Договор = Doc.Контрагент.ДоговорПоУмолчанию;
+	EndIf;
+
+	Doc.СуммаДокумента = Sum;
+
+	///////////////////////////////////////////// расшифровка платежа (аванс)
+	Стр = Doc.РасшифровкаПлатежа.Добавить();
+	Стр.Договор       = Doc.Договор;
+	Стр.ПризнакАванса = True;
+	Стр.СуммаПлатежа  = Sum;
+	Стр.СуммаРасчетов = Sum;
+	Стр.Курс          = 1;
+	Стр.Кратность     = 1;
+	Стр.Заказ         = Документы.ЗаказПокупателя.ПустаяСсылка();
+
+	If Doc.НалогообложениеНДС = Перечисления.ТипыНалогообложенияНДС.ОблагаетсяНДС Then
+		Стр.СтавкаНДС = ПодборНоменклатурыВДокументахПовтИсп.ПолучитьСтавкуНДСОрганизации(Doc.Организация);
+		Стр.СуммаНДС  = ?(ЗначениеЗаполнено(Стр.СтавкаНДС) AND Стр.СтавкаНДС.Ставка > 0, Sum * (1 - 1 / ((Стр.СтавкаНДС.Ставка + 100) / 100)), 0);
+	Else
+		Стр.СтавкаНДС = УправлениеНебольшойФирмойПовтИсп.ПолучитьСтавкуНДСБезНДС();
+		Стр.СуммаНДС  = 0;
+	EndIf;
+
 EndProcedure
+
+// Возвращает ссылку на существующий элемент справочника по строковому GUID,
+// либо Неопределено (пустой/некорректный GUID или элемент не найден в базе).
+Function ResolveCatalogRef(Manager, GuidStr)
+
+	If IsBlankString(GuidStr) Then
+		Return Undefined;
+	EndIf;
+
+	Try
+		Ref = Manager.GetRef(New UUID(GuidStr));
+	Except
+		Return Undefined;
+	EndTry;
+
+	If Ref.GetObject() = Undefined Then
+		Return Undefined;
+	EndIf;
+
+	Return Ref;
+
+EndFunction // ResolveCatalogRef()
 
 Function GetManager(ID)
 
@@ -1507,6 +2426,25 @@ EndFunction // GetManager()
 
 #Region API_Calls
 
+// Возвращает соединение с сервером обмена.
+// Адрес берется из Params.Server (реквизит Server справочника AV_Settings);
+// если не заполнен, используется адрес по умолчанию.
+Function ServerConnection(Params)
+
+	Server = "";
+
+	If Params.Property("Server") Then
+		Server = TrimAll(Params.Server);
+	EndIf;
+
+	If IsBlankString(Server) Then
+		Server = "https://lic.nomadus.net";
+	EndIf;
+
+	Return HTTP_NewConnection(Server, , True);
+
+EndFunction // ServerConnection()
+
 Procedure DoRequest(Params, Path, Data)
 	Var Err, StatusCode;
 
@@ -1514,15 +2452,24 @@ Procedure DoRequest(Params, Path, Data)
 		Params.Insert("CC", 0);
 	EndIf;
 
-	LogPath 	= "E:\dev\debug\";
-	Debug 		= True;
+	// отладка управляется реквизитами Debug и DebugPath справочника AV_Settings
+	Debug 		= False;
+	LogPath 	= "";
+
+	If Params.Property("Debug") Then
+		Debug = Params.Debug = True;
+	EndIf;
+
+	If Params.Property("DebugPath") Then
+		LogPath = TrimAll(Params.DebugPath);
+	EndIf;
+
+	If IsBlankString(LogPath) Then
+		Debug = False;
+	EndIf;
+
 	CC 			= Params.CC + 1;
 	Params.CC 	= CC;
-
-	If CC%90 = 0 Then
-		WriteLogEvent("AgentVenta", EventLogLevel.Note, , , "Sleep; count="+CC);
-		Sleep(60);
-	EndIf;
 
 	// добавление метки времени в каждый элемент данных
 	Items = Undefined;
@@ -1545,7 +2492,7 @@ Procedure DoRequest(Params, Path, Data)
 
 	If Params.Conn = Undefined Then
 
-		Params.Conn = HTTP_NewConnection("https://lic.nomadus.net", , True);
+		Params.Conn = ServerConnection(Params);
 
 	EndIf;
 
@@ -1554,21 +2501,26 @@ Procedure DoRequest(Params, Path, Data)
 
 	If Debug Then
 
-		JsonErr = Undefined;
-		FileName = StrTemplate("%1request_%2.txt", LogPath, CC);
+		Sep = ?(Right(LogPath, 1) = "\" OR Right(LogPath, 1) = "/", "", "/");
+		FileName = StrTemplate("%1%2request_%3.txt", LogPath, Sep, CC);
 
-		Txt = New TextDocument;
-		Txt.SetText(Req.GetBodyAsString());
-		Txt.Write(FileName);
+		// ошибка записи отладки не должна прерывать обмен
+		Try
+			Txt = New TextDocument;
+			Txt.SetText(Req.GetBodyAsString());
+			Txt.Write(FileName);
+		Except
+			WriteLogEvent("AgentVenta", EventLogLevel.Warning,,,
+				StrTemplate("Debug write failed: %1; path=%2", BriefErrorDescription(ErrorInfo()), FileName));
+		EndTry;
 
 	EndIf;
 
 	// Повторы при HTTP 429 (Too Many Requests).
-	// Паузы между попытками: 10, 20, 30 секунд — итого до 3 повторов после первой неудачи.
 	RetryDelays = New Array;
-	RetryDelays.Add(10);
 	RetryDelays.Add(20);
 	RetryDelays.Add(30);
+	RetryDelays.Add(60);
 
 	AttemptIndex = 0;
 	Response     = "";
@@ -1624,6 +2576,117 @@ Procedure DoRequest(Params, Path, Data)
 
 EndProcedure
 
+// Загружает двоичные данные картинки на relay-сервер: PUT /api/v1/images/{guid}.
+// Контракт бекенда (tasks/images-via-relay-plan.md, реализовано):
+//  - тело: сырые байты, Content-Type по расширению файла (иначе 415);
+//  - заголовок X-Image-Time: версия картинки (мс), необязателен;
+//  - лимит 2 МБ (413); отдельный rate-limit 600 req/min;
+//  - успешный ответ 200/201, стандартный конверт: {"success":true,"data":{"stored":true,"url":"..."}};
+//    data.url — готовый абсолютный URL с ?v={time}, используется как есть.
+// Возвращает URL или Неопределено (проблема конкретного файла — обмен продолжается).
+// Транспортная ошибка или исчерпание повторов 429 ставит Params.Err.
+Function UploadImage(Params, FileRef, Extension, VersionMs)
+	Var Err;
+
+	Try
+		BinData = ПрисоединенныеФайлы.ПолучитьДвоичныеДанныеФайла(FileRef);
+	Except
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,, FileRef,
+			StrTemplate("Image read failed: %1", BriefErrorDescription(ErrorInfo())));
+		Return Undefined;
+	EndTry;
+
+	Ext = Lower(TrimAll(Extension));
+
+	If Ext = "jpg" OR Ext = "jpeg" Then
+		ContentType = "image/jpeg";
+	ElsIf Ext = "png" Then
+		ContentType = "image/png";
+	ElsIf Ext = "webp" Then
+		ContentType = "image/webp";
+	Else
+		Return Undefined;
+	EndIf;
+
+	If Params.Conn = Undefined Then
+		Params.Conn = ServerConnection(Params);
+	EndIf;
+
+	Req = New HTTPRequest;
+	Req.Headers.Insert("Content-Type", ContentType);
+	Req.Headers.Insert("Authorization", StrTemplate("Bearer %1", Params.Token));
+	Req.Headers.Insert("X-Image-Time", Format(VersionMs, "NG=0"));
+	Req.ResourceAddress = StrTemplate("/api/v1/images/%1", String(FileRef.UUID()));
+	Req.SetBodyFromBinaryData(BinData);
+
+	// Повторы при HTTP 429 (Too Many Requests).
+	RetryDelays = New Array;
+	RetryDelays.Add(20);
+	RetryDelays.Add(30);
+	RetryDelays.Add(60);
+
+	AttemptIndex = 0;
+	StatusCode   = 0;
+
+	While True Do
+
+		Try
+			Resp = Params.Conn.Put(Req);
+		Except
+			Params.Err = StrTemplate("Image upload: %1", BriefErrorDescription(ErrorInfo()));
+			Return Undefined;
+		EndTry;
+
+		StatusCode = Resp.StatusCode;
+
+		If StatusCode = 429 AND AttemptIndex < RetryDelays.Count() Then
+
+			Delay = RetryDelays[AttemptIndex];
+			AttemptIndex = AttemptIndex + 1;
+
+			WriteLogEvent(
+				"AgentVenta",
+				EventLogLevel.Warning, , ,
+				StrTemplate("HTTP 429 (rate limit); image upload; attempt %1/%2; sleeping %3s",
+					AttemptIndex, RetryDelays.Count(), Delay));
+
+			Sleep(Delay);
+			Continue;
+
+		EndIf;
+
+		Break;
+
+	EndDo;
+
+	If StatusCode = 429 Then
+		Params.Err = "Image upload: rate limited (429)";
+		Return Undefined;
+	EndIf;
+
+	If StatusCode <> 200 AND StatusCode <> 201 Then
+		// проблема конкретного файла (размер, формат) — пропускаем, обмен продолжается
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,, FileRef,
+			StrTemplate("Image upload rejected: status=%1; %2", StatusCode, Resp.GetBodyAsString()));
+		Return Undefined;
+	EndIf;
+
+	Body = JSON_Unmarshall(Resp.GetBodyAsString(), Err);
+
+	// полезная нагрузка в стандартном конверте ответа: data.url, уже с ?v={time}
+	Payload = ?(Body = Undefined, Undefined, Body["data"]);
+	Url 	= ?(Payload = Undefined, Undefined, Payload["url"]);
+
+	If NOT ValueIsFilled(Url) Then
+		WriteLogEvent("AgentVenta", EventLogLevel.Warning,, FileRef,
+			StrTemplate("Image upload: no data.url in response; %1", Err));
+		Return Undefined;
+	EndIf;
+
+	Return Url;
+
+EndFunction // UploadImage()
+
 Procedure GET(Params, Path)
 	Var Err, StatusCode;
 
@@ -1633,21 +2696,50 @@ Procedure GET(Params, Path)
 
 	If Params.Conn = Undefined Then
 
-		Params.Conn = HTTP_NewConnection("https://lic.nomadus.net", , True);
+		Params.Conn = ServerConnection(Params);
 
 	EndIf;
 
 	Req.Headers.Insert("Authorization", StrTemplate("Bearer %1", Params.Token));
 	Req.ResourceAddress = StrTemplate("/api/v1/%1", Path);
 
-	Response = HTTP_GET(Params.Conn, , Req, StatusCode, Err);
+	// Повторы при HTTP 429 (Too Many Requests).
+	RetryDelays = New Array;
+	RetryDelays.Add(20);
+	RetryDelays.Add(30);
+	RetryDelays.Add(60);
 
-	If Err<>Undefined Then
+	AttemptIndex = 0;
+	Response     = "";
 
-		Params.Err = "HTTP request: " + Err;
-		Return;
+	While True Do
 
-	EndIf;
+		Response = HTTP_GET(Params.Conn, , Req, StatusCode, Err);
+
+		If Err<>Undefined Then
+
+			Params.Err = "HTTP request: " + Err;
+			Return;
+
+		EndIf;
+
+		If StatusCode = 429 AND AttemptIndex < RetryDelays.Count() Then
+
+			Delay = RetryDelays[AttemptIndex];
+			AttemptIndex = AttemptIndex + 1;
+
+			WriteLogEvent("AgentVenta", EventLogLevel.Warning, , ,
+				StrTemplate("HTTP 429 (rate limit); path=%1; attempt %2/%3; sleeping %4s",
+					Path, AttemptIndex, RetryDelays.Count(), Delay));
+
+			Sleep(Delay);
+			Continue;
+
+		EndIf;
+
+		Break;
+
+	EndDo;
 
 	Resp = JSON_Unmarshall(Response, Err);
 
@@ -1676,21 +2768,50 @@ Procedure DELETE(Params, Path)
 
 	If Params.Conn = Undefined Then
 
-		Params.Conn = HTTP_NewConnection("https://lic.nomadus.net", , True);
+		Params.Conn = ServerConnection(Params);
 
 	EndIf;
 
 	Req.Headers.Insert("Authorization", StrTemplate("Bearer %1", Params.Token));
 	Req.ResourceAddress = StrTemplate("/api/v1/%1", Path);
 
-	Response = HTTP_DELETE(Params.Conn, , Req, StatusCode, Err);
+	// Повторы при HTTP 429 (Too Many Requests).
+	RetryDelays = New Array;
+	RetryDelays.Add(20);
+	RetryDelays.Add(30);
+	RetryDelays.Add(60);
 
-	If Err<>Undefined Then
+	AttemptIndex = 0;
+	Response     = "";
 
-		Params.Err = "HTTP request: " + Err;
-		Return;
+	While True Do
 
-	EndIf;
+		Response = HTTP_DELETE(Params.Conn, , Req, StatusCode, Err);
+
+		If Err<>Undefined Then
+
+			Params.Err = "HTTP request: " + Err;
+			Return;
+
+		EndIf;
+
+		If StatusCode = 429 AND AttemptIndex < RetryDelays.Count() Then
+
+			Delay = RetryDelays[AttemptIndex];
+			AttemptIndex = AttemptIndex + 1;
+
+			WriteLogEvent("AgentVenta", EventLogLevel.Warning, , ,
+				StrTemplate("HTTP 429 (rate limit); path=%1; attempt %2/%3; sleeping %4s",
+					Path, AttemptIndex, RetryDelays.Count(), Delay));
+
+			Sleep(Delay);
+			Continue;
+
+		EndIf;
+
+		Break;
+
+	EndDo;
 
 	Resp = JSON_Unmarshall(Response, Err);
 
@@ -1734,11 +2855,12 @@ EndProcedure
 
 #Region OtherMethods
 
-Procedure ReadDevices(Token, Response) Export
+Procedure ReadDevices(Token, Response, Server="") Export
 
 	Params = New Structure;
 	Params.Insert("Conn", 		Undefined);
 	Params.Insert("Token", 		Token);
+	Params.Insert("Server",		Server);
 	Params.Insert("Err",		Undefined);
 	Params.Insert("Response",	Undefined);
 
@@ -1752,11 +2874,12 @@ Procedure ReadDevices(Token, Response) Export
 
 EndProcedure
 
-Procedure ApproveDevice(Token, ID, Err) Export
+Procedure ApproveDevice(Token, ID, Err, Server="") Export
 
 	Params = New Structure;
 	Params.Insert("Conn", 		Undefined);
 	Params.Insert("Token", 		Token);
+	Params.Insert("Server",		Server);
 	Params.Insert("Err",		Undefined);
 	Params.Insert("Response",	Undefined);
 
@@ -1769,11 +2892,12 @@ Procedure ApproveDevice(Token, ID, Err) Export
 
 EndProcedure
 
-Procedure RemoveDevice(Token, ID, Err) Export
+Procedure RemoveDevice(Token, ID, Err, Server="") Export
 
 	Params = New Structure;
 	Params.Insert("Conn", 		Undefined);
 	Params.Insert("Token", 		Token);
+	Params.Insert("Server",		Server);
 	Params.Insert("Err",		Undefined);
 	Params.Insert("Response",	Undefined);
 
@@ -1864,6 +2988,19 @@ EndFunction // ContainsNonNumbers()
 
 #Region JobExecution
 
+// Проверяет, выполняется ли сейчас фоновое задание обмена.
+// Используется для защиты от параллельных выгрузок, запущенных интерактивно:
+// сервер обмена требует не более одного push в полете на устройство.
+Function ExchangeJobActive() Export
+
+	Filter = New Structure;
+	Filter.Insert("MethodName", "AV_Common.ExchangeJob");
+	Filter.Insert("State", BackgroundJobState.Active);
+
+	Return BackgroundJobs.GetBackgroundJobs(Filter).Count() > 0;
+
+EndFunction // ExchangeJobActive()
+
 Procedure ExchangeJob(Params) Export
 	Var Uid, Action;
 
@@ -1882,6 +3019,7 @@ Procedure ExchangeJob(Params) Export
 	Query.Text =
 	"SELECT
 	|	AV_Settings.Token AS Token,
+	|	AV_Settings.Server AS Server,
 	|	AV_Settings.Ref AS Ref
 	|FROM
 	|	Catalog.AV_Settings AS AV_Settings
@@ -1899,6 +3037,7 @@ Procedure ExchangeJob(Params) Export
 		WriteLogEvent("AgentVenta", EventLogLevel.Note, , Sel.Ref, "Action: ORDER_DOWNLOAD");
 
 		Params.Insert("Token", 		Sel.Token);
+		Params.Insert("Server",		Sel.Server);
 		Params.Insert("Err",		Undefined);
 		Params.Insert("Response",	Undefined);
 		Params.Insert("Conn",		Undefined);
@@ -1918,7 +3057,10 @@ Procedure ExchangeJob(Params) Export
 	|	AV_SettingsDevices.ID AS ID,
 	|	AV_SettingsDevices.Name AS Name,
 	|	AV_SettingsDevices.Manager AS Manager,
-	|	AV_SettingsDevices.Ref.ExchangePlan AS ExchangePlan
+	|	AV_SettingsDevices.Ref.ExchangePlan AS ExchangePlan,
+	|	AV_SettingsDevices.Ref.Server AS Server,
+	|	AV_SettingsDevices.Ref.Debug AS Debug,
+	|	AV_SettingsDevices.Ref.DebugPath AS DebugPath
 	|FROM
 	|	Catalog.AV_Settings.Devices AS AV_SettingsDevices
 	|WHERE
@@ -1953,11 +3095,14 @@ Procedure ExchangeJob(Params) Export
 			GroupChanges	= Undefined;
 		EndIf;
 
-		// Новая группа: один раз читаем регистрации изменений для всего плана обмена
+		// Новая группа: один раз читаем регистрации изменений для всего плана обмена.
+		// Читаем и для FULL_UPLOAD (п.24): после полной выгрузки существовавшие
+		// до её начала регистрации избыточны и очищаются в FinishDiffGroup при
+		// успехе — иначе следующий diff повторно перешлёт уже доставленные данные.
+		// Изменения, зарегистрированные во время выгрузки, в снимок не попадают и
+		// уцелеют для следующего diff.
 		If Sel.Ref <> GroupRef Then
-			If Action = "DIFF_UPLOAD" Then
-				GroupChanges = FetchDiffChanges(Sel.ExchangePlan);
-			EndIf;
+			GroupChanges = FetchDiffChanges(Sel.ExchangePlan);
 		EndIf;
 
 		GroupRef	= Sel.Ref;
@@ -1970,6 +3115,9 @@ Procedure ExchangeJob(Params) Export
 		Params.Insert("Name", 		Sel.Name);
 		Params.Insert("Manager",	Sel.Manager);
 		Params.Insert("Token", 		Sel.Token);
+		Params.Insert("Server",		Sel.Server);
+		Params.Insert("Debug",		Sel.Debug);
+		Params.Insert("DebugPath",	Sel.DebugPath);
 		Params.Insert("Err",		Undefined);
 		Params.Insert("Response",	Undefined);
 		Params.Insert("Conn",		Undefined);
