@@ -13,6 +13,8 @@ import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.fileName
 import ua.com.programmer.agentventa.data.local.entity.getBaseUrl
 import ua.com.programmer.agentventa.data.local.entity.hasImageData
+import ua.com.programmer.agentventa.data.local.entity.isRelayRest
+import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import java.io.File
 import javax.inject.Inject
@@ -31,7 +33,8 @@ import javax.inject.Singleton
 @Singleton
 class GlideImageLoadingManager @Inject constructor(
     private val glide: RequestManager,
-    private val logger: Logger
+    private val logger: Logger,
+    private val apiKeyProvider: ApiKeyProvider
 ) : ImageLoadingManager {
 
     private val logTag = "AV-ImageLoading"
@@ -182,18 +185,28 @@ class GlideImageLoadingManager @Inject constructor(
     /**
      * Creates authentication headers for image requests.
      *
+     * Relay accounts download images from the relay server, which authenticates
+     * devices with the same Bearer apiKey:deviceUuid scheme as RelaySyncClient;
+     * direct-1C accounts keep Basic auth with the 1C database credentials.
+     * The two schemes are mutually exclusive in the Authorization header.
+     *
      * @param account User account with credentials
-     * @return LazyHeaders with Basic Auth
+     * @return LazyHeaders with the account's auth scheme
      */
     private fun createHeaders(account: UserAccount): LazyHeaders {
-        val credentials = "${account.dbUser ?: ""}:${account.dbPassword ?: ""}"
-        val encodedAuth = android.util.Base64.encodeToString(
-            credentials.toByteArray(),
-            android.util.Base64.NO_WRAP
-        )
+        val authorization = if (account.isRelayRest()) {
+            "Bearer ${apiKeyProvider.webSocketApiKey}:${account.guid}"
+        } else {
+            val credentials = "${account.dbUser ?: ""}:${account.dbPassword ?: ""}"
+            val encodedAuth = android.util.Base64.encodeToString(
+                credentials.toByteArray(),
+                android.util.Base64.NO_WRAP
+            )
+            "Basic $encodedAuth"
+        }
 
         return LazyHeaders.Builder()
-            .addHeader("Authorization", "Basic $encodedAuth")
+            .addHeader("Authorization", authorization)
             .build()
     }
 }

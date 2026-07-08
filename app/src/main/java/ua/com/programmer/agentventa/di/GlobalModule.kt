@@ -14,6 +14,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
 import ua.com.programmer.agentventa.infrastructure.location.GeocodeHelperImpl
 import ua.com.programmer.agentventa.data.local.database.AppDatabase
+import ua.com.programmer.agentventa.infrastructure.config.ApiKeyProvider
 import ua.com.programmer.agentventa.infrastructure.location.GeocodeHelper
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
 import ua.com.programmer.agentventa.presentation.common.viewmodel.GlideImageLoadingManager
@@ -63,9 +64,10 @@ class GlobalModule {
     @Singleton
     fun provideImageLoadingManager(
         glide: RequestManager,
-        logger: Logger
+        logger: Logger,
+        apiKeyProvider: ApiKeyProvider
     ): ImageLoadingManager {
-        return GlideImageLoadingManager(glide, logger)
+        return GlideImageLoadingManager(glide, logger, apiKeyProvider)
     }
 }
 
