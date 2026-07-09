@@ -228,7 +228,12 @@ class RelaySyncClient @Inject constructor(
 
     private suspend fun processOptions(optionsItems: List<JsonObject>) {
         try {
-            val obj = optionsItems.first().deepCopy()
+            // A single pull round can return more than one options item: ERP's
+            // dedicated options push and a full upload each embed their own
+            // `value_id:"options"` element. They are ACKed together below, so we
+            // must apply the newest one — picking the first (oldest, FIFO) would
+            // silently drop a fresher toggle (e.g. loadImages) and never redeliver it.
+            val obj = optionsItems.maxByOrNull { it.get("timestamp")?.asLong ?: 0L }!!.deepCopy()
             val license = obj.get("license")?.asString ?: ""
             obj.remove("value_id")
             val optionsJson = gson.toJson(obj)
