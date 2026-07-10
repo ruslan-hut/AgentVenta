@@ -340,7 +340,10 @@ Push user settings to device.
 | address | string | Address |
 | discount | number | Discount percentage |
 | price_type | number | Price type number |
-| sum | number | Account balance |
+
+The client's account balance is **not** part of this object. Send it as a `debt`
+record with an empty `doc_id` — the app treats that record as the client's total
+and shows it in the client list and client card.
 
 ---
 
@@ -391,6 +394,13 @@ Push user settings to device.
 | has_content | number | Content availability flag (0/1) |
 | sum | number | Document sum |
 | sorting | number | Display sort order |
+
+A record with an empty `doc_id` is the client's **total balance**, not a document
+line: the app stores it separately and shows it as the client's debt. Send one
+such record per client on every sync — including a zero one, otherwise a
+previously synced balance stays on the device. Positive sums mean the client owes
+money, negative sums mean a prepayment. `company_guid` must match the company
+selected on the device (send an empty string when `useCompanies` is off).
 
 ---
 

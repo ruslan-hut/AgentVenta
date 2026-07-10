@@ -380,7 +380,11 @@ EndFunction // DELETE()
 
 #Region DataRead
 
-Function GetProductPage(Params, Next)
+// Страница товаров для выгрузки.
+// FilterKey / CursorKey позволяют вести независимую пагинацию по своему
+// подмножеству товаров: товары и картинки в диф-обмене отбираются по разным
+// спискам изменений (см. GetImageData).
+Function GetProductPage(Params, Next, FilterKey = "FProducts", CursorKey = "ProductCursor")
 
 	Data 		= New Array;
 	PageSize 	= 100;
@@ -391,8 +395,10 @@ Function GetProductPage(Params, Next)
 	If Next = 0 Then
 		Cursor = Catalogs.Номенклатура.EmptyRef();
 	Else
-		Cursor = Params.ProductCursor;
+		Cursor = Params[CursorKey];
 	EndIf;
+
+	Filter = Params[FilterKey];
 
 	Query = New Query;
 	Query.Text =
@@ -425,8 +431,8 @@ Function GetProductPage(Params, Next)
 	|ORDER BY
 	|	Ref";
 
-	Query.SetParameter("WithFilter", 	Params.FProducts<>Undefined);
-	Query.SetParameter("Filter", 		Params.FProducts);
+	Query.SetParameter("WithFilter", 	Filter<>Undefined);
+	Query.SetParameter("Filter", 		Filter);
 	Query.SetParameter("UseCursor", 	Next > 0);
 	Query.SetParameter("Cursor", 		Cursor);
 
@@ -443,13 +449,22 @@ Function GetProductPage(Params, Next)
 		Next = 0;
 	Else
 		Next = Next + 1;
-		Params.Insert("ProductCursor", LastRef);
+		Params.Insert(CursorKey, LastRef);
 	EndIf;
 
 	Return Data;
 
 EndFunction // GetProductPage()
 
+// Готовит данные о товарах (value_id = "item") и их ценах (value_id = "price").
+//
+// Остаток (quantity) сворачивается по всем организациям и по складам из
+// СкладыДляВыгрузкиВ_МП — разреза здесь нет намеренно. При выключенной опции
+// useStores приложение читает остаток именно из item.quantity, не спрашивая ни
+// склад, ни фирму. Разрез включается опцией useStores (не useCompanies): тогда
+// приложение переходит на таблицу rests и отбирает ее по паре company_guid +
+// store_guid. Наборы "rest"/"store"/"company" мы не выгружаем, поэтому включать
+// useStores нельзя — остатки на устройстве обнулятся.
 Function GetProductData(Params, Next)
 
 	Filter = GetProductPage(Params, Next);
@@ -626,7 +641,9 @@ Function GetImageData(Params, Next)
 
 	Data = New Array;
 
-	Filter = GetProductPage(Params, Next);
+	// собственный фильтр FImages: в диф-обмене картинки отправляются только для
+	// товаров с изменившимися файлами, а не для всех попавших в диф товаров
+	Filter = GetProductPage(Params, Next, "FImages", "ImageCursor");
 
 	If Filter.Count() = 0 Then
 		Return Data;
@@ -841,12 +858,75 @@ Function GetClientPage(Params, Next)
 
 EndFunction // GetClientPage()
 
+// Работа с несколькими фирмами. Определяет одноименную опцию устройства и
+// разрез по организациям в выгрузке взаиморасчетов (см. GetDebtData):
+// при Ложь долги сворачиваются по всем организациям и уходят с пустым
+// company_guid — так же, как приложение их запрашивает при выключенной опции.
+Function UseCompanies() Export
+
+	Return False;
+
+EndFunction // UseCompanies()
+
+// GUID организации для выгрузки; пустая ссылка — пустая строка,
+// приложение при выключенной опции useCompanies ищет записи именно по ней.
+Function CompanyGuid(Company)
+
+	Return ?(ValueIsFilled(Company), String(Company.UUID()), "");
+
+EndFunction // CompanyGuid()
+
+// Текущий баланс взаиморасчетов по списку контрагентов.
+// Знак: плюс — долг клиента, минус — оплата/аванс.
+// Разрез по организации — только при включенной опции UseCompanies();
+// иначе Company во всех строках пустая ссылка.
+// Возвращает ТаблицуЗначений с колонками Client, Company, Sum.
+Function ClientBalances(Clients)
+
+	Query = New Query;
+	Query.Text =
+	"SELECT ALLOWED
+	|	Balances.Контрагент AS Client,
+	|	CASE
+	|		WHEN &ByCompany
+	|			THEN Balances.Организация
+	|		ELSE VALUE(Catalog.Организации.EmptyRef)
+	|	END AS Company,
+	|	SUM(CASE
+	|			WHEN Balances.ТипРасчетов = VALUE(Enum.ТипыРасчетов.Долг)
+	|				THEN Balances.СуммаОстаток
+	|			ELSE -Balances.СуммаОстаток
+	|		END) AS Sum
+	|FROM
+	|	AccumulationRegister.РасчетыСПокупателями.Balance(, Контрагент IN (&Clients)) AS Balances
+	|
+	|GROUP BY
+	|	Balances.Контрагент,
+	|	CASE
+	|		WHEN &ByCompany
+	|			THEN Balances.Организация
+	|		ELSE VALUE(Catalog.Организации.EmptyRef)
+	|	END";
+
+	Query.SetParameter("Clients", 	Clients);
+	Query.SetParameter("ByCompany", UseCompanies());
+
+	Return Query.Execute().Unload();
+
+EndFunction // ClientBalances()
+
 Function GetClientData(Params, Next)
 
 	Data = New Array;
 
 	TPhone = Catalogs.ВидыКонтактнойИнформации.ТелефонКонтрагента;
 	TAddress = Catalogs.ВидыКонтактнойИнформации.АдресДоставкиКонтрагета;
+
+	Clients = GetClientPage(Params, Next);
+
+	If Clients.Count() = 0 Then
+		Return Data;
+	EndIf;
 
 	Query = New Query;
 	Query.Text =
@@ -869,7 +949,7 @@ Function GetClientData(Params, Next)
 	|	Контрагенты.Ref IN(&Filter)
 	|	AND NOT Контрагенты.IsFolder";
 
-	Query.SetParameter("Filter", GetClientPage(Params, Next));
+	Query.SetParameter("Filter", Clients);
 
 	Sel = Query.Execute().Select();
 
@@ -887,7 +967,8 @@ Function GetClientData(Params, Next)
 		Item.Insert("discount", 		0);
 		// у контрагента может не быть договора по умолчанию или вида цен в нем
 		Item.Insert("price_type", 		?(ValueIsFilled(Sel.PriceType), String(Sel.PriceType.UUID()), ""));
-		Item.Insert("sum", 				0);
+		// баланс клиента здесь не передается: приложение берет его из набора
+		// "debt" — итоговой строки с пустым doc_id (см. GetDebtData)
 
 		//If ValueIsFilled(Sel.Parent) Then
 		//
@@ -962,6 +1043,10 @@ EndFunction // GetDiscountData()
 //    иначе прежний долг останется на устройстве;
 //  - детальные строки по документам-регистраторам за последние N дней.
 // Знак: плюс — долг клиента, минус — оплата/аванс.
+//
+// company_guid заполняется только при включенной опции UseCompanies(): приложение
+// отбирает долги по выбранной на устройстве фирме, а при выключенной опции фирма
+// там пустая — поэтому долги сворачиваются по всем организациям и уходят с "".
 Function GetDebtData(Params, Next)
 
 	Data = New Array;
@@ -978,34 +1063,36 @@ Function GetDebtData(Params, Next)
 	DateFrom 	= BegOfDay(DateTo - PeriodDays * 86400);
 
 	// -------------------------------------------------- текущий баланс клиентов
-	Query = New Query;
-	Query.Text =
-	"SELECT ALLOWED
-	|	Balances.Контрагент AS Client,
-	|	SUM(CASE
-	|			WHEN Balances.ТипРасчетов = VALUE(Enum.ТипыРасчетов.Долг)
-	|				THEN Balances.СуммаОстаток
-	|			ELSE -Balances.СуммаОстаток
-	|		END) AS Sum
-	|FROM
-	|	AccumulationRegister.РасчетыСПокупателями.Balance(, Контрагент IN (&Clients)) AS Balances
-	|
-	|GROUP BY
-	|	Balances.Контрагент";
+	Balance = ClientBalances(Clients);
 
-	Query.SetParameter("Clients", Clients);
+	// клиенты, по которым баланса нет: им нужна нулевая итоговая строка,
+	// иначе на устройстве останется долг с прошлого обмена
+	WithBalance = New Map;
 
-	Balance = New Map;
+	For Each Row In Balance Do
 
-	Sel = Query.Execute().Select();
+		WithBalance.Insert(Row.Client, True);
 
-	While Sel.Next() Do
-		Balance.Insert(Sel.Client, Sel.Sum);
+		Item = New Structure;
+		Item.Insert("value_id", 	"debt");
+		Item.Insert("client_guid", 	String(Row.Client.UUID()));
+		Item.Insert("company_guid", CompanyGuid(Row.Company));
+		Item.Insert("doc_id", 		"");
+		Item.Insert("doc_guid", 	"");
+		Item.Insert("doc_type", 	"");
+		Item.Insert("sum", 			Row.Sum);
+		Item.Insert("sorting", 		0);
+		Item.Insert("has_content", 	0);
+
+		Data.Add(Item);
+
 	EndDo;
 
 	For Each Client In Clients Do
 
-		Sum = Balance.Get(Client);
+		If WithBalance.Get(Client) <> Undefined Then
+			Continue;
+		EndIf;
 
 		Item = New Structure;
 		Item.Insert("value_id", 	"debt");
@@ -1014,7 +1101,7 @@ Function GetDebtData(Params, Next)
 		Item.Insert("doc_id", 		"");
 		Item.Insert("doc_guid", 	"");
 		Item.Insert("doc_type", 	"");
-		Item.Insert("sum", 			?(Sum = Undefined, 0, Sum));
+		Item.Insert("sum", 			0);
 		Item.Insert("sorting", 		0);
 		Item.Insert("has_content", 	0);
 
@@ -1027,6 +1114,11 @@ Function GetDebtData(Params, Next)
 	Query.Text =
 	"SELECT ALLOWED
 	|	Turnovers.Контрагент AS Client,
+	|	CASE
+	|		WHEN &ByCompany
+	|			THEN Turnovers.Организация
+	|		ELSE VALUE(Catalog.Организации.EmptyRef)
+	|	END AS Company,
 	|	Turnovers.Recorder AS Doc,
 	|	Turnovers.Recorder.Date AS DocDate,
 	|	SUM(CASE
@@ -1039,6 +1131,11 @@ Function GetDebtData(Params, Next)
 	|
 	|GROUP BY
 	|	Turnovers.Контрагент,
+	|	CASE
+	|		WHEN &ByCompany
+	|			THEN Turnovers.Организация
+	|		ELSE VALUE(Catalog.Организации.EmptyRef)
+	|	END,
 	|	Turnovers.Recorder,
 	|	Turnovers.Recorder.Date
 	|
@@ -1049,6 +1146,7 @@ Function GetDebtData(Params, Next)
 	Query.SetParameter("Clients", 	Clients);
 	Query.SetParameter("DateFrom", 	DateFrom);
 	Query.SetParameter("DateTo", 	DateTo);
+	Query.SetParameter("ByCompany", UseCompanies());
 
 	Sel = Query.Execute().Select();
 
@@ -1061,7 +1159,7 @@ Function GetDebtData(Params, Next)
 		Item = New Structure;
 		Item.Insert("value_id", 	"debt");
 		Item.Insert("client_guid", 	String(Sel.Client.UUID()));
-		Item.Insert("company_guid", "");
+		Item.Insert("company_guid", CompanyGuid(Sel.Company));
 		// doc_id отображается в приложении как есть и входит в ключ записи;
 		// дата видна только внутри представления документа
 		Item.Insert("doc_id", 		TrimAll(String(Sel.Doc)));
@@ -1093,6 +1191,7 @@ Procedure DeviceDataUpload(Params) Export
 
 	// заглушки для фильтров по изменениям
 	Params.Insert("FProducts", 	Undefined);
+	Params.Insert("FImages", 	Undefined);
 	Params.Insert("FClients", 	Undefined);
 
 	UserOptions(Params);
@@ -1147,6 +1246,11 @@ Procedure DeviceOptionsUpload(Params) Export
 
 EndProcedure
 
+// Опции (value_id "options") в этом проекте фиксированы намеренно (см. AV_Settings/[[av-options-and-diff]]):
+// нет per-пользовательской настройки, значения захардкожены здесь. Правило только для текущей интеграции.
+// Выгружаются ТОЛЬКО при полной выгрузке (вызов из DeviceDataUpload) или вручную (DeviceOptionsUpload) —
+// плановый дифф-обмен (DiffUpload) options не пересобирает и не шлёт. Если поменять значение опции здесь,
+// устройство увидит его только на следующей полной выгрузке для этого device_uuid.
 Procedure UserOptions(Params)
 
 	Валюта = PredefinedValue("Catalog.Валюты.УдалитьНациональнаяВалюта");
@@ -1188,8 +1292,9 @@ Procedure UserOptions(Params)
 	// клиент по умолчанию
 	Opt.Insert("defaultClient", 		"");
 	// работа с несколькими фирмами
-	Opt.Insert("useCompanies", 			False);
-	// работа с несколькими складами
+	Opt.Insert("useCompanies", 			UseCompanies());
+	// работа с несколькими складами; включать только вместе с выгрузкой
+	// наборов "store"/"rest"/"company" (см. GetProductData)
 	Opt.Insert("useStores", 			False);
 
 	// --- дополнительные распознаваемые приложением опции (п.20) ---
@@ -1406,14 +1511,19 @@ EndProcedure
 // Возвращает структуру:
 //   Objects     — Array(СправочникОбъект/НаборЗаписей) — для последующей очистки регистраций
 //   Products    — Array(СправочникСсылка.Номенклатура) — фильтр для SendProducts
+//   Images      — Array(СправочникСсылка.Номенклатура) — фильтр для SendImages
 //   Clients     — Array(СправочникСсылка.Контрагенты)  — фильтр для SendClients / SendDiscounts / SendDebts
 //   AllProducts — Булево — изменился состав видов цен менеджера, нужен полный переслап товаров
+//
+// Products и Images намеренно разделены: движения остатков и цен затрагивают
+// почти весь ассортимент при каждом обмене, а картинки при этом не меняются.
 //
 Function FetchDiffChanges(Node) Export
 
 	Changes = New Structure;
 	Changes.Insert("Objects",     New Array);
 	Changes.Insert("Products",    New Array);
+	Changes.Insert("Images",      New Array);
 	Changes.Insert("Clients",     New Array);
 	Changes.Insert("AllProducts", False);
 
@@ -1423,6 +1533,7 @@ Function FetchDiffChanges(Node) Export
 
 	// Карты используются как множества для O(1) проверки дубликатов
 	ProductsMap = New Map;
+	ImagesMap   = New Map;
 	ClientsMap  = New Map;
 
 	Sel = ExchangePlans.SelectChanges(Node, Node.НомерОтправленного+1);
@@ -1437,6 +1548,12 @@ Function FetchDiffChanges(Node) Export
 			If ProductsMap.Get(Obj.Ref) = Undefined Then
 				ProductsMap.Insert(Obj.Ref, True);
 				Changes.Products.Add(Obj.Ref);
+			EndIf;
+			// реквизиты ФайлКартинкиСайт / ФайлКартинки задают картинку по
+			// умолчанию, поэтому изменение товара переотправляет и его картинки
+			If ImagesMap.Get(Obj.Ref) = Undefined Then
+				ImagesMap.Insert(Obj.Ref, True);
+				Changes.Images.Add(Obj.Ref);
 			EndIf;
 			Changes.Objects.Add(Obj);
 
@@ -1462,10 +1579,10 @@ Function FetchDiffChanges(Node) Export
 
 		ElsIf Type = Type("СправочникОбъект.НоменклатураПрисоединенныеФайлы") Then
 
-			// изменение картинки — переотправка товара вместе с картинками
-			If ProductsMap.Get(Obj.ВладелецФайла) = Undefined Then
-				ProductsMap.Insert(Obj.ВладелецФайла, True);
-				Changes.Products.Add(Obj.ВладелецФайла);
+			// изменился файл — переотправляем картинки товара, сам товар не тронут
+			If ImagesMap.Get(Obj.ВладелецФайла) = Undefined Then
+				ImagesMap.Insert(Obj.ВладелецФайла, True);
+				Changes.Images.Add(Obj.ВладелецФайла);
 			EndIf;
 			Changes.Objects.Add(Obj);
 
@@ -1523,7 +1640,7 @@ Function FetchDiffChanges(Node) Export
 
 EndFunction
 
-Procedure DiffUpload(Params, Changes)
+Procedure DiffUpload(Params, Changes) Export
 
 	Node = Params.ExchangePlan;
 
@@ -1544,16 +1661,11 @@ Procedure DiffUpload(Params, Changes)
 	If Changes.AllProducts Then
 
 		// изменился состав видов цен менеджера — пересылаем все товары с ценами;
-		// без push/complete это upsert на устройстве, удалений не будет
+		// без push/complete это upsert на устройстве, удалений не будет.
+		// Картинок это не касается — они отправляются отдельно, по своему списку
 		Params.Insert("FProducts", Undefined);
 
 		SendProducts(Params);
-
-		If Params.Err <> Undefined Then
-			Return;
-		EndIf;
-
-		SendImages(Params);
 
 		If Params.Err <> Undefined Then
 			Return;
@@ -1568,6 +1680,12 @@ Procedure DiffUpload(Params, Changes)
 		If Params.Err <> Undefined Then
 			Return;
 		EndIf;
+
+	EndIf;
+
+	If Changes.Images.Count() > 0 Then
+
+		Params.Insert("FImages", Changes.Images);
 
 		SendImages(Params);
 
@@ -3127,6 +3245,7 @@ Procedure ExchangeJob(Params) Export
 
 		// заглушки для фильтров по изменениям
 		Params.Insert("FProducts", 	Undefined);
+		Params.Insert("FImages", 	Undefined);
 		Params.Insert("FClients", 	Undefined);
 
 		// Очищаем результат предыдущего устройства, чтобы не перепутать наборы
@@ -3163,7 +3282,7 @@ EndProcedure
 // Удаляет регистрации изменений для группы устройств одной AV_Settings,
 // если ни одно устройство группы не сообщило об ошибке.
 // При сбое регистрации сохраняются и попадут в следующий diff.
-Procedure FinishDiffGroup(Node, Changes, GroupFailed)
+Procedure FinishDiffGroup(Node, Changes, GroupFailed) Export
 
 	If GroupFailed Then
 		Return;
