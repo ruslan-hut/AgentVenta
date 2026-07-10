@@ -5,6 +5,8 @@ import android.util.Base64
 import androidx.core.content.edit
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -59,16 +61,27 @@ class RelaySyncClient @Inject constructor(
     // encoding the WS connect handler uses (URL-safe, no wrap; the relay trims
     // padding before decoding).
     private fun appParametersParam(account: UserAccount): String {
-        val params = mapOf(
-            "device_uuid" to account.guid,
-            "description" to account.description,
-            "license" to account.license,
-            "data_format" to account.dataFormat,
-            "app_version" to BuildConfig.VERSION_NAME,
-            "app_version_code" to BuildConfig.VERSION_CODE,
-        )
+        val params = JsonObject().apply {
+            addProperty("device_uuid", account.guid)
+            addProperty("description", account.description)
+            addProperty("license", account.license)
+            addProperty("data_format", account.dataFormat)
+            addProperty("app_version", BuildConfig.VERSION_NAME)
+            addProperty("app_version_code", BuildConfig.VERSION_CODE)
+            add("options", optionsElement(account.options))
+        }
         val json = gson.toJson(params)
         return Base64.encodeToString(json.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP)
+    }
+
+    // Server-controlled feature flags (UserAccount.options). Forwarded to the
+    // relay so it stores the device's full options alongside the other app
+    // params. Nested as an object when the stored value is valid JSON; falls
+    // back to the raw string otherwise.
+    private fun optionsElement(options: String) = try {
+        if (options.isBlank()) JsonPrimitive("") else JsonParser.parseString(options)
+    } catch (_: Exception) {
+        JsonPrimitive(options)
     }
 
     /**

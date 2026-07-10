@@ -149,22 +149,6 @@ class NetworkRepositoryImpl @Inject constructor(
             return@flow
         }
 
-        // Approval/license is gated by the relay /status endpoint for every
-        // non-demo account, including direct-1C HTTP (data still goes direct to
-        // the customer's 1C; only the license check uses the relay). The demo
-        // account is fully self-contained and needs neither approval nor license.
-        val currentAccount = account
-        if (currentAccount?.isDemo() == true) {
-            logger.d(logTag, "Demo account - skipping device approval check")
-        } else if (currentAccount != null) {
-            val (isApproved, approvalError) = relaySyncClient.checkApproval(currentAccount)
-            if (!isApproved) {
-                logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
-                emit(Result.Error(approvalError))
-                return@flow
-            }
-        }
-
         _timestamp = System.currentTimeMillis()
         val accountGuid = account?.guid ?: ""
         counters.clear()
@@ -203,6 +187,24 @@ class NetworkRepositoryImpl @Inject constructor(
         if (token.isBlank()) {
             emit(Result.Error("Forbidden"))
             return@flow
+        }
+
+        // Approval/license is gated by the relay /status endpoint for every
+        // non-demo account, including direct-1C HTTP (data still goes direct to
+        // the customer's 1C; only the license check uses the relay). Runs after
+        // the token refresh so the app params sent to the relay carry the fresh
+        // options just fetched from 1C. The demo account is fully self-contained
+        // and needs neither approval nor license.
+        val currentAccount = account
+        if (currentAccount?.isDemo() == true) {
+            logger.d(logTag, "Demo account - skipping device approval check")
+        } else if (currentAccount != null) {
+            val (isApproved, approvalError) = relaySyncClient.checkApproval(currentAccount)
+            if (!isApproved) {
+                logger.w(logTag, "Device not approved for HTTP operations: $approvalError")
+                emit(Result.Error(approvalError))
+                return@flow
+            }
         }
 
         val hasOptions = !(account?.options?.isEmpty() ?: true)
