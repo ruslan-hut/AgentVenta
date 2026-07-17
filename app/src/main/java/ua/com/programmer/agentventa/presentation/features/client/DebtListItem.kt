@@ -14,10 +14,17 @@ sealed class DebtListItem {
 
 /**
  * Turns documents ordered by (group_name, sorting) into a list with a header in
- * front of every named group. Documents without a group_name keep the plain flat
- * look; since they sort first, they stay above the grouped ones.
+ * front of every named group. Headers appear only when there is something to
+ * separate - two or more distinct groups; a single group (e.g. a client that
+ * deals with one company) would just repeat the total already shown on top, so
+ * the list stays flat. Documents without a group_name are never given a header.
  */
 fun List<Debt>.withGroupHeaders(): List<DebtListItem> {
+    val distinctGroups = mapNotNull { it.groupName.ifBlank { null } }.distinct()
+    if (distinctGroups.size < 2) {
+        return map { DebtListItem.Document(it) }
+    }
+
     val items = mutableListOf<DebtListItem>()
     var currentGroup: String? = null
     for (debt in this) {

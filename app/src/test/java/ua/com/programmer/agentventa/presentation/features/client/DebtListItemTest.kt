@@ -20,6 +20,21 @@ class DebtListItemTest {
     }
 
     @Test
+    fun `a single group is not given a header`() {
+        val rows = listOf(
+            debt("A", group = "Company 1", groupSum = 300.0),
+            debt("B", group = "Company 1", groupSum = 300.0),
+        )
+
+        val result = rows.withGroupHeaders()
+
+        assertThat(result).containsExactly(
+            DebtListItem.Document(rows[0]),
+            DebtListItem.Document(rows[1]),
+        ).inOrder()
+    }
+
+    @Test
     fun `each named group gets one header carrying the sent group sum`() {
         val rows = listOf(
             debt("A", group = "Company 1", groupSum = 300.0),
@@ -44,6 +59,7 @@ class DebtListItemTest {
         val rows = listOf(
             debt("A", group = "Company 1", groupSum = 1000.0, sorting = 1),
             debt("B", group = "Company 1", groupSum = 1000.0, sorting = 2),
+            debt("C", group = "Company 2", groupSum = 5.0),
         )
 
         val header = rows.withGroupHeaders().first() as DebtListItem.Header
@@ -56,6 +72,7 @@ class DebtListItemTest {
         val rows = listOf(
             debt("A"),
             debt("B", group = "Company 1", groupSum = 10.0),
+            debt("C", group = "Company 2", groupSum = 20.0),
         )
 
         val result = rows.withGroupHeaders()
@@ -64,6 +81,8 @@ class DebtListItemTest {
             DebtListItem.Document(rows[0]),
             DebtListItem.Header("Company 1", 10.0),
             DebtListItem.Document(rows[1]),
+            DebtListItem.Header("Company 2", 20.0),
+            DebtListItem.Document(rows[2]),
         ).inOrder()
     }
 }

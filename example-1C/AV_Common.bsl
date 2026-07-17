@@ -921,6 +921,44 @@ Function ClientBalances(Clients)
 
 EndFunction // ClientBalances()
 
+// Баланс взаиморасчетов в разрезе организаций — источник group_sum для
+// группировки списка долгов (см. GetDebtData). В отличие от ClientBalances,
+// разрез по организации здесь всегда, независимо от UseCompanies(): организация
+// используется только как правило группировки и подытог, а не как фильтр обмена.
+// Знак: плюс — долг клиента, минус — оплата/аванс.
+// Возвращает ТаблицуЗначений с колонками Client, Company, Sum.
+Function ClientGroupBalances(Clients)
+
+	Query = New Query;
+	Query.Text =
+	"SELECT ALLOWED
+	|	Balances.Контрагент AS Client,
+	|	Balances.Организация AS Company,
+	|	SUM(CASE
+	|			WHEN Balances.ТипРасчетов = VALUE(Enum.ТипыРасчетов.Долг)
+	|				THEN Balances.СуммаОстаток
+	|			ELSE -Balances.СуммаОстаток
+	|		END) AS Sum
+	|FROM
+	|	AccumulationRegister.РасчетыСПокупателями.Balance(, Контрагент IN (&Clients)) AS Balances
+	|
+	|GROUP BY
+	|	Balances.Контрагент,
+	|	Balances.Организация";
+
+	Query.SetParameter("Clients", Clients);
+
+	Return Query.Execute().Unload();
+
+EndFunction // ClientGroupBalances()
+
+// Ключ поиска подытога группы: контрагент + организация.
+Function GroupKey(Client, Company)
+
+	Return String(Client.UUID()) + "|" + String(Company.UUID());
+
+EndFunction // GroupKey()
+
 Function GetClientData(Params, Next)
 
 	Data = New Array;
@@ -1053,6 +1091,14 @@ EndFunction // GetDiscountData()
 // company_guid заполняется только при включенной опции UseCompanies(): приложение
 // отбирает долги по выбранной на устройстве фирме, а при выключенной опции фирма
 // там пустая — поэтому долги сворачиваются по всем организациям и уходят с "".
+//
+// Группировка (group_name / group_sum) — это ТОЛЬКО отображение и к фильтру
+// company_guid отношения не имеет. Детальные строки группируются по организации
+// документа независимо от UseCompanies(): group_name — название организации,
+// group_sum — баланс пары (клиент, организация) из регистра остатков (не оборот
+// за N дней, а полный остаток). Приложение рисует заголовок над каждой группой и
+// показывает group_sum как есть, само ничего не суммирует. Итоговая строка
+// (пустой doc_id) в группу не входит — group_name у нее пустой.
 Function GetDebtData(Params, Next)
 
 	Data = New Array;
@@ -1067,6 +1113,12 @@ Function GetDebtData(Params, Next)
 	PeriodDays 	= 90;
 	DateTo 		= EndOfDay(CurrentDate());
 	DateFrom 	= BegOfDay(DateTo - PeriodDays * 86400);
+
+	// подытоги групп: баланс (клиент, организация) для group_sum детальных строк
+	GroupBalance = New Map;
+	For Each Row In ClientGroupBalances(Clients) Do
+		GroupBalance.Insert(GroupKey(Row.Client, Row.Company), Row.Sum);
+	EndDo;
 
 	// -------------------------------------------------- текущий баланс клиентов
 	Balance = ClientBalances(Clients);
@@ -1087,6 +1139,9 @@ Function GetDebtData(Params, Next)
 		Item.Insert("doc_guid", 	"");
 		Item.Insert("doc_type", 	"");
 		Item.Insert("sum", 			Row.Sum);
+		// итоговая строка баланса в группу не входит
+		Item.Insert("group_name", 	"");
+		Item.Insert("group_sum", 	0);
 		Item.Insert("sorting", 		0);
 		Item.Insert("has_content", 	0);
 
@@ -1108,6 +1163,8 @@ Function GetDebtData(Params, Next)
 		Item.Insert("doc_guid", 	"");
 		Item.Insert("doc_type", 	"");
 		Item.Insert("sum", 			0);
+		Item.Insert("group_name", 	"");
+		Item.Insert("group_sum", 	0);
 		Item.Insert("sorting", 		0);
 		Item.Insert("has_content", 	0);
 
@@ -1125,6 +1182,8 @@ Function GetDebtData(Params, Next)
 	|			THEN Turnovers.Организация
 	|		ELSE VALUE(Catalog.Организации.EmptyRef)
 	|	END AS Company,
+	|	Turnovers.Организация AS GroupCompany,
+	|	Turnovers.Организация.Description AS GroupName,
 	|	Turnovers.Recorder AS Doc,
 	|	Turnovers.Recorder.Date AS DocDate,
 	|	SUM(CASE
@@ -1142,11 +1201,14 @@ Function GetDebtData(Params, Next)
 	|			THEN Turnovers.Организация
 	|		ELSE VALUE(Catalog.Организации.EmptyRef)
 	|	END,
+	|	Turnovers.Организация,
+	|	Turnovers.Организация.Description,
 	|	Turnovers.Recorder,
 	|	Turnovers.Recorder.Date
 	|
 	|ORDER BY
 	|	Client,
+	|	GroupName,
 	|	DocDate DESC";
 
 	Query.SetParameter("Clients", 	Clients);
@@ -1172,6 +1234,12 @@ Function GetDebtData(Params, Next)
 		Item.Insert("doc_guid", 	String(Sel.Doc.UUID()));
 		Item.Insert("doc_type", 	Sel.Doc.Metadata().Name);
 		Item.Insert("sum", 			Sel.Sum);
+		// группировка: организация документа и ее баланс (подытог) по клиенту;
+		// group_sum — из остатков, а не из оборота за период, поэтому может не
+		// совпадать с суммой видимых строк группы
+		GroupSum = GroupBalance.Get(GroupKey(Sel.Client, Sel.GroupCompany));
+		Item.Insert("group_name", 	TrimAll(String(Sel.GroupName)));
+		Item.Insert("group_sum", 	?(GroupSum = Undefined, 0, GroupSum));
 		// приложение сортирует список только по возрастанию sorting, поэтому
 		// значение инвертировано: чем новее документ, тем меньше (отрицательнее)
 		// число — новые документы оказываются вверху списка

@@ -421,6 +421,12 @@ groups themselves are ordered by `group_name`. The empty-`doc_id` balance record
 must keep `group_name` empty and is never placed in a group. Both fields are
 optional — a source that omits them behaves exactly as before.
 
+Headers are drawn only when there are **two or more** distinct groups. If every
+document falls under a single `group_name`, the app shows a flat list and no
+header — a lone header would only repeat the client's total shown above the list.
+So a source may safely tag every row with its group; single-group clients still
+read cleanly.
+
 ---
 
 #### Client Location (`value_id: "client_location"`)
