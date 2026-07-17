@@ -18,6 +18,12 @@ data class Debt(
     @ColumnInfo(name = "sum_in") val sumIn: Double = 0.0,
     @ColumnInfo(name = "sum_out") val sumOut: Double = 0.0,
     @ColumnInfo(name = "is_total") val isTotal: Int = 0,
+    // Grouping is defined by the data source, not by the app: rows sharing a
+    // non-empty group_name are listed under one header, titled group_name and
+    // showing group_sum. The app never sums a group up - group_sum is displayed
+    // as sent, so it may legitimately differ from the rows on screen.
+    @ColumnInfo(name = "group_name") val groupName: String = "",
+    @ColumnInfo(name = "group_sum") val groupSum: Double = 0.0,
     val sorting: Long = 0,
     val timestamp: Long = 0
 ){
@@ -37,6 +43,8 @@ data class Debt(
                 sumIn = data.getDouble("sum_in"),
                 sumOut = data.getDouble("sum_out"),
                 isTotal = if (docId.isBlank()) 1 else 0,
+                groupName = data.getString("group_name"),
+                groupSum = data.getDouble("group_sum"),
                 sorting = data.getLong("sorting"),
                 timestamp = data.getTimestamp()
             )

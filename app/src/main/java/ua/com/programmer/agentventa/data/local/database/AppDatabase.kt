@@ -65,7 +65,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Store::class,
     Discount::class,
     DebugLogEntry::class,
-                     ], version = 29, exportSchema = true)
+                     ], version = 30, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -327,6 +327,17 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Debt list grouping: the data source may split a client's documents into
+        // named groups and send the total of each group with every row of it.
+        // Both columns stay empty for sources that do not group - the list then
+        // renders flat, exactly as before.
+        private val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE debts ADD COLUMN group_name TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE debts ADD COLUMN group_sum REAL NOT NULL DEFAULT 0.0")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -350,6 +361,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_26_27,
                         MIGRATION_27_28,
                         MIGRATION_28_29,
+                        MIGRATION_29_30,
                     )
                     .build()
                 INSTANCE = instance

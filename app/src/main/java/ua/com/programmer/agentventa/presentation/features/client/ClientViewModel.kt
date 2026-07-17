@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ua.com.programmer.agentventa.R
@@ -85,6 +86,10 @@ class ClientViewModel @Inject constructor(
     )
     val debtListFlow: StateFlow<List<Debt>> = _debtListFlow
     val debtList = _debtListFlow.asLiveData()
+
+    // The same debts prepared for the screen: grouped under headers when the data
+    // source sent a group_name, flat otherwise
+    val debtListItems = _debtListFlow.map { it.withGroupHeaders() }.asLiveData()
 
     // Client images as StateFlow
     private val _clientImagesFlow: StateFlow<List<ClientImage>> = _clientGuid

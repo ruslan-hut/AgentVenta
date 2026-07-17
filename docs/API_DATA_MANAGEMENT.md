@@ -393,6 +393,8 @@ and shows it in the client list and client card.
 | doc_type | string | Document type |
 | has_content | number | Content availability flag (0/1) |
 | sum | number | Document sum |
+| group_name | string | Optional group title; empty = no grouping |
+| group_sum | number | Total of the group, calculated by the source |
 | sorting | number | Display sort order |
 
 A record with an empty `doc_id` is the client's **total balance**, not a document
@@ -401,6 +403,23 @@ such record per client on every sync — including a zero one, otherwise a
 previously synced balance stays on the device. Positive sums mean the client owes
 money, negative sums mean a prepayment. `company_guid` must match the company
 selected on the device (send an empty string when `useCompanies` is off).
+
+The app always orders the document list by `sorting` **ascending**, so the value
+itself must carry the direction. Negative values are allowed: to put the newest
+documents on top, send an inverted document date — for example the number of
+seconds from the document date back to a fixed base date.
+
+**Grouping.** The document list can be split into named groups — by company, by
+contract, by any rule the source decides. Put the same `group_name` on every
+document of a group; the app draws a header above each group. The header shows
+`group_sum` **exactly as sent** — the app does not add the rows up, so the total
+may legitimately cover more than the documents on screen (e.g. the full-period
+balance of a group while the rows are only the last N days). Leave `group_name`
+empty on every record to keep a flat list (the previous behaviour). Records are
+grouped by exact `group_name` match; within a group they follow `sorting`, and
+groups themselves are ordered by `group_name`. The empty-`doc_id` balance record
+must keep `group_name` empty and is never placed in a group. Both fields are
+optional — a source that omits them behaves exactly as before.
 
 ---
 

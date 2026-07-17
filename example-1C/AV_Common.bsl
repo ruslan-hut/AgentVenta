@@ -1147,7 +1147,7 @@ Function GetDebtData(Params, Next)
 	|
 	|ORDER BY
 	|	Client,
-	|	DocDate";
+	|	DocDate DESC";
 
 	Query.SetParameter("Clients", 	Clients);
 	Query.SetParameter("DateFrom", 	DateFrom);
@@ -1172,9 +1172,10 @@ Function GetDebtData(Params, Next)
 		Item.Insert("doc_guid", 	String(Sel.Doc.UUID()));
 		Item.Insert("doc_type", 	Sel.Doc.Metadata().Name);
 		Item.Insert("sum", 			Sel.Sum);
-		// сортировка по дате документа (секунды от 2001 года),
-		// приложение упорядочивает по возрастанию
-		Item.Insert("sorting", 		Sel.DocDate - Date(2001, 1, 1));
+		// приложение сортирует список только по возрастанию sorting, поэтому
+		// значение инвертировано: чем новее документ, тем меньше (отрицательнее)
+		// число — новые документы оказываются вверху списка
+		Item.Insert("sorting", 		Date(2001, 1, 1) - Sel.DocDate);
 		// расшифровка документов через relay-сервер не поддерживается
 		Item.Insert("has_content", 	0);
 

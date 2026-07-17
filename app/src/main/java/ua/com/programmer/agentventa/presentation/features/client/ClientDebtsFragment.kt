@@ -49,7 +49,7 @@ class ClientDebtsFragment: Fragment() {
 
         clientRecycler.adapter = adapter
 
-        viewModel.debtList.observe(viewLifecycleOwner) {
+        viewModel.debtListItems.observe(viewLifecycleOwner) {
             adapter.submitList(it)
             binding.empty.visibility = if (it.isEmpty()) View.VISIBLE else View.GONE
         }

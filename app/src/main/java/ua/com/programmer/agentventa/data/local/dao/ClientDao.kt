@@ -103,7 +103,7 @@ interface ClientDao {
             AND is_total=0
             AND company_guid=:companyGuid
             AND db_guid = :currentDbGuid
-            ORDER BY sorting
+            ORDER BY group_name, sorting
     """)
     fun getClientDebts(currentDbGuid: String, guid: String, companyGuid: String): Flow<List<Debt>>
 
