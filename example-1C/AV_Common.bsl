@@ -237,13 +237,19 @@ Function HTTP_NewConnection(Url, Port=0, SSL=True)
 		Url = Left(Url, Col-1);
 	EndIf;
 
+	// Таймаут операций с соединением (сек). БЕЗ него зависшее соединение с relay
+	// блокирует Get/Post/Put бессрочно: фоновое задание висит в активных, а в
+	// журнале — тишина (код не возвращается из вызова, ретраи/Sleep не работают).
+	// 6-й позиционный параметр HTTPConnection — Таймаут.
+	Timeout = 60;
+
 	If NOT SSL Then
 
-		Return New HTTPConnection(Url, ?(Port=0, 80, Port));
+		Return New HTTPConnection(Url, ?(Port=0, 80, Port),,,, Timeout);
 
 	EndIf;
 
-	Return New HTTPConnection(Url, ?(Port=0, 443, Port),,,,, New OpenSSLSecureConnection);
+	Return New HTTPConnection(Url, ?(Port=0, 443, Port),,,, Timeout, New OpenSSLSecureConnection);
 
 EndFunction // NewConnection()
 
@@ -1058,7 +1064,7 @@ Function GetDebtData(Params, Next)
 	EndIf;
 
 	// период выгрузки движений взаиморасчетов, дней
-	PeriodDays 	= 30;
+	PeriodDays 	= 90;
 	DateTo 		= EndOfDay(CurrentDate());
 	DateFrom 	= BegOfDay(DateTo - PeriodDays * 86400);
 
@@ -2702,7 +2708,10 @@ EndProcedure
 //  - успешный ответ 200/201, стандартный конверт: {"success":true,"data":{"stored":true,"url":"..."}};
 //    data.url — готовый абсолютный URL с ?v={time}, используется как есть.
 // Возвращает URL или Неопределено (проблема конкретного файла — обмен продолжается).
-// Транспортная ошибка или исчерпание повторов 429 ставит Params.Err.
+// Транспортный обрыв (напр. "Transferred a partial file") ретраится и при
+// исчерпании попыток приводит к пропуску файла (без Params.Err), чтобы одна
+// флаки-картинка не валила весь diff и не зацикливала повторную отправку.
+// Params.Err ставится только при исчерпании повторов 429 (жёсткий rate-limit).
 Function UploadImage(Params, FileRef, Extension, VersionMs)
 	Var Err;
 
@@ -2751,7 +2760,22 @@ Function UploadImage(Params, FileRef, Extension, VersionMs)
 		Try
 			Resp = Params.Conn.Put(Req);
 		Except
-			Params.Err = StrTemplate("Image upload: %1", BriefErrorDescription(ErrorInfo()));
+			// транспортный обрыв (напр. "Transferred a partial file") — повторяем,
+			// как и 429; при исчерпании попыток пропускаем файл (Return Undefined
+			// без Params.Err), чтобы одна флаки-картинка не валила весь diff и не
+			// зацикливала повторную отправку всего пакета изменений.
+			ErrText = BriefErrorDescription(ErrorInfo());
+			If AttemptIndex < RetryDelays.Count() Then
+				Delay = RetryDelays[AttemptIndex];
+				AttemptIndex = AttemptIndex + 1;
+				WriteLogEvent("AgentVenta", EventLogLevel.Warning,, FileRef,
+					StrTemplate("Image upload transport error; attempt %1/%2; sleeping %3s; %4",
+						AttemptIndex, RetryDelays.Count(), Delay, ErrText));
+				Sleep(Delay);
+				Continue;
+			EndIf;
+			WriteLogEvent("AgentVenta", EventLogLevel.Warning,, FileRef,
+				StrTemplate("Image upload transport error, file skipped: %1", ErrText));
 			Return Undefined;
 		EndTry;
 
@@ -3161,6 +3185,14 @@ Procedure ExchangeJob(Params) Export
 		Params.Insert("Conn",		Undefined);
 
 		DeviceDataDownload(Params);
+
+		// сбой приёма заказов иначе невиден: pull ставит Params.Err и молча выходит
+		// (транспортный обрыв GET не ретраится, 429 — после исчерпания попыток),
+		// а документы остаются в очереди на relay. Фиксируем причину в журнале.
+		If Params.Err <> Undefined Then
+			WriteLogEvent("AgentVenta", EventLogLevel.Error, , Sel.Ref,
+				StrTemplate("ORDER_DOWNLOAD failed: %1", Params.Err));
+		EndIf;
 
 	EndDo;
 
