@@ -65,7 +65,7 @@ import ua.com.programmer.agentventa.data.local.dao.UserAccountDao
     Store::class,
     Discount::class,
     DebugLogEntry::class,
-                     ], version = 30, exportSchema = true)
+                     ], version = 31, exportSchema = true)
 abstract class AppDatabase: RoomDatabase() {
 
     abstract fun orderDao(): OrderDao
@@ -338,6 +338,15 @@ abstract class AppDatabase: RoomDatabase() {
             }
         }
 
+        // Parent-document link on cash: reference_guid (already present) carries the
+        // ERP UUID uploaded for identification; reference stores the debt's doc_id as
+        // human-readable presentation shown in the form. Empty for legacy rows.
+        private val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE cash ADD COLUMN reference TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -362,6 +371,7 @@ abstract class AppDatabase: RoomDatabase() {
                         MIGRATION_27_28,
                         MIGRATION_28_29,
                         MIGRATION_29_30,
+                        MIGRATION_30_31,
                     )
                     .build()
                 INSTANCE = instance

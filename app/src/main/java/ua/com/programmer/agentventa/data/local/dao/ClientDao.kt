@@ -117,6 +117,17 @@ interface ClientDao {
     fun getClientDebt(currentDbGuid: String, guid: String, docId: String): Flow<Debt?>
 
     @Query("""
+        SELECT * FROM debts
+            WHERE client_guid=:guid
+            AND is_total=0
+            AND (has_content=1 OR sum>0)
+            AND (:companyGuid='' OR company_guid=:companyGuid)
+            AND db_guid = :currentDbGuid
+            ORDER BY group_name, sorting
+    """)
+    fun getSelectableClientDebts(currentDbGuid: String, guid: String, companyGuid: String): Flow<List<Debt>>
+
+    @Query("""
         SELECT
             cl.db_guid AS databaseId,
             cl.client_guid AS clientGuid,

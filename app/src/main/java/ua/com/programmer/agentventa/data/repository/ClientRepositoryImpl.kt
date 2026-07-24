@@ -42,6 +42,12 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getSelectableDebts(guid: String, companyGuid: String): Flow<List<Debt>> {
+        return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
+            dao.getSelectableClientDebts(currentDbGuid, guid, companyGuid)
+        }
+    }
+
     override fun getDebt(guid: String, docId: String): Flow<Debt> {
         return userAccountRepository.currentAccountGuid.flatMapLatest { currentDbGuid ->
             dao.getClientDebt(currentDbGuid, guid, docId).map { debt ->

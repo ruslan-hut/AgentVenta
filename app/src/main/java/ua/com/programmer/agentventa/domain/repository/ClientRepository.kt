@@ -10,6 +10,7 @@ interface ClientRepository {
     fun getClient(guid: String, companyGuid: String): Flow<LClient>
     fun getClients(group: String, filter: String, companyGuid: String): Flow<List<LClient>>
     fun getDebts(guid: String, companyGuid: String): Flow<List<Debt>>
+    fun getSelectableDebts(guid: String, companyGuid: String): Flow<List<Debt>>
     fun getDebt(guid: String, docId: String): Flow<Debt>
     fun getLocation(guid: String): Flow<LClientLocation>
     fun getLocations(): Flow<List<LClientLocation>>

@@ -166,7 +166,7 @@ Located in `/domain/result/Result.kt`:
 
 ### Database (Room)
 
-**Database:** AppDatabase (version 26)
+**Database:** AppDatabase (version 31)
 
 **Key Entity Categories:**
 - **Documents**: Order, Cash, Task (with isSent, isProcessed flags)
@@ -191,7 +191,7 @@ Most entities use `db_guid` in composite primary keys. Each UserAccount represen
 - **Single PK**: UserAccount (guid only — its guid IS the `db_guid` for other tables)
 
 **Migration Strategy:**
-Manual migrations defined: MIGRATION_13_14 through MIGRATION_25_26. Schema location: `app/schemas/`
+Manual migrations defined: MIGRATION_13_14 through MIGRATION_30_31. Schema location: `app/schemas/`
 
 Key migrations since v20:
 - **20→21**: Added performance indexes on orders, clients, products, order_content tables
@@ -200,6 +200,8 @@ Key migrations since v20:
 - **23→24**: Added `use_websocket` flag to UserAccount (default: 1)
 - **24→25**: Removed `sync_email` column (table recreation)
 - **25→26**: Added `discounts` table for complex discount system (PK: db_guid, client_guid, product_guid)
+- **29→30**: Added `group_name`/`group_sum` to `debts` for debt-list grouping
+- **30→31**: Added `reference` column to `cash` (parent-document presentation text)
 
 ### Repository Pattern
 
@@ -234,7 +236,7 @@ Key migrations since v20:
 
 #### Feature ViewModels
 Order: OrderViewModel, OrderListViewModel
-Cash: CashViewModel, CashListViewModel
+Cash: CashViewModel, CashListViewModel, ParentDocumentListViewModel
 Task: TaskViewModel, TaskListViewModel
 Client: ClientViewModel, ClientListViewModel, ClientImageViewModel
 Product: ProductViewModel, ProductListViewModel, ProductImageViewModel
@@ -364,6 +366,11 @@ All data stored locally in Room. Documents created offline marked with `isSent=0
 #### Document-Content Pattern
 Orders use header-lines structure: Order (header) + OrderContent (lines). Cascade delete operations. Totals calculated via DAO aggregations with real-time Flow<DocumentTotals>.
 
+#### Cash Parent Document
+A cash receipt can be linked to one of the client's debt documents (the document being paid). No dedicated selectable flag exists — **selectability = `is_total=0 AND (has_content=1 OR sum>0)`**: any document the client still owes on, plus explicitly content-flagged docs; prepayment/credit lines (`sum<0`, `has_content=0`) are excluded. (`has_content` alone was insufficient — some bases, e.g. Rich Hills, send real invoices with `has_content=0`.) The picker (`ParentDocumentListFragment` + `ParentDocumentListViewModel`, `/presentation/features/cash/`) reuses the client debt list infra (`ClientDebtsAdapter`, `withGroupHeaders`) and queries `ClientDao.getSelectableClientDebts` (client + rule above + optional company match) via `ClientRepository.getSelectableDebts`.
+
+On selection: `Cash.referenceGuid` ← `debt.docGuid` (the ERP identifier, **uploaded** in `Cash.toMap()` under `reference_guid` — pre-existing field), and `Cash.reference` ← `debt.docId` (human-readable presentation, **display-only, not uploaded**; column added in migration 30→31). `CashFragment` opens the picker from the `doc_parent_document` field (guards: client required, disabled when sent) via `SharedViewModel.selectParentDocumentAction`. Legacy cash rows with only a GUID display `referenceGuid` as a fallback. Contract documented in `docs/API_DATA_MANAGEMENT.md` (Debt + Cash sections).
+
 #### Discount System
 
 Two discount modes controlled by `UserOptions.complexDiscounts` (default: `false`):
@@ -474,7 +481,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │   │                                    #   ImageLoadingManager, UiState, SharedParameters
 │   └── /features/                       # Feature screens
 │       ├── /order/                      # OrderFragment, OrderListFragment, OrderViewModel, OrderListViewModel
-│       ├── /cash/                       # CashFragment, CashListFragment + ViewModels
+│       ├── /cash/                       # CashFragment, CashListFragment, ParentDocumentListFragment + ViewModels
 │       ├── /task/                       # TaskFragment, TaskListFragment + ViewModels
 │       ├── /client/                     # ClientFragment, ClientListFragment, ClientInfoFragment,
 │       │                                #   ClientDebtsFragment, ClientImageFragment + ViewModels
@@ -513,7 +520,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │
 ├── /data/                               # Data Layer
 │   ├── /local/
-│   │   ├── /database/                   # AppDatabase (v26)
+│   │   ├── /database/                   # AppDatabase (v31)
 │   │   ├── /dao/                        # Room DAOs (14 DAOs)
 │   │   └── /entity/                     # Room entities with db_guid (20 entities)
 │   ├── /remote/
@@ -627,7 +634,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 11. Create ViewModel (extend DocumentViewModel<T>) and Fragment in `/presentation/features/{type}/`
 
 ### When Modifying Database Schema
-1. Increment AppDatabase version (currently 26)
+1. Increment AppDatabase version (currently 31)
 2. Create MIGRATION_X_Y in AppDatabase
 3. Test migration on existing data
 4. Update schema export in `app/schemas/`

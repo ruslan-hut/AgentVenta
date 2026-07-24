@@ -73,6 +73,11 @@ class CashFragment: Fragment(), MenuProvider {
             viewModel.onClientClick(client, popUp)
         }
 
+        sharedModel.selectParentDocumentAction = { debt, popUp ->
+            viewModel.onParentDocumentSelected(debt)
+            popUp()
+        }
+
         return binding.root
     }
 
@@ -87,7 +92,7 @@ class CashFragment: Fragment(), MenuProvider {
                 docClient.setText(it.client)
                 isFiscal.text = "" //it.fiscalNumber.toString()
                 isFiscal.isChecked = it.isFiscal > 0
-                docParentDocument.setText(it.referenceGuid)
+                docParentDocument.setText(it.reference.ifBlank { it.referenceGuid })
                 docNotes.setText(it.notes)
 
                 if (it.sum > 0) {
@@ -110,6 +115,7 @@ class CashFragment: Fragment(), MenuProvider {
                     docSum.isEnabled = true
                     docNotes.isEnabled = true
                     isFiscal.isEnabled = true
+                    docParentDocument.isEnabled = true
                     fabSave.visibility = View.VISIBLE
                 }
             }
@@ -119,6 +125,9 @@ class CashFragment: Fragment(), MenuProvider {
         }
         binding.docClient.setOnClickListener {
             openClients()
+        }
+        binding.docParentDocument.setOnClickListener {
+            openParentDocuments()
         }
         binding.docNotes.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
@@ -161,6 +170,20 @@ class CashFragment: Fragment(), MenuProvider {
 
     fun openCompanies() {
         val action = CashFragmentDirections.actionCashFragmentToCompanyListFragment()
+        view?.findNavController()?.navigate(action)
+    }
+
+    private fun openParentDocuments() {
+        val cash = viewModel.document.value ?: return
+        if (cash.isSent == 1) return
+        if (cash.clientGuid.isEmpty()) {
+            Toast.makeText(requireContext(), getString(R.string.error_cannot_process), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val action = CashFragmentDirections.actionCashFragmentToParentDocumentListFragment(
+            clientGuid = cash.clientGuid,
+            companyGuid = cash.companyGuid,
+        )
         view?.findNavController()?.navigate(action)
     }
 

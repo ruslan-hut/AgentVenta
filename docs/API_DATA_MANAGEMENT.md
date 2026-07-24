@@ -390,14 +390,24 @@ and shows it in the client list and client card.
 | value_id | string | Value: `"debt"` |
 | client_guid | string | Client identifier |
 | company_guid | string | Company identifier |
-| doc_id | string | Document representation |
-| doc_guid | string | Document identifier |
+| doc_id | string | Document representation (shown to the agent; also the parent-document presentation on cash) |
+| doc_guid | string | Document identifier (echoed back as `reference_guid` when this debt is picked as a cash parent) |
 | doc_type | string | Document type |
 | has_content | number | Content availability flag (0/1) |
 | sum | number | Document sum |
 | group_name | string | Optional group title; empty = no grouping |
 | group_sum | number | Total of the group, calculated by the source |
 | sorting | number | Display sort order |
+
+**Cash parent document.** When creating a cash receipt the agent can link it to
+one of the client's debt documents. A record is offered for selection when it is
+a document line (`doc_id` non-empty, `is_total` treated as 0) **and** either
+`has_content: 1` **or** `sum > 0` — i.e. any document the client still owes on,
+plus any explicitly content-flagged document. Prepayments/credit lines (`sum < 0`,
+`has_content: 0`) are not offered. On selection the app stores the debt's
+`doc_guid` in the cash `reference_guid` (uploaded, the ERP identifier) and its
+`doc_id` as the readable presentation shown in the form (local only, not
+uploaded). No dedicated flag is required.
 
 A record with an empty `doc_id` is the client's **total balance**, not a document
 line: the app stores it separately and shows it as the client's debt. Send one
@@ -655,11 +665,15 @@ matches `Cash.toMap`.
 | company | string | Company name |
 | client_guid | string | Client (payer) identifier |
 | client | string | Client name |
-| reference_guid | string | Linked/paid document guid (e.g. the order being paid); empty for an advance |
+| reference_guid | string | Parent/paid document identifier — the `doc_guid` of the debt document the agent linked (see Debt); empty for an advance |
 | sum | number | Payment amount |
 | notes | string | Notes |
 | fiscal_number | number | Fiscal receipt number |
 | is_fiscal | number | Fiscal flag (1/0) |
+
+The parent document's presentation (the debt `doc_id`) is stored on the device
+for display only and is **not** uploaded — `reference_guid` alone identifies the
+parent for the ERP.
 
 ---
 

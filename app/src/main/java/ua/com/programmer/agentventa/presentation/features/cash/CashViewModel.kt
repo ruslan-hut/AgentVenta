@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.data.local.entity.Cash
 import ua.com.programmer.agentventa.data.local.entity.Client
+import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.LClient
 import ua.com.programmer.agentventa.presentation.common.document.DocumentViewModel
 import ua.com.programmer.agentventa.domain.result.DomainException
@@ -85,6 +86,19 @@ class CashViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onParentDocumentSelected(debt: Debt) {
+        val sum = if (cash.sum <= 0.0) debt.sum else cash.sum
+        updateDocument(
+            cash.copy(
+                referenceGuid = debt.docGuid,
+                reference = debt.docId,
+                sum = sum,
+                isSent = 0,
+                isProcessed = 0,
+            )
+        )
     }
 
     fun onClientClick(client: LClient, popUp: () -> Unit) {

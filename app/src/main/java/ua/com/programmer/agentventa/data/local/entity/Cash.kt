@@ -20,6 +20,7 @@ data class Cash(
     @ColumnInfo(name = "client_guid") val clientGuid: String = "",
     @ColumnInfo(name = "client") val client: String = "",
     @ColumnInfo(name = "reference_guid") val referenceGuid: String = "",
+    @ColumnInfo(name = "reference") val reference: String = "",
     val sum: Double = 0.0,
     val notes: String = "",
     @ColumnInfo(name = "fiscal_number") val fiscalNumber: Int = 0,

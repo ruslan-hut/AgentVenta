@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ua.com.programmer.agentventa.data.local.entity.ClientImage
 import ua.com.programmer.agentventa.data.local.entity.Company
+import ua.com.programmer.agentventa.data.local.entity.Debt
 import ua.com.programmer.agentventa.data.local.entity.DocumentTotals
 import ua.com.programmer.agentventa.data.local.entity.LClient
 import ua.com.programmer.agentventa.data.local.entity.LProduct
@@ -109,6 +110,7 @@ class SharedViewModel @Inject constructor(
 
     var selectClientAction: (LClient, () -> Unit) -> Unit = { _, _ -> }
     var selectProductAction: (LProduct?, () -> Unit) -> Unit = { _, _ -> }
+    var selectParentDocumentAction: (Debt, () -> Unit) -> Unit = { _, _ -> }
 
     fun toggleSortByName() {
         val newValue = !_sharedParams.value.sortByName
@@ -192,6 +194,7 @@ class SharedViewModel @Inject constructor(
         setDocumentGuid()
         selectClientAction = { _, _ -> }
         selectProductAction = { _, _ -> }
+        selectParentDocumentAction = { _, _ -> }
     }
 
     fun setCacheDir(dir: File) {

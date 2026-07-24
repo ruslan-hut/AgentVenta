@@ -199,6 +199,20 @@
         <action
             android:id="@+id/action_cashFragment_to_companyListFragment"
             app:destination="@id/companyListFragment" />
+        <action
+            android:id="@+id/action_cashFragment_to_parentDocumentListFragment"
+            app:destination="@id/parentDocumentListFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/parentDocumentListFragment"
+        android:name="ua.com.programmer.agentventa.presentation.features.cash.ParentDocumentListFragment"
+        android:label="@string/attr_parent_document" >
+        <argument
+            android:name="clientGuid"
+            app:argType="string" />
+        <argument
+            android:name="companyGuid"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/taskListFragment"
