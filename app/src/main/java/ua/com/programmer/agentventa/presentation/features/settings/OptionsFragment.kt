@@ -35,6 +35,7 @@ class OptionsFragment: PreferenceFragmentCompat() {
             screen.addCategory(R.string.option_category_orders) {
                 addCheckBox(R.string.pref_title_allow_price, options.allowPriceTypeChoose)
                 addCheckBox(R.string.option_title_allow_price_edit, options.allowPriceEdit)
+                addCheckBox(R.string.option_title_allow_discount_edit, options.allowDiscountEdit)
                 addCheckBox(R.string.option_title_allow_return, options.allowReturn)
                 addCheckBox(R.string.pref_title_delivery_date, options.requireDeliveryDate)
                 addCheckBox(R.string.pref_title_show_client_price_only, options.showClientPriceOnly)

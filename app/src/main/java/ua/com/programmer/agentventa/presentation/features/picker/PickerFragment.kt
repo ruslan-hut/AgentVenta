@@ -230,8 +230,8 @@ class PickerFragment: Fragment(), MenuProvider {
             editPrice.setText(product.price.format(2))
             editPrice.isEnabled = options.allowPriceEdit
 
-            // Discount fields: editable only when complexDiscounts and allowPriceEdit
-            canEditDiscount = options.complexDiscounts && options.allowPriceEdit
+            // Discount fields: editable only when complexDiscounts and allowDiscountEdit
+            canEditDiscount = options.complexDiscounts && options.allowDiscountEdit
             editDiscountPercent.isEnabled = canEditDiscount
             editDiscountPrice.isEnabled = canEditDiscount
 

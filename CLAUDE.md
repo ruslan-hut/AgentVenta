@@ -352,6 +352,15 @@ All data stored locally in Room. Documents created offline marked with `isSent=0
 - `PendingDataChecker` (Singleton): Queries `DataExchangeDao` for counts of unsent orders, cash, images, locations. Exposes `PendingDataSummary`.
 - `NetworkConnectivityMonitor` (Singleton): Observes network connectivity changes to trigger reconnection.
 
+#### Sync Result Notifications
+`SyncNotifier` (`@Singleton`, `/infrastructure/notification/`) posts a system notification with the outcome of each sync run. Loudness depends on the account's connection mode:
+- **Automatic (relay REST, `isRelayRest()`):** background syncs are unattended, so the notification fires **only when data actually moved** (`sent + received > 0`); silent runs and transport errors stay in the log.
+- **Manual (direct 1C, `HTTP_service`):** the user triggered the sync, so **every** outcome is reported — counts, "no new data", and errors.
+
+**Counters:** `SyncStats` (`/data/remote/`) holds two ordered maps — `sent` keyed by document type, `received` keyed by `value_id`. It is created by whoever starts the run (`NetworkRepositoryImpl.updateAll/updateDifferential` wrap the flow in `withSyncNotification()`; `RelayRestSyncWorker` calls `notifyResult` directly) and threaded through the transport. `DataExchangeRepository.saveData()` returns per-`value_id` saved counts (no longer logs a line per batch — the noisy `saved <type>: N` lines were removed). The notifier emits one summary line to the log and the same text to the shade, e.g. `Sent: orders 2; Received: products 253, prices 753`. Type labels are localized `sync_type_*` strings; unknown ids fall through to the raw `value_id`.
+
+**Channel:** `sync_results_v2`, `IMPORTANCE_DEFAULT` (sound + vibration). Channel importance is immutable after creation, so the id carries a version suffix — bump it to change the level. Gated by `POST_NOTIFICATIONS`; `MainActivity` requests it on API 33+, and `SyncNotifier` silently no-ops if denied.
+
 #### Document-Content Pattern
 Orders use header-lines structure: Order (header) + OrderContent (lines). Cascade delete operations. Totals calculated via DAO aggregations with real-time Flow<DocumentTotals>.
 
@@ -398,6 +407,11 @@ Convention: empty string "" = wildcard (any client / any product)
 - `DocumentTotals.discount` = SUM of all `OrderContent.discount` values
 - `Order.discountValue` stores the total discount amount across all lines
 - Product groups identified by `Product.isGroup = 1`, linked via `Product.groupGuid` (single-level hierarchy only)
+
+**Field-edit gating (two independent server flags):**
+- `UserOptions.allowPriceEdit` — gates the price field (`editPrice`) in `PickerFragment`.
+- `UserOptions.allowDiscountEdit` — gates the discount fields (`editDiscountPercent`, `editDiscountPrice`); effective only when `complexDiscounts` is also on (`canEditDiscount = complexDiscounts && allowDiscountEdit`).
+- Both default `false`, are display-only checkboxes in `OptionsFragment`, and round-trip through `UserOptions.toJson()` / `UserOptionsBuilder`.
 
 **Sync:** Discount data synced as `DATA_DISCOUNT = "discount"` constant. HTTP mode: added to sync queue when `complexDiscounts` enabled. WebSocket mode: handled automatically via `DataExchangeRepository` routing. Cleanup follows standard timestamp-based pattern.
 
@@ -533,6 +547,8 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │   │                                    #   OrderPrintFormatter, WebhookPrintService
 │   ├── /websocket/                      # WebSocketConnectionManager, WebSocketSyncWorker,
 │   │                                    #   PendingDataChecker, NetworkConnectivityMonitor
+│   ├── /relay/                          # RelayRestSyncWorker (REST-relay periodic sync)
+│   ├── /notification/                   # SyncNotifier (sync result notifications)
 │   ├── /logger/                         # Logger interface
 │   └── /config/                         # ApiKeyProvider
 │
