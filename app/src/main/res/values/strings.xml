@@ -565,4 +565,12 @@
     <string name="nav_products">Products</string>
     <string name="nav_sync">Sync</string>
 
+    <!-- Sync result notifications -->
+    <string name="notification_channel_sync">Sync results</string>
+    <string name="notification_channel_sync_description">Reports what each data sync sent and received</string>
+    <string name="notification_sync_title">Data sync</string>
+    <string name="notification_sync_error_title">Sync error</string>
+    <string name="notification_sync_result">Sent: %1$d, received: %2$d</string>
+    <string name="notification_sync_no_changes">No new data</string>
+
 </resources>

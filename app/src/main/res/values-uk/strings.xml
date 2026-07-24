@@ -536,4 +536,12 @@
     <string name="diag_no_data">Немає записаних діагностичних даних</string>
     <string name="toast_saved">Дані збережено</string>
 
+    <!-- Sync result notifications -->
+    <string name="notification_channel_sync">Результати синхронізації</string>
+    <string name="notification_channel_sync_description">Повідомляє, що було відправлено й отримано під час обміну даними</string>
+    <string name="notification_sync_title">Обмін даними</string>
+    <string name="notification_sync_error_title">Помилка синхронізації</string>
+    <string name="notification_sync_result">Відправлено: %1$d, отримано: %2$d</string>
+    <string name="notification_sync_no_changes">Нових даних немає</string>
+
 </resources>

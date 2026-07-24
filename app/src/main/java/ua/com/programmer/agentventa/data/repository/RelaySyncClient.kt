@@ -14,6 +14,7 @@ import ua.com.programmer.agentventa.BuildConfig
 import ua.com.programmer.agentventa.data.local.entity.UserAccount
 import ua.com.programmer.agentventa.data.local.entity.toMap
 import ua.com.programmer.agentventa.data.remote.Result
+import ua.com.programmer.agentventa.data.remote.SyncStats
 import ua.com.programmer.agentventa.data.remote.api.RelayApi
 import ua.com.programmer.agentventa.data.remote.dto.RelayAckRequest
 import ua.com.programmer.agentventa.data.remote.dto.RelayStatusData
@@ -141,7 +142,7 @@ class RelaySyncClient @Inject constructor(
      * batch_complete sentinel is seen, using the 1C timestamp it carries (never
      * a client clock), with the same crash-recovery checkpoint as the WS path.
      */
-    fun pullCatalog(account: UserAccount): Flow<Result> = flow {
+    fun pullCatalog(account: UserAccount, stats: SyncStats = SyncStats()): Flow<Result> = flow {
         val auth = authHeader(account)
         val accountGuid = account.guid
         var totalSaved = 0
@@ -201,6 +202,7 @@ class RelaySyncClient @Inject constructor(
                     if (batch.size >= BATCH_SIZE) {
                         dataExchangeRepository.saveData(batch)
                         totalSaved += batch.size
+                        stats.addReceived(batch.size)
                         batch.clear()
                     }
                 }
@@ -208,6 +210,7 @@ class RelaySyncClient @Inject constructor(
             if (batch.isNotEmpty()) {
                 dataExchangeRepository.saveData(batch)
                 totalSaved += batch.size
+                stats.addReceived(batch.size)
                 batch.clear()
             }
             if (optionsItems.isNotEmpty()) {
@@ -291,7 +294,7 @@ class RelaySyncClient @Inject constructor(
      * match the WS upload_* frames so 1C receives identical data. The relay
      * dedupes on document_guid, so a re-send after a dropped response is safe.
      */
-    fun uploadDocuments(account: UserAccount): Flow<Result> = flow {
+    fun uploadDocuments(account: UserAccount, stats: SyncStats = SyncStats()): Flow<Result> = flow {
         val auth = authHeader(account)
         val accountGuid = account.guid
 
@@ -360,6 +363,7 @@ class RelaySyncClient @Inject constructor(
             sent++
         }
 
+        stats.addSent(sent)
         logger.d(logTag, "Uploaded $sent/${documents.size} documents via REST")
         emit(Result.Progress("upload: $sent"))
     }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -59,6 +60,12 @@ class MainActivity : AppCompatActivity() {
             locationTracker.start()
         }
     }
+
+    // Sync results are reported through the notification shade; the user may
+    // decline, in which case SyncNotifier silently no-ops.
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     private val sharedViewModel: SharedViewModel by viewModels()
     private var _binding: ActivityMainBinding? = null
@@ -192,6 +199,8 @@ class MainActivity : AppCompatActivity() {
             currentFragment = fragment
         }
 
+        requestNotificationPermission()
+
         sharedViewModel.currentAccount.observe(this) { account ->
             account?.let {
                 val textUserID = "${BuildConfig.VERSION_NAME} (${account.getGuid()})"
@@ -257,6 +266,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         Snackbar.make(binding.navigationDrawerLayout, message, duration).show()
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ActivityCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     private fun checkPermissions(): Boolean {

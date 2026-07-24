@@ -27,9 +27,11 @@ import ua.com.programmer.agentventa.data.remote.interceptor.HttpAuthInterceptor
 import ua.com.programmer.agentventa.data.remote.interceptor.TokenRefresh
 import ua.com.programmer.agentventa.data.remote.Result
 import ua.com.programmer.agentventa.data.remote.SendResult
+import ua.com.programmer.agentventa.data.remote.SyncStats
 import ua.com.programmer.agentventa.data.remote.TokenManager
 import ua.com.programmer.agentventa.data.remote.TokenManagerImpl
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.infrastructure.notification.SyncNotifier
 import ua.com.programmer.agentventa.domain.repository.DataExchangeRepository
 import ua.com.programmer.agentventa.domain.repository.NetworkRepository
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
@@ -49,7 +51,8 @@ class NetworkRepositoryImpl @Inject constructor(
     private val logger: Logger,
     private val tokenManager: TokenManager,
     tokenRefresh: TokenRefresh,
-    private val relaySyncClient: RelaySyncClient
+    private val relaySyncClient: RelaySyncClient,
+    private val syncNotifier: SyncNotifier
 ): NetworkRepository {
 
     private var _timestamp = 0L
@@ -213,13 +216,31 @@ class NetworkRepositoryImpl @Inject constructor(
         emit(Result.Progress("start: ${account?.description}"))
     }
 
-    override suspend fun updateAll(): Flow<Result> = flow {
+    /**
+     * Reports the run's outcome to the notification shade once the flow ends.
+     * Applied at the outermost level so every early `emit(Result.Error)` return
+     * inside the sync body is still accounted for.
+     */
+    private fun Flow<Result>.withSyncNotification(stats: SyncStats): Flow<Result> {
+        var error: String? = null
+        return onEach { if (it is Result.Error) error = it.message }
+            .onCompletion { cause ->
+                if (cause == null) syncNotifier.notifyResult(account, stats, error)
+            }
+    }
+
+    override suspend fun updateAll(): Flow<Result> {
+        val stats = SyncStats()
+        return updateAllFlow(stats).withSyncNotification(stats)
+    }
+
+    private fun updateAllFlow(stats: SyncStats): Flow<Result> = flow {
         val currentAccount = account
 
         // REST-relay sync path: pull catalog + upload documents over /api/v1/device.
         if (currentAccount != null && currentAccount.isRelayRest()) {
             logger.d(logTag, "Using REST relay sync (full)")
-            relaySyncViaRest(currentAccount).collect { emit(it) }
+            relaySyncViaRest(currentAccount, stats).collect { emit(it) }
             return@flow
         }
 
@@ -256,7 +277,7 @@ class NetworkRepositoryImpl @Inject constructor(
         for (item in queue) {
             try {
                 ensureSameAccount(accountGuid)
-                makeDataRequest(accountGuid, _timestamp, item)
+                makeDataRequest(accountGuid, _timestamp, item, stats)
                 for (c in counters) {
                     emit(Result.Progress("${c.key}: ${c.value}"))
                 }
@@ -292,7 +313,7 @@ class NetworkRepositoryImpl @Inject constructor(
     // documents, then pull pending catalog. Used by both updateAll and
     // updateDifferential — for the relay the full/differential distinction is
     // moot since the catalog is delta-by-timestamp on the server.
-    private fun relaySyncViaRest(account: UserAccount): Flow<Result> = flow {
+    private fun relaySyncViaRest(account: UserAccount, stats: SyncStats): Flow<Result> = flow {
         _timestamp = System.currentTimeMillis()
         logger.d(logTag, "relaySyncViaRest begin: ${account.guid.trimForLog()}")
         val (approved, message) = relaySyncClient.checkApproval(account)
@@ -303,8 +324,8 @@ class NetworkRepositoryImpl @Inject constructor(
         }
         emit(Result.Progress("start: ${account.description}"))
         try {
-            relaySyncClient.uploadDocuments(account).collect { emit(it) }
-            relaySyncClient.pullCatalog(account).collect { emit(it) }
+            relaySyncClient.uploadDocuments(account, stats).collect { emit(it) }
+            relaySyncClient.pullCatalog(account, stats).collect { emit(it) }
         } catch (e: CancellationException) {
             logger.w(logTag, "REST relay sync CANCELLED: ${e.message}")
             throw e
@@ -321,13 +342,18 @@ class NetworkRepositoryImpl @Inject constructor(
         if (cause != null) logger.w(logTag, "relaySyncViaRest flow ended: ${cause.javaClass.simpleName}: ${cause.message}")
     }
 
-    override suspend fun updateDifferential(): Flow<Result> = flow {
+    override suspend fun updateDifferential(): Flow<Result> {
+        val stats = SyncStats()
+        return updateDifferentialFlow(stats).withSyncNotification(stats)
+    }
+
+    private fun updateDifferentialFlow(stats: SyncStats): Flow<Result> = flow {
         val currentAccount = account
 
         // REST-relay accounts: upload documents and pull any pending catalog.
         if (currentAccount != null && currentAccount.isRelayRest()) {
             logger.d(logTag, "Using REST relay sync (differential)")
-            relaySyncViaRest(currentAccount).collect { emit(it) }
+            relaySyncViaRest(currentAccount, stats).collect { emit(it) }
             return@flow
         }
 
@@ -347,7 +373,7 @@ class NetworkRepositoryImpl @Inject constructor(
 
         if(_options.write) {
             try {
-                sendDocuments(accountGuid).collect {
+                sendDocuments(accountGuid, stats).collect {
                     emit(it)
                 }
             } catch (e: HttpException) {
@@ -424,7 +450,7 @@ class NetworkRepositoryImpl @Inject constructor(
      * empty; we additionally stop if the cursor fails to advance (server bug
      * protection) or if we exceed [Constants.SYNC_MAX_PAGES] (runaway guard).
      */
-    private suspend fun makeDataRequest(account: String, time: Long, type: String) {
+    private suspend fun makeDataRequest(account: String, time: Long, type: String, stats: SyncStats) {
         if (token.isBlank()) throw Exception("get: token is empty")
 
         val api = apiService ?: return
@@ -436,7 +462,7 @@ class NetworkRepositoryImpl @Inject constructor(
             val suffix = if (cursor.isEmpty()) "" else "-more$cursor"
             val response = api.get(type, token, suffix)
 
-            (response["data"] as? List<*>)?.let { saveData(account, time, it) }
+            (response["data"] as? List<*>)?.let { saveData(account, time, it, stats) }
 
             val nextCursor = parseMoreCursor(response["more"]) ?: return
             if (nextCursor.isEmpty()) return
@@ -475,13 +501,15 @@ class NetworkRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun makePostRequest(data: JsonObject, account: String, guid: String, type: String) {
+    /** Returns true when the server accepted the document. */
+    private suspend fun makePostRequest(data: JsonObject, account: String, guid: String, type: String): Boolean {
 
         if (token.isBlank()) throw Exception("post: token is empty")
 
-        val response = apiService?.post(token, data)
+        val response = apiService?.post(token, data) ?: return false
 
-        response?.let {
+        var accepted = false
+        response.let {
             val result = XMap(it)
             val error = result.getString("error")
             val status = result.getString("status")
@@ -495,6 +523,7 @@ class NetworkRepositoryImpl @Inject constructor(
                         error = error
                     )
                     dataRepository.saveSendResult(sendResult)
+                    accepted = true
                     if (error.isNotEmpty() && error != "null") {
                         logger.w(logTag, "send: ok with warn: $error")
                     }
@@ -508,13 +537,14 @@ class NetworkRepositoryImpl @Inject constructor(
             }
         }
 
+        return accepted
     }
 
     /**
      * Uploads unsent documents (orders, cash, images, locations) to the 1C
      * server via HTTP POST. Used by the direct-1C / demo path.
      */
-    private fun sendDocuments(account: String): Flow<Result> = flow {
+    private fun sendDocuments(account: String, stats: SyncStats): Flow<Result> = flow {
 
         val documents = dataRepository.getOrders(account)
         val type = Constants.DOCUMENT_ORDER
@@ -526,7 +556,7 @@ class NetworkRepositoryImpl @Inject constructor(
                 val content = (contentByOrder[document.guid] ?: emptyList()).map { it.toMap() }
                 val documentData = document.toMap(account, content)
                 val json = gson.toJsonTree(documentData).asJsonObject
-                makePostRequest(json, account, document.guid, type)
+                if (makePostRequest(json, account, document.guid, type)) stats.addSent(1)
             }
             emit(Result.Progress("$type: ${documents.size}"))
         }
@@ -538,7 +568,7 @@ class NetworkRepositoryImpl @Inject constructor(
             for (cash in cashList) {
                 val cashContent = cash.toMap(account)
                 val json = gson.toJsonTree(cashContent).asJsonObject
-                makePostRequest(json, account, cash.guid, typeCash)
+                if (makePostRequest(json, account, cash.guid, typeCash)) stats.addSent(1)
             }
             emit(Result.Progress("$typeCash: ${cashList.size}"))
         }
@@ -550,7 +580,7 @@ class NetworkRepositoryImpl @Inject constructor(
             for (image in images) {
                 val imageContent = image.toMap()
                 val json = gson.toJsonTree(imageContent).asJsonObject
-                makePostRequest(json, account, image.guid, typeImage)
+                if (makePostRequest(json, account, image.guid, typeImage)) stats.addSent(1)
             }
             emit(Result.Progress("$typeImage: ${images.size}"))
         }
@@ -562,14 +592,14 @@ class NetworkRepositoryImpl @Inject constructor(
             for (location in locations) {
                 val locationContent = location.toMap()
                 val json = gson.toJsonTree(locationContent).asJsonObject
-                makePostRequest(json, account, location.clientGuid, typeLocation)
+                if (makePostRequest(json, account, location.clientGuid, typeLocation)) stats.addSent(1)
             }
             emit(Result.Progress("$typeLocation: ${locations.size}"))
         }
 
     }
 
-    private suspend fun saveData(account: String, time: Long, data: List<*>) {
+    private suspend fun saveData(account: String, time: Long, data: List<*>, stats: SyncStats) {
         if (data.isEmpty()) return
         val dataset = ArrayList<XMap>()
         try {
@@ -587,6 +617,7 @@ class NetworkRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             logger.e(logTag, "Read data error: $e")
         }
+        stats.addReceived(dataset.size)
         dataRepository.saveData(dataset)
     }
 

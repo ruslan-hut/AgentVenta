@@ -534,4 +534,12 @@
     <string name="nav_products">Товары</string>
     <string name="nav_sync">Синхронизация</string>
 
+    <!-- Sync result notifications -->
+    <string name="notification_channel_sync">Результаты синхронизации</string>
+    <string name="notification_channel_sync_description">Сообщает, что было отправлено и получено при обмене данными</string>
+    <string name="notification_sync_title">Обмен данными</string>
+    <string name="notification_sync_error_title">Ошибка синхронизации</string>
+    <string name="notification_sync_result">Отправлено: %1$d, получено: %2$d</string>
+    <string name="notification_sync_no_changes">Новых данных нет</string>
+
 </resources>

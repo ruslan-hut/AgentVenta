@@ -17,9 +17,11 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
 import ua.com.programmer.agentventa.data.local.entity.isRelayRest
 import ua.com.programmer.agentventa.data.remote.Result as SyncResult
+import ua.com.programmer.agentventa.data.remote.SyncStats
 import ua.com.programmer.agentventa.data.repository.RelaySyncClient
 import ua.com.programmer.agentventa.domain.repository.UserAccountRepository
 import ua.com.programmer.agentventa.infrastructure.logger.Logger
+import ua.com.programmer.agentventa.infrastructure.notification.SyncNotifier
 import ua.com.programmer.agentventa.utility.Constants
 import java.util.concurrent.TimeUnit
 
@@ -37,6 +39,7 @@ class RelayRestSyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val userAccountRepository: UserAccountRepository,
     private val relaySyncClient: RelaySyncClient,
+    private val syncNotifier: SyncNotifier,
     private val logger: Logger,
 ) : CoroutineWorker(context, workerParams) {
 
@@ -59,13 +62,16 @@ class RelayRestSyncWorker @AssistedInject constructor(
         }
 
         var hadError = false
+        val stats = SyncStats()
         return try {
-            relaySyncClient.uploadDocuments(account).collect {
+            relaySyncClient.uploadDocuments(account, stats).collect {
                 if (it is SyncResult.Error) hadError = true
             }
-            relaySyncClient.pullCatalog(account).collect {
+            relaySyncClient.pullCatalog(account, stats).collect {
                 if (it is SyncResult.Error) hadError = true
             }
+            // Auto mode: the notifier stays quiet unless data actually moved.
+            syncNotifier.notifyResult(account, stats, null)
             if (hadError && runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.success()
         } catch (e: CancellationException) {
             throw e
