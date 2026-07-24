@@ -570,7 +570,27 @@
     <string name="notification_channel_sync_description">Reports what each data sync sent and received</string>
     <string name="notification_sync_title">Data sync</string>
     <string name="notification_sync_error_title">Sync error</string>
-    <string name="notification_sync_result">Sent: %1$d, received: %2$d</string>
+    <string name="notification_sync_sent">Sent: %1$s</string>
+    <string name="notification_sync_received">Received: %1$s</string>
     <string name="notification_sync_no_changes">No new data</string>
+
+    <!-- Sync data type labels -->
+    <string name="sync_type_item">products</string>
+    <string name="sync_type_price">prices</string>
+    <string name="sync_type_image">images</string>
+    <string name="sync_type_client">clients</string>
+    <string name="sync_type_client_location">client locations</string>
+    <string name="sync_type_client_direction">client routes</string>
+    <string name="sync_type_client_goods">client products</string>
+    <string name="sync_type_client_image">photos</string>
+    <string name="sync_type_debt">debts</string>
+    <string name="sync_type_company">companies</string>
+    <string name="sync_type_store">stores</string>
+    <string name="sync_type_rest">stock</string>
+    <string name="sync_type_payment_type">payment types</string>
+    <string name="sync_type_discount">discounts</string>
+    <string name="sync_type_order">orders</string>
+    <string name="sync_type_cash">cash</string>
+    <string name="sync_type_location">locations</string>
 
 </resources>

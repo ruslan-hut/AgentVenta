@@ -33,22 +33,21 @@ class DataExchangeRepositoryImpl @Inject constructor(
 
     private val logTag = "AV-DataExRepo"
 
-    override suspend fun saveData(data: List<XMap>) {
-        separator(data)
-    }
-
-    private suspend fun separator(data: List<XMap>) {
-        val type = data.first().getValueId()
-        val listToSave = data.filter { it.getValueId() == type }
-        try {
-            saveFilteredData(listToSave)
-            logger.d(logTag, "saved $type: ${listToSave.size}")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.e(logTag, "separator [$type]: ${e.message}")
+    // Per-batch counts are returned rather than logged: a sync writes hundreds of
+    // batches, and only the run-level totals are worth a log entry (see SyncNotifier).
+    override suspend fun saveData(data: List<XMap>): Map<String, Int> {
+        val saved = LinkedHashMap<String, Int>()
+        for ((type, listToSave) in data.groupBy { it.getValueId() }) {
+            try {
+                saveFilteredData(listToSave)
+                saved[type] = (saved[type] ?: 0) + listToSave.size
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.e(logTag, "separator [$type]: ${e.message}")
+            }
         }
-        if (listToSave.size < data.size) separator(data.filter { it.getValueId() != type })
+        return saved
     }
 
     private suspend fun saveFilteredData(data: List<XMap>) {

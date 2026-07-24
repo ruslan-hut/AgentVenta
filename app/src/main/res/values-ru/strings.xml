@@ -539,7 +539,27 @@
     <string name="notification_channel_sync_description">Сообщает, что было отправлено и получено при обмене данными</string>
     <string name="notification_sync_title">Обмен данными</string>
     <string name="notification_sync_error_title">Ошибка синхронизации</string>
-    <string name="notification_sync_result">Отправлено: %1$d, получено: %2$d</string>
+    <string name="notification_sync_sent">Отправлено: %1$s</string>
+    <string name="notification_sync_received">Получено: %1$s</string>
     <string name="notification_sync_no_changes">Новых данных нет</string>
+
+    <!-- Sync data type labels -->
+    <string name="sync_type_item">товары</string>
+    <string name="sync_type_price">цены</string>
+    <string name="sync_type_image">изображения</string>
+    <string name="sync_type_client">клиенты</string>
+    <string name="sync_type_client_location">адреса клиентов</string>
+    <string name="sync_type_client_direction">маршруты</string>
+    <string name="sync_type_client_goods">товары клиентов</string>
+    <string name="sync_type_client_image">фото</string>
+    <string name="sync_type_debt">долги</string>
+    <string name="sync_type_company">организации</string>
+    <string name="sync_type_store">склады</string>
+    <string name="sync_type_rest">остатки</string>
+    <string name="sync_type_payment_type">виды оплаты</string>
+    <string name="sync_type_discount">скидки</string>
+    <string name="sync_type_order">заказы</string>
+    <string name="sync_type_cash">касса</string>
+    <string name="sync_type_location">координаты</string>
 
 </resources>

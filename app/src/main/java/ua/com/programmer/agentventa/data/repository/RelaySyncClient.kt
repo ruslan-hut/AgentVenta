@@ -200,17 +200,15 @@ class RelaySyncClient @Inject constructor(
                     xMap.setDatabaseId(accountGuid)
                     batch.add(xMap)
                     if (batch.size >= BATCH_SIZE) {
-                        dataExchangeRepository.saveData(batch)
+                        stats.addReceived(dataExchangeRepository.saveData(batch))
                         totalSaved += batch.size
-                        stats.addReceived(batch.size)
                         batch.clear()
                     }
                 }
             }
             if (batch.isNotEmpty()) {
-                dataExchangeRepository.saveData(batch)
+                stats.addReceived(dataExchangeRepository.saveData(batch))
                 totalSaved += batch.size
-                stats.addReceived(batch.size)
                 batch.clear()
             }
             if (optionsItems.isNotEmpty()) {
@@ -354,6 +352,7 @@ class RelaySyncClient @Inject constructor(
         for (result in data.results) {
             if (!result.queued) continue
             val guid = result.documentGuid ?: continue
+            stats.addSent(result.type)
             when (result.type) {
                 "order" -> dataExchangeRepository.markOrderSentViaWebSocket(accountGuid, guid)
                 "cash" -> dataExchangeRepository.markCashSentViaWebSocket(accountGuid, guid)
@@ -363,7 +362,6 @@ class RelaySyncClient @Inject constructor(
             sent++
         }
 
-        stats.addSent(sent)
         logger.d(logTag, "Uploaded $sent/${documents.size} documents via REST")
         emit(Result.Progress("upload: $sent"))
     }

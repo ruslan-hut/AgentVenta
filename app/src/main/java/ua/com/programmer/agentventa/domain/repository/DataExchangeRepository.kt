@@ -9,7 +9,8 @@ import ua.com.programmer.agentventa.data.remote.SendResult
 import ua.com.programmer.agentventa.utility.XMap
 
 interface DataExchangeRepository {
-    suspend fun saveData(data: List<XMap>)
+    /** Saves a mixed batch and returns how many elements were stored per `value_id`. */
+    suspend fun saveData(data: List<XMap>): Map<String, Int>
     suspend fun cleanUp(accountGuid: String, timestamp: Long)
     suspend fun saveSendResult(result: SendResult)
     suspend fun getOrders(accountGuid: String): List<Order>

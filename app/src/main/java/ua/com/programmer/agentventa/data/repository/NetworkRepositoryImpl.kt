@@ -556,7 +556,7 @@ class NetworkRepositoryImpl @Inject constructor(
                 val content = (contentByOrder[document.guid] ?: emptyList()).map { it.toMap() }
                 val documentData = document.toMap(account, content)
                 val json = gson.toJsonTree(documentData).asJsonObject
-                if (makePostRequest(json, account, document.guid, type)) stats.addSent(1)
+                if (makePostRequest(json, account, document.guid, type)) stats.addSent(type)
             }
             emit(Result.Progress("$type: ${documents.size}"))
         }
@@ -568,7 +568,7 @@ class NetworkRepositoryImpl @Inject constructor(
             for (cash in cashList) {
                 val cashContent = cash.toMap(account)
                 val json = gson.toJsonTree(cashContent).asJsonObject
-                if (makePostRequest(json, account, cash.guid, typeCash)) stats.addSent(1)
+                if (makePostRequest(json, account, cash.guid, typeCash)) stats.addSent(typeCash)
             }
             emit(Result.Progress("$typeCash: ${cashList.size}"))
         }
@@ -580,7 +580,7 @@ class NetworkRepositoryImpl @Inject constructor(
             for (image in images) {
                 val imageContent = image.toMap()
                 val json = gson.toJsonTree(imageContent).asJsonObject
-                if (makePostRequest(json, account, image.guid, typeImage)) stats.addSent(1)
+                if (makePostRequest(json, account, image.guid, typeImage)) stats.addSent(typeImage)
             }
             emit(Result.Progress("$typeImage: ${images.size}"))
         }
@@ -592,7 +592,7 @@ class NetworkRepositoryImpl @Inject constructor(
             for (location in locations) {
                 val locationContent = location.toMap()
                 val json = gson.toJsonTree(locationContent).asJsonObject
-                if (makePostRequest(json, account, location.clientGuid, typeLocation)) stats.addSent(1)
+                if (makePostRequest(json, account, location.clientGuid, typeLocation)) stats.addSent(typeLocation)
             }
             emit(Result.Progress("$typeLocation: ${locations.size}"))
         }
@@ -617,8 +617,7 @@ class NetworkRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             logger.e(logTag, "Read data error: $e")
         }
-        stats.addReceived(dataset.size)
-        dataRepository.saveData(dataset)
+        stats.addReceived(dataRepository.saveData(dataset))
     }
 
     private fun showTime(begin: Long, end: Long): String {

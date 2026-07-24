@@ -541,7 +541,27 @@
     <string name="notification_channel_sync_description">Повідомляє, що було відправлено й отримано під час обміну даними</string>
     <string name="notification_sync_title">Обмін даними</string>
     <string name="notification_sync_error_title">Помилка синхронізації</string>
-    <string name="notification_sync_result">Відправлено: %1$d, отримано: %2$d</string>
+    <string name="notification_sync_sent">Відправлено: %1$s</string>
+    <string name="notification_sync_received">Отримано: %1$s</string>
     <string name="notification_sync_no_changes">Нових даних немає</string>
+
+    <!-- Sync data type labels -->
+    <string name="sync_type_item">товари</string>
+    <string name="sync_type_price">ціни</string>
+    <string name="sync_type_image">зображення</string>
+    <string name="sync_type_client">клієнти</string>
+    <string name="sync_type_client_location">адреси клієнтів</string>
+    <string name="sync_type_client_direction">маршрути</string>
+    <string name="sync_type_client_goods">товари клієнтів</string>
+    <string name="sync_type_client_image">фото</string>
+    <string name="sync_type_debt">борги</string>
+    <string name="sync_type_company">організації</string>
+    <string name="sync_type_store">склади</string>
+    <string name="sync_type_rest">залишки</string>
+    <string name="sync_type_payment_type">види оплати</string>
+    <string name="sync_type_discount">знижки</string>
+    <string name="sync_type_order">замовлення</string>
+    <string name="sync_type_cash">каса</string>
+    <string name="sync_type_location">координати</string>
 
 </resources>
