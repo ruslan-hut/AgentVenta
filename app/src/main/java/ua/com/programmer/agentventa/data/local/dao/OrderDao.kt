@@ -184,7 +184,8 @@ interface OrderDao {
                     "ON products.group_guid=product_groups.guid AND products.db_guid=product_groups.db_guid " +
                 "WHERE products.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)) AS product " +
                 "ON product.guid=content.product_guid " +
-            "WHERE content.order_guid=:orderGuid")
+            "WHERE content.order_guid=:orderGuid " +
+            "ORDER BY content._id")
     fun getOrderContent(orderGuid: String): Flow<List<LOrderContent>?>
 
     @Query("SELECT " +
@@ -217,7 +218,8 @@ interface OrderDao {
             "ON products.group_guid=product_groups.guid AND products.db_guid=product_groups.db_guid " +
             "WHERE products.db_guid IN (SELECT guid FROM user_accounts WHERE is_current=1)) AS product " +
             "ON product.guid=content.product_guid " +
-            "WHERE content.order_guid=:orderGuid")
+            "WHERE content.order_guid=:orderGuid " +
+            "ORDER BY content._id")
     suspend fun getContent(orderGuid: String): List<LOrderContent>?
 
     // get order for clientGuid before given time
