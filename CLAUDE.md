@@ -61,11 +61,11 @@ Version is auto-incremented on build via `app/version.properties`. Format: `3.0.
 - **standart**: Standard production build (targetSdk 35)
 - **beta**: Beta testing build with β suffix (targetSdk 35)
 
-Both flavors support minSdk 23, compileSdk 36, Java 21.
+Both flavors support minSdk 23, compileSdk 37, Java 21. (defaultConfig targetSdk is 37; both flavors override to 35.)
 
 ### Build Config Fields
 Both debug and release builds expose:
-- `WEBSOCKET_API_KEY` — from `local.properties`
+- `WEBSOCKET_API_KEY` — from `local.properties` (relay API key; name retained for compatibility)
 - `KEY_HOST` — from `local.properties`
 
 ## Architecture
@@ -76,14 +76,14 @@ The project follows **Clean Architecture** with four layers:
 
 - **Presentation Layer** (`/presentation/`): Fragments, ViewModels, adapters, UI state
 - **Domain Layer** (`/domain/`): Repository interfaces, Use Cases, Result types, domain models
-- **Data Layer** (`/data/`): Repository implementations, Room DAOs/entities, Retrofit API, WebSocket models
-- **Infrastructure Layer** (`/infrastructure/`): Android platform services (location, camera, printer, WebSocket workers, logging, config)
+- **Data Layer** (`/data/`): Repository implementations, Room DAOs/entities, Retrofit APIs (1C HTTP + relay REST)
+- **Infrastructure Layer** (`/infrastructure/`): Android platform services (location, camera, printer, relay sync worker, remote logging, config)
 
 ### MVVM Pattern
 - **View Layer**: Fragments with ViewBinding/DataBinding
 - **ViewModel Layer**: HiltViewModel-annotated ViewModels with StateFlow/LiveData
 - **Domain Layer**: Use Cases encapsulate business logic, return `domain.result.Result<T>`
-- **Data Layer**: Repository pattern with Room + Retrofit + WebSocket
+- **Data Layer**: Repository pattern with Room + Retrofit (1C HTTP + relay REST)
 
 ### Domain Layer
 
@@ -106,6 +106,8 @@ Located in `/domain/result/Result.kt`:
 - `domain.result.Result<T>` — domain layer result for use cases
 
 #### Current Use Cases
+Several classes share one file (not one-file-per-use-case): order create/save/delete/validate/enable-edit live in `SaveOrderUseCase.kt`; the getters in `GetOrdersUseCase.kt`; all cash use cases in `CashUseCases.kt`; all task use cases in `TaskUseCases.kt`. `CopyOrderUseCase`, `GenerateOrderPrintUseCase`, `GetProductDiscountUseCase` have their own files.
+
 **Order:** GetOrdersUseCase, GetOrderUseCase, GetOrderWithContentUseCase, CreateOrderUseCase, SaveOrderUseCase, ValidateOrderUseCase, DeleteOrderUseCase, EnableOrderEditUseCase, CopyOrderUseCase, GenerateOrderPrintUseCase, GetProductDiscountUseCase
 **Cash:** CreateCashUseCase, SaveCashUseCase, ValidateCashUseCase, DeleteCashUseCase, EnableCashEditUseCase
 **Task:** CreateTaskUseCase, SaveTaskUseCase, ValidateTaskUseCase, DeleteTaskUseCase, MarkTaskDoneUseCase
@@ -129,13 +131,12 @@ Located in `/domain/result/Result.kt`:
 - ResourceProvider → ResourceProviderImpl binding
 
 **NetworkModule** (`SingletonComponent`):
-- OkHttpClient with HttpAuthInterceptor + TokenRefresh authenticator
-- `@WebSocketClient` OkHttpClient (no auth interceptor, 30s ping interval)
-- Retrofit.Builder with GsonConverterFactory
-- HttpClientApi service
+- OkHttpClient with HttpAuthInterceptor + TokenRefresh authenticator (direct-1C HTTP)
+- Retrofit.Builder with GsonConverterFactory + HttpClientApi service
+- `@RelayClient` OkHttpClient/Retrofit + RelayApi (relay device REST; no auth interceptor, longer timeouts, Bearer `apiKey:deviceUuid` per call)
+- `@DebugLogClient` OkHttpClient/Retrofit + DebugLogApi (relay debug-log upload; same Bearer auth, no interceptor)
 - TokenManager → TokenManagerImpl
 - ApiKeyProvider
-- WebSocketRepository → WebSocketRepositoryImpl
 - Gson instance
 
 **DomainModule** (`SingletonComponent + ViewModelComponent + ServiceComponent`):
@@ -143,7 +144,7 @@ Located in `/domain/result/Result.kt`:
 - `RepositoryBindModule`: Binds all repository interfaces to implementations:
   OrderRepository, UserAccountRepository, ProductRepository, ClientRepository,
   NetworkRepository, LogRepository, DataExchangeRepository, CashRepository,
-  CommonRepository, TaskRepository, LocationRepository, FilesRepository
+  CommonRepository, TaskRepository, LocationRepository, FilesRepository, DebugLogRepository
 
 **RepositoryModule** (`ViewModelComponent`):
 - DocumentRepository<Order> → OrderRepositoryImpl
@@ -157,10 +158,11 @@ Located in `/domain/result/Result.kt`:
 - BluetoothAdapter (nullable, from BluetoothManager)
 
 **Qualifiers** (`/di/Qualifiers.kt`):
-- `@WebSocketClient` — for WebSocket-specific OkHttpClient
+- `@RelayClient` — OkHttpClient/Retrofit for relay device REST sync (status/pull/ack/upload), longer timeouts
+- `@DebugLogClient` — OkHttpClient/Retrofit for POSTing debug logs to the relay
 
 **Scope Strategy:**
-- Singleton: Database, network clients, preferences, utilities, WebSocket, logging
+- Singleton: Database, network clients, preferences, utilities, relay sync, logging
 - SingletonComponent + ViewModelComponent + ServiceComponent: DAOs and repository bindings (available across all scopes)
 - ViewModelComponent: DocumentRepository<T> providers, use cases (`@ViewModelScoped`)
 
@@ -175,12 +177,14 @@ Located in `/domain/result/Result.kt`:
 - **Financial**: Debt, Rest (stock levels), ProductPrice, Discount
 - **Location**: LocationHistory, ClientLocation
 - **Media**: ProductImage, ClientImage (with isLocal flag for sync)
-- **System**: UserAccount, LogEvent
+- **System**: UserAccount, LogEvent, DebugLogEntry (`debug_log_entries`, remote debug-log queue)
 
-**DAOs:** OrderDao, ProductDao, ClientDao, LocationDao, UserAccountDao, LogDao, DataExchangeDao, DiscountDao, TaskDao, CashDao, CommonDao, CompanyDao, StoreDao, RestDao
+**DAOs (15):** OrderDao, ProductDao, ClientDao, LocationDao, UserAccountDao, LogDao, DataExchangeDao, DiscountDao, TaskDao, CashDao, CommonDao, CompanyDao, StoreDao, RestDao, DebugLogDao
 
 **UserAccount Fields (current):**
 guid, is_current, extended_id, description, license, data_format, db_server, db_name, db_user, db_password, token, options, relay_server, use_websocket
+
+`data_format` is the transport discriminator (`HTTP_service` → direct-1C; anything else → relay REST). `use_websocket` is a **legacy** column, retained only as the settings auto/manual switch state (WebSocket transport was removed) — see `UserAccount.syncTransport()` / `isRelayRest()`.
 
 **Multi-Account Architecture:**
 Most entities use `db_guid` in composite primary keys. Each UserAccount represents a connection to a different 1C database. Current account marked with `is_current=1`. DAOs automatically filter by current account.
@@ -200,6 +204,9 @@ Key migrations since v20:
 - **23→24**: Added `use_websocket` flag to UserAccount (default: 1)
 - **24→25**: Removed `sync_email` column (table recreation)
 - **25→26**: Added `discounts` table for complex discount system (PK: db_guid, client_guid, product_guid)
+- **26→27**: Added `debug_log_entries` table (remote debug-log queue) + indexes on `sent`, `timestamp`
+- **27→28**: Data-only — migrate `data_format='WebSocket_relay'` accounts to `REST_relay`
+- **28→29**: Data-only — normalize every non-`HTTP_service` account to `REST_relay` (WebSocket transport removed)
 - **29→30**: Added `group_name`/`group_sum` to `debts` for debt-list grouping
 - **30→31**: Added `reference` column to `cash` (parent-document presentation text)
 
@@ -217,10 +224,12 @@ Key migrations since v20:
 - **LocationRepository**: GPS tracking history
 - **UserAccountRepository**: Account management with Flow-based current account
 - **DataExchangeRepository**: Sync data transformation between Room entities and network models
-- **WebSocketRepository**: WebSocket connection management and messaging
 - **LogRepository**: Logging operations
+- **DebugLogRepository**: Queue of `DebugLogEntry` rows drained to the relay by `RemoteLogUploader`
 - **FilesRepository**: File operations (images, cache)
 - **CommonRepository**: Cross-cutting queries (payment types, price types, companies, stores)
+
+Relay REST sync (`RelaySyncClient`) and 1C HTTP sync (`NetworkRepositoryImpl`) are both concrete in `/data/repository/` — there is no `WebSocketRepository` interface anymore.
 
 **Location:** Interfaces in `/domain/repository/`, implementations in `/data/repository/` and `/infrastructure/location/`
 
@@ -242,7 +251,7 @@ Client: ClientViewModel, ClientListViewModel, ClientImageViewModel
 Product: ProductViewModel, ProductListViewModel, ProductImageViewModel
 Maps: ClientsMapViewModel, LocationHistoryViewModel
 Settings: SyncViewModel, UserAccountViewModel, UserAccountListViewModel, OptionsViewModel
-Other: DebtViewModel, FiscalViewModel, LogViewModel, PrinterViewModel, PickerViewModel, WebSocketTestViewModel, LocationPickupViewModel
+Other: DebtViewModel, FiscalViewModel, LogViewModel, PrinterViewModel, PickerViewModel, LocationPickupViewModel
 Company/Store: ListViewModel (shared name, separate packages)
 
 #### UI State
@@ -270,28 +279,31 @@ Company/Store: ListViewModel (shared name, separate packages)
 - TokenManager interface + TokenManagerImpl: Manages token lifecycle with UserAccountRepository
 
 **HTTP Sync Models** (`/data/remote/`):
-- `Result` sealed class (legacy): Progress/Success/Error for sync Flow tracking
+- `Result` sealed class: Progress/Success/Error for sync Flow tracking (used by both transports)
+- `SyncStats`: per-run `sent`/`received` counters (see Sync Result Notifications)
 - `SendResult`: Upload result handling
 - `HttpClient`: HTTP client wrapper
 
-**WebSocket Layer** (`/data/websocket/` + `/infrastructure/websocket/`):
-- **Data models** (`/data/websocket/`): WebSocketMessage, WebSocketState, PendingMessage, SyncModels, WebSocketMessageFactory
-- **Infrastructure** (`/infrastructure/websocket/`): WebSocketConnectionManager, WebSocketSyncWorker, PendingDataChecker, NetworkConnectivityMonitor
-- **Repository**: WebSocketRepository interface (`/domain/repository/`) + WebSocketRepositoryImpl (`/data/repository/`)
-- Uses `@WebSocketClient` OkHttpClient (no auth interceptor, Bearer token format)
-- ApiKeyProvider (`/infrastructure/config/`) manages WebSocket API key from BuildConfig
+**Relay REST Layer** (replaced the removed WebSocket transport):
+- **API** (`/data/remote/api/RelayApi.kt`): `GET api/v1/device/status`, `GET api/v1/device/pull`, `POST api/v1/device/ack`, `POST api/v1/device/upload`
+- **Engine** (`/data/repository/RelaySyncClient.kt`, `@Singleton`): `checkApproval` → status, `pullCatalog` → pull + ack, `uploadDocuments` → upload. Saves catalog + runs stale-row cleanup off the 1C `batch_complete` timestamp, mirroring the old WebSocket path.
+- **Worker** (`/infrastructure/relay/RelayRestSyncWorker.kt`, `@HiltWorker`): periodic background sync for relay accounts; no-ops for direct-1C/demo. WorkManager 15-min floor.
+- **Auth**: `Bearer <apiKey>:<deviceUuid>` header per call (no interceptor). `ApiKeyProvider` (`/infrastructure/config/`) exposes the relay API key from BuildConfig (`webSocketApiKey`, legacy name).
+- DTOs in `/data/remote/dto/`: RelayStatusData, RelayAckRequest, RelayUploadRequest, RelayUploadDocument.
 
-**Sync Strategy (HTTP mode):**
+**Remote Debug Logging** (`/infrastructure/logger/RemoteLogUploader.kt`):
+- Drains `DebugLogRepository` (`debug_log_entries` table) to the relay's `POST api/v1/device/logs` via `DebugLogApi`, using the `@DebugLogClient` client and the same Bearer auth.
+
+**Sync Strategy (direct-1C HTTP mode, `HTTP_service`, manual):**
 1. **Full Sync**: Download all catalogs (clients, goods, debts, payment_types, companies, stores, rests, images, discounts) based on UserOptions. Optional catalogs added to sync queue conditionally (e.g., `discounts` only when `complexDiscounts=true`, `companies` only when `useCompanies=true`). Cleans old data via timestamp comparison.
 2. **Differential Sync**: Upload unsent documents (orders, cash, images, locations), receive sync results.
 
-**Sync Strategy (WebSocket mode):**
-1. **Document Upload**: App uploads unsent documents (orders, cash, images, locations) via WebSocket relay.
-2. **Catalog Receipt**: Fully passive — 1C pushes catalog data (including discounts) through the relay server at its own initiative. Each data element contains a `value_id` field identifying the data type (e.g., `"discount"`, `"item"`, `"client"`) and a UTC millisecond `timestamp` field set by 1C. The app routes data to the correct loader via `DataExchangeRepositoryImpl.saveFilteredData()` based on `value_id`.
-3. **Batch Complete**: When 1C finishes pushing all data, it sends `POST /api/v1/push/complete` with the same timestamp. The relay delivers a `batch_complete` sentinel to the app.
-4. **Cleanup**: On receiving `batch_complete`, the app deletes all local catalog data where `timestamp < T` (the 1C timestamp), removing items not refreshed in the current batch. This includes discounts table cleanup.
+**Sync Strategy (relay REST mode, everything else, automatic):**
+1. **Upload**: `RelaySyncClient.uploadDocuments` POSTs unsent documents (orders, cash, images, locations) to `api/v1/device/upload`.
+2. **Catalog Pull**: `pullCatalog` GETs pushed catalog data (including discounts) from `api/v1/device/pull`, then `POST api/v1/device/ack`. Each data element carries a `value_id` (e.g. `"discount"`, `"item"`, `"client"`) and a UTC-ms 1C `timestamp`. Data routes to the correct loader via `DataExchangeRepository.saveData()` by `value_id`.
+3. **Batch Complete / Cleanup**: 1C stamps a `batch_complete` timestamp `T`; the app deletes local catalog rows where `timestamp < T`, removing items not refreshed this batch (discounts included).
 
-**Progress Tracking:** Flow<Result> with Progress/Success/Error states (legacy `data.remote.Result`).
+**Progress Tracking:** Flow<Result> with Progress/Success/Error states (`data.remote.Result`).
 
 ### Navigation
 
@@ -311,13 +323,12 @@ Company/Store: ListViewModel (shared name, separate packages)
 - Maps: ClientsMap, LocationHistory
 - Picker: PickerFragment (reusable selection UI for price types, payment types, etc.)
 - Company/Store: CompanyList, StoreList
-- WebSocket: WebSocketTestFragment (diagnostics)
 - Logger: LogFragment
 
 ### Key Business Logic Areas
 
 #### Multi-Account System
-Each UserAccount represents a connection to a 1C database with its own data partition. Switch accounts via `is_current=1` flag. All DAOs filter by current account automatically. `use_websocket` flag (default: 1) controls sync mode per account.
+Each UserAccount represents a connection to a 1C database with its own data partition. Switch accounts via `is_current=1` flag. All DAOs filter by current account automatically. Sync transport is decided by `data_format` (`HTTP_service` → direct-1C manual; anything else → relay REST automatic); the legacy `use_websocket` flag is now just the settings auto/manual switch state.
 
 #### License Number Usage (IMPORTANT)
 **License numbers are used on the backend to identify 1C bases, NOT for device authorization.**
@@ -332,7 +343,7 @@ Each UserAccount represents a connection to a 1C database with its own data part
 - **Stores** license in `UserAccount.license` field (for display/reference only)
 - **Displays** license number in settings UI (read-only)
 - **Does NOT send** license number for authentication/authorization
-- **WebSocket connections**: Use only device UUID (`?uuid={guid}`), NOT license
+- **Relay connections**: authenticated by the `Bearer <apiKey>:<deviceUuid>` header (device UUID), NOT license
 
 **Backend Behavior:**
 - Links device UUIDs to license numbers server-side
@@ -342,17 +353,15 @@ Each UserAccount represents a connection to a 1C database with its own data part
 **Key Point:** Never use `UserAccount.license` for authorization. It's metadata received from backend for display purposes only.
 
 #### Offline-First Sync
-All data stored locally in Room. Documents created offline marked with `isSent=0`. Sync uploads unsent documents via HTTP or WebSocket.
+All data stored locally in Room. Documents created offline marked with `isSent=0`. Sync uploads unsent documents via direct-1C HTTP or relay REST.
 
-**HTTP mode:** App pulls catalog data from 1C server, stamps items with local timestamp, cleans up stale data after download completes.
+**Direct-1C HTTP mode (`HTTP_service`, manual):** App pulls catalog data from the 1C server, stamps items with a local timestamp, cleans up stale data after download completes.
 
-**WebSocket mode:** Catalog data is pushed by 1C through the relay server — the app does not request it. 1C generates a UTC millisecond timestamp, embeds it in every data element, and sends `batch_complete` with the same timestamp when done. The app saves items with the 1C timestamp (already in the data) and uses the `batch_complete` timestamp for cleanup (`DELETE WHERE timestamp < T`). The `batchComplete` flow in `WebSocketRepository` triggers cleanup in `NetworkRepositoryImpl`.
+**Relay REST mode (everything else, automatic):** Catalog data is prepared by 1C and pulled by the app from the relay (`GET api/v1/device/pull` + `POST ack`). 1C generates a UTC-ms timestamp, embeds it in every data element, and marks a `batch_complete` timestamp `T`. The app saves items with the 1C timestamp and cleans up with `DELETE WHERE timestamp < T`. `RelaySyncClient` performs both the save and the cleanup.
 
-**WebSocket Infrastructure:**
-- `WebSocketConnectionManager` (Singleton, `DefaultLifecycleObserver`): Lifecycle-aware WebSocket management via `ProcessLifecycleOwner`. Connects on foreground/network-available, disconnects on background after grace period. **Always connects for license/device status regardless of `use_websocket` flag** — the flag only controls whether data exchange uses WebSocket vs HTTP.
-- `WebSocketSyncWorker` (`@HiltWorker` CoroutineWorker): Periodic background sync (min 15-minute interval per WorkManager). Checks pending data via `PendingDataChecker`, triggers `WebSocketConnectionManager.checkAndConnect()`. Exponential backoff on failure.
-- `PendingDataChecker` (Singleton): Queries `DataExchangeDao` for counts of unsent orders, cash, images, locations. Exposes `PendingDataSummary`.
-- `NetworkConnectivityMonitor` (Singleton): Observes network connectivity changes to trigger reconnection.
+**Relay Infrastructure:**
+- `RelaySyncClient` (`@Singleton`, `/data/repository/`): the data-exchange engine — status/pull/ack/upload over `RelayApi`, plus catalog save + stale-row cleanup.
+- `RelayRestSyncWorker` (`@HiltWorker` CoroutineWorker, `/infrastructure/relay/`): periodic background sync for relay accounts (WorkManager 15-min floor; exponential backoff). No-ops for direct-1C/demo accounts. Sub-15-min freshness would need an FCM doorbell (deferred).
 
 #### Sync Result Notifications
 `SyncNotifier` (`@Singleton`, `/infrastructure/notification/`) posts a system notification with the outcome of each sync run. Loudness depends on the account's connection mode:
@@ -420,7 +429,7 @@ Convention: empty string "" = wildcard (any client / any product)
 - `UserOptions.allowDiscountEdit` — gates the discount fields (`editDiscountPercent`, `editDiscountPrice`); effective only when `complexDiscounts` is also on (`canEditDiscount = complexDiscounts && allowDiscountEdit`).
 - Both default `false`, are display-only checkboxes in `OptionsFragment`, and round-trip through `UserOptions.toJson()` / `UserOptionsBuilder`.
 
-**Sync:** Discount data synced as `DATA_DISCOUNT = "discount"` constant. HTTP mode: added to sync queue when `complexDiscounts` enabled. WebSocket mode: handled automatically via `DataExchangeRepository` routing. Cleanup follows standard timestamp-based pattern.
+**Sync:** Discount data synced as `DATA_DISCOUNT = "discount"` constant. Direct-1C HTTP mode: added to sync queue when `complexDiscounts` enabled. Relay REST mode: handled automatically via `DataExchangeRepository` routing. Cleanup follows standard timestamp-based pattern.
 
 #### Location Tracking
 Foreground-only GPS tracking via `LocationTracker` (`@Singleton`, in-process — not a service). Requests updates from `FusedLocationProviderClient` at 10-second intervals while `MainActivity` is started; stops in `onStop`. Filtering by accuracy threshold and minimum distance. History stored in LocationHistory table. Addresses resolved via GeocodeHelper interface (GeocodeHelperImpl using Geocoding API).
@@ -501,50 +510,44 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │       │                                #   UserAccountListFragment, OptionsFragment,
 │       │                                #   ScannerSettingsFragment, ScannerTestFragment,
 │       │                                #   ApplicationSettingsFragment + ViewModels
-│       ├── /websocket/                  # WebSocketTestFragment, WebSocketTestViewModel
 │       └── /logger/                     # LogFragment, LogViewModel
 │
 ├── /domain/                             # Domain Layer
 │   ├── /repository/                     # Repository interfaces (DocumentRepository, OrderRepository,
 │   │                                    #   CashRepository, TaskRepository, ClientRepository,
-│   │                                    #   ProductRepository, NetworkRepository, WebSocketRepository,
+│   │                                    #   ProductRepository, NetworkRepository, DebugLogRepository,
 │   │                                    #   UserAccountRepository, DataExchangeRepository,
 │   │                                    #   LocationRepository, LogRepository, FilesRepository,
 │   │                                    #   CommonRepository)
 │   ├── /usecase/                        # Use case base classes + implementations
 │   │   ├── UseCase.kt                  # Base interfaces and abstract classes
-│   │   ├── /order/                      # Order use cases (10 use cases)
-│   │   ├── /cash/                       # Cash use cases (5 use cases)
-│   │   └── /task/                       # Task use cases (5 use cases)
+│   │   ├── /order/                      # Order use cases (across GetOrdersUseCase.kt, SaveOrderUseCase.kt, +3 files)
+│   │   ├── /cash/                       # Cash use cases (CashUseCases.kt)
+│   │   └── /task/                       # Task use cases (TaskUseCases.kt)
 │   └── /result/                         # Result<T> sealed class, DomainException hierarchy
 │
 ├── /data/                               # Data Layer
 │   ├── /local/
 │   │   ├── /database/                   # AppDatabase (v31)
-│   │   ├── /dao/                        # Room DAOs (14 DAOs)
-│   │   └── /entity/                     # Room entities with db_guid (20 entities)
+│   │   ├── /dao/                        # Room DAOs (15 DAOs)
+│   │   └── /entity/                     # Room entities (22 entities)
 │   ├── /remote/
-│   │   ├── /api/                        # HttpClientApi (Retrofit service)
-│   │   ├── /dto/                        # Network DTOs (UserAccountDto, etc.)
+│   │   ├── /api/                        # HttpClientApi (1C), RelayApi, DebugLogApi
+│   │   ├── /dto/                        # Network DTOs (UserAccountDto, Relay*, DebugLog*, etc.)
 │   │   ├── /interceptor/                # HttpAuthInterceptor, TokenRefresh
 │   │   ├── HttpClient.kt               # HTTP client wrapper
 │   │   ├── TokenManager.kt             # Token management interface
 │   │   ├── TokenManagerImpl.kt          # Token management implementation
-│   │   ├── Result.kt                    # Legacy sync Result (Progress/Success/Error)
+│   │   ├── Result.kt                    # Sync Result (Progress/Success/Error)
+│   │   ├── SyncStats.kt                 # Per-run sent/received counters
 │   │   └── SendResult.kt               # Upload result model
-│   ├── /repository/                     # Repository implementations
-│   │                                    #   (OrderRepositoryImpl, CashRepositoryImpl,
-│   │                                    #   TaskRepositoryImpl, ClientRepositoryImpl,
-│   │                                    #   ProductRepositoryImpl, NetworkRepositoryImpl,
-│   │                                    #   UserAccountRepositoryImpl, DataExchangeRepositoryImpl,
-│   │                                    #   WebSocketRepositoryImpl, LogRepositoryImpl,
-│   │                                    #   FilesRepositoryImpl, CommonRepositoryImpl)
-│   └── /websocket/                      # WebSocket data models
-│       ├── WebSocketMessage.kt          # Message types
-│       ├── WebSocketState.kt            # Connection states
-│       ├── PendingMessage.kt            # Queued messages
-│       ├── SyncModels.kt                # Sync-specific models
-│       └── WebSocketMessageFactory.kt   # Message construction
+│   └── /repository/                     # Repository implementations
+│                                        #   (OrderRepositoryImpl, CashRepositoryImpl,
+│                                        #   TaskRepositoryImpl, ClientRepositoryImpl,
+│                                        #   ProductRepositoryImpl, NetworkRepositoryImpl,
+│                                        #   UserAccountRepositoryImpl, DataExchangeRepositoryImpl,
+│                                        #   RelaySyncClient, DebugLogRepositoryImpl,
+│                                        #   LogRepositoryImpl, FilesRepositoryImpl, CommonRepositoryImpl)
 │
 ├── /infrastructure/                     # Infrastructure Layer
 │   ├── /location/                       # LocationTracker (foreground-only), LocationRepositoryImpl,
@@ -552,22 +555,20 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 │   ├── /camera/                         # CameraFragment (CameraX photo capture)
 │   ├── /printer/                        # PrinterViewModel, PrinterSettingsFragment,
 │   │                                    #   OrderPrintFormatter, WebhookPrintService
-│   ├── /websocket/                      # WebSocketConnectionManager, WebSocketSyncWorker,
-│   │                                    #   PendingDataChecker, NetworkConnectivityMonitor
 │   ├── /relay/                          # RelayRestSyncWorker (REST-relay periodic sync)
 │   ├── /notification/                   # SyncNotifier (sync result notifications)
-│   ├── /logger/                         # Logger interface
-│   └── /config/                         # ApiKeyProvider
+│   ├── /logger/                         # Logger interface, RemoteLogUploader
+│   └── /config/                         # ApiKeyProvider, CachingDns
 │
 ├── /di/                                 # Hilt DI modules
 │   ├── GlobalModule.kt                  # Singleton: DB, prefs, Glide, geocoder, image loading
 │   │                                    #   + CoroutineModule + ResourceProviderModule
-│   ├── NetworkModule.kt                 # Singleton: HTTP client, Retrofit, WebSocket, API key
+│   ├── NetworkModule.kt                 # Singleton: 1C HTTP client, relay + debug-log clients, API key
 │   ├── DomainModule.kt                  # DAO providers + RepositoryBindModule
 │   ├── RepositoryModule.kt              # ViewModelComponent: DocumentRepository<T> providers
 │   ├── UseCaseModule.kt                 # ViewModelComponent: Use case providers
 │   ├── PrintModule.kt                   # Singleton: BluetoothAdapter
-│   └── Qualifiers.kt                    # @WebSocketClient qualifier
+│   └── Qualifiers.kt                    # @RelayClient, @DebugLogClient qualifiers
 │
 ├── /extensions/                         # Kotlin extension functions
 └── /utility/                            # Utilities, Constants, ResourceProvider
@@ -644,7 +645,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 2. Create DTO in `/data/remote/dto/`
 3. Add transformation in DataExchangeRepository
 4. Update HttpClientApi endpoint if needed
-5. For WebSocket: add message type in `/data/websocket/`, handle in WebSocketRepositoryImpl
+5. For relay REST: route the new `value_id` in `DataExchangeRepository.saveData()` (RelaySyncClient pulls generically)
 6. Add progress reporting
 
 ### When Adding New Use Cases
@@ -658,7 +659,7 @@ Two independent printing mechanisms in `/infrastructure/printer/`:
 - API credentials stored in UserAccount (encrypted database)
 - ProGuard rules in app/proguard-rules.pro for release builds
 - local.properties excluded from git (SDK paths, keys, WEBSOCKET_API_KEY, KEY_HOST)
-- WebSocket API key loaded via BuildConfig, not hardcoded
+- Relay API key (`WEBSOCKET_API_KEY`, legacy name) loaded via BuildConfig, not hardcoded
 
 ### Testing (Demo Mode)
 Demo mode available for evaluation:
@@ -673,19 +674,19 @@ Demo mode available for evaluation:
 - **Room**: 2.8.4
 - **Retrofit**: 3.0.0
 - **OkHttp Logging**: 5.3.2
-- **Navigation Component**: 2.9.7
-- **CameraX**: 1.5.3
-- **Firebase BOM**: 34.9.0 (Messaging, Crashlytics, Firestore, Auth)
-- **Glide**: 5.0.5
+- **Navigation Component**: 2.9.8
+- **CameraX**: 1.6.0
+- **Firebase BOM**: 34.12.0 (Messaging, Crashlytics, Firestore, Auth)
+- **Glide**: 5.0.7
 - **Google Play Services**: Maps 20.0.0, Location 21.3.0
-- **WorkManager**: 2.11.1
+- **WorkManager**: 2.11.2
 - **Lifecycle**: 2.10.0
 - **Material**: 1.13.0
 - **KSP**: 2.3.4
-- **AGP**: 9.1.0
+- **AGP**: 9.3.1 (compileSdk 37)
 
 ### Test Dependencies
-- JUnit 4.13.2, Mockito 5.21.0, Mockito-Kotlin 6.1.0
+- JUnit 4.13.2, Mockito 5.23.0, Mockito-Kotlin 6.3.0
 - Google Truth 1.4.5, Turbine 1.2.1
 - Coroutines Test 1.10.2, Robolectric 4.16.1
 - AndroidX Test (Core, JUnit, Espresso, Arch Core Testing)
@@ -696,13 +697,11 @@ Demo mode available for evaluation:
 
 **Document Types:** `DOCUMENT_ORDER="order"`, `DOCUMENT_CASH="cash"`, `DOCUMENT_TASK="task"`
 
-**Sync Formats:** `SYNC_FORMAT_FTP="FTP_server"` (legacy), `SYNC_FORMAT_WEB="Web_service"` (legacy), `SYNC_FORMAT_HTTP="HTTP_service"`, `SYNC_FORMAT_WEBSOCKET="WebSocket_relay"`
+**Sync Formats:** `SYNC_FORMAT_HTTP="HTTP_service"` (direct 1C, manual), `SYNC_FORMAT_RELAY_REST="REST_relay"` (relay, automatic). Legacy/retained: `SYNC_FORMAT_FTP="FTP_server"`, `SYNC_FORMAT_WEB="Web_service"`, `SYNC_FORMAT_WEBSOCKET="WebSocket_relay"` (transport removed; migrated to `REST_relay`).
 
-**WebSocket Timing:** Reconnect initial=1s, max=60s; Ping interval=30s; Sync worker intervals: default=15min, min=5min, max=60min
+**Relay sync worker intervals:** default=15min, min=5min, max=60min (`WEBSOCKET_IDLE_INTERVAL_*`, legacy names).
 
-**WebSocket Message Types:** `data`, `ack`, `ping`, `pong`, `error`, `upload_order`, `upload_cash`, `upload_image`, `upload_location`, `download_catalogs`
-
-**Sync Data Types:** `DATA_DISCOUNT="discount"`, `DATA_GOODS_ITEM="item"`, `DATA_PRICE="price"`, `DATA_CLIENT="client"`, `DATA_COMPANY="company"`, `DATA_STORE="store"`, `DATA_REST="rest"`, `DATA_PAYMENT_TYPE="payment_type"`, `DATA_IMAGE="image"`, `DATA_DEBT="debt"`
+**Sync Data Types:** `DATA_DISCOUNT="discount"`, `DATA_GOODS_ITEM="item"`, `DATA_PRICE="price"`, `DATA_COMPETITOR_PRICE="competitor_price"`, `DATA_CLIENT="client"`, `DATA_COMPANY="company"`, `DATA_STORE="store"`, `DATA_REST="rest"`, `DATA_PAYMENT_TYPE="payment_type"`, `DATA_IMAGE="image"`, `DATA_CLIENT_IMAGE="client_image"`, `DATA_DEBT="debt"`, `DATA_DEBT_DOCUMENT="debt_document"`, `DATA_CLIENT_LOCATION="client_location"`, `DATA_CLIENT_DIRECTION="client_direction"`, `DATA_CLIENT_GOODS="client_goods_item"`, `DATA_LOCATION="location"`, `DATA_OPTIONS="options"`
 
 **Device Status Values:** `pending`, `approved`, `denied`
 
