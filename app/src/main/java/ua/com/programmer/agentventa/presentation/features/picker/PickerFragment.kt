@@ -78,6 +78,7 @@ class PickerFragment: Fragment(), MenuProvider {
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
         binding?.editQuantity?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
+        binding?.editPrice?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
         binding?.editDiscountPrice?.setOnEditorActionListener { _, actionId, _ -> onEditTextAction(actionId) }
 
         binding?.buttonCancel?.setOnClickListener {
@@ -135,6 +136,13 @@ class PickerFragment: Fragment(), MenuProvider {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) { updateTotal() }
+        })
+
+        // Price edited → recalc discounted price and total
+        binding?.editPrice?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) { recalcDiscountPrice() }
         })
 
         // Discount percent edited → recalc discounted price as visible text
@@ -219,9 +227,8 @@ class PickerFragment: Fragment(), MenuProvider {
             priceUnit.text = currency
             discountPriceUnit.text = currency
 
-            // Price is always read-only (display only)
             editPrice.setText(product.price.format(2))
-            editPrice.isEnabled = false
+            editPrice.isEnabled = options.allowPriceEdit
 
             // Discount fields: editable only when complexDiscounts and allowPriceEdit
             canEditDiscount = options.complexDiscounts && options.allowPriceEdit

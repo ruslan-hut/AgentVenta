@@ -287,6 +287,7 @@ Push user settings to device.
 | useCompanies | boolean | Multi-company operation |
 | useStores | boolean | Multi-warehouse operation |
 | complexDiscounts | boolean | Enable per-client per-product discount system |
+| allowPriceEdit | boolean | Allow manual price editing when adding a product to an order; also enables the discount fields when `complexDiscounts: true` |
 
 ---
 
@@ -744,6 +745,7 @@ matches `Cash.toMap`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.4 | 2026-07-24 | Documented `allowPriceEdit` option (manual price editing in the order product picker). |
 | 3.3 | 2026-07-07 | Renamed to Data Management API; device ↔ relay transport switched from WebSocket to REST device API; fixed cross-links. |
 | 3.2 | 2026-03-24 | Added Discount data type (`value_id: "discount"`) with priority-based lookup, `complexDiscounts` option. |
 | 3.1 | 2026-03-16 | Added Sync Modes section: full sync flow, required data types, key options parameters. |
